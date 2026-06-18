@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Review"
+  short_description: "Full Clean Code audit of a Swift file or module."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-review to do a full Clean Code audit of this Swift code."
+
+policy:
+  allow_implicit_invocation: true

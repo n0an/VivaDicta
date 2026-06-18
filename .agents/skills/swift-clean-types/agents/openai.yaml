@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Types"
+  short_description: "Reviews Swift class/struct/enum/protocol design, SRP, cohesion, DI."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-types to review type design in this Swift code."
+
+policy:
+  allow_implicit_invocation: true

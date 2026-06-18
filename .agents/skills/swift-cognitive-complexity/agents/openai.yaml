@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Cognitive Complexity"
+  short_description: "Scores and reduces Cognitive Complexity in Swift functions."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-cognitive-complexity to score and reduce complexity in this Swift code."
+
+policy:
+  allow_implicit_invocation: true

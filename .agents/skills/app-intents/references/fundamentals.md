@@ -64,6 +64,8 @@ struct RefreshFeedIntent: AppIntent {
 | `VideoCallIntent` | Starts a video call. |
 | `CameraCaptureIntent` | Starts a camera capture flow. |
 | `ProgressReportingIntent` | Reports progress for long-running tasks; Shortcuts shows a progress bar automatically. Set `totalUnitCount`, bump `completedUnitCount` during `perform()`. (iOS 17+) |
+| `LongRunningIntent` | Runs past the 30-second background budget via `performBackgroundTask`; surfaces a Live Activity; supports background GPU. Refines `ProgressReportingIntent`. (iOS 27+ - see `long-running-and-execution.md`) |
+| `CancellableIntent` | Clean up gracefully with the cancellation *reason* via `withIntentCancellationHandler`. (iOS 26.4+ - see `long-running-and-execution.md`) |
 | `URLRepresentableIntent` | Lets the system open the app via a universal link URL without your `perform()` running. Pairs with `URLRepresentableEntity`. See `open-and-snippet-intents.md`. |
 | `TargetContentProvidingIntent` | Marker protocol on iOS - tells the system this intent produces the app scene users navigated to. Needed for visual intelligence routing back into the app. |
 | `WidgetConfigurationIntent` | Marker protocol for an intent that's *only* used as widget configuration. Parameter queries drive the configuration picker; no user-invokable action. (iOS 17+ via WidgetKit's `AppIntentConfiguration`) |
@@ -155,6 +157,13 @@ Two consequences:
 - If an intent later decides it needs UI (e.g., via `continueInForeground`), the system will create the scene at that point.
 
 Background launches are significantly faster than scene launches. Keep `openAppWhenRun = false` whenever possible.
+
+## Execution time and target
+
+Two more lifecycle facts, both expanded in the 27 releases (full detail in `long-running-and-execution.md`):
+
+- **30-second budget.** An intent triggered from any system surface gets ~30 seconds to finish (no hard limit on macOS). Past that it's killed. For uploads, sync, large file ops, or on-device inference, conform to `LongRunningIntent` and wrap the work in `performBackgroundTask`; for graceful cleanup on cancellation, conform to `CancellableIntent`.
+- **Execution target.** When intents live in a shared package imported by the app *and* extensions, the system picks the process by heuristic. Override it with the `allowedExecutionTargets` type property (`IntentExecutionTargets`) - e.g. pin a data-mutating intent to the main app so a read-only widget extension never writes the shared store.
 
 ## Hard limits and character caps
 

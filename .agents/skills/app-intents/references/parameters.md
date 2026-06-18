@@ -31,6 +31,30 @@ Design guidance: keep parameters **optional** unless the intent is genuinely use
 
 For boolean parameters, set a default that reflects the common case (`default: true`). For a toggle intent, default to the value the toggle ends up at - e.g., a "Set Do Not Disturb" intent defaults `enabled: true`.
 
+### Optional in update intents: "don't change" vs "clear" via `valueState`
+
+For an **update** intent, an optional parameter being `nil` is ambiguous: does `nil` mean "leave this field alone" or "explicitly clear it"? A plain `nil` check can't tell them apart. The `@AppIntent` macro wraps each parameter in an `IntentParameter` exposing a `valueState`, which distinguishes the three cases:
+
+```swift
+struct UpdateEventIntent: AppIntent {
+    @Parameter var event: EventEntity
+    @Parameter var recurrence: Calendar.RecurrenceRule?
+    // ...
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<EventEntity> {
+        switch $recurrence.valueState {
+        case .set(let rule?):  try store.setRecurrence(rule, on: event.id)   // new value provided
+        case .set(nil):        try store.clearRecurrence(on: event.id)        // explicitly cleared
+        case .unset:           break                                          // not part of the request - leave alone
+        }
+        // ...
+    }
+}
+```
+
+`$parameter.valueState` is `.set(value)` (with a non-nil value = new value, with `nil` = explicitly cleared) or `.unset` (the parameter wasn't part of the request). Reach for it on any optional parameter where clearing the value is a meaningful, distinct action from not touching it - typical in schema-based update intents (`calendar_updateEvent`, etc.) where most parameters are optional.
+
 ## Supported parameter types
 
 Primitive:
@@ -38,12 +62,19 @@ Primitive:
 - `String`, `Int`, `Double`, `Bool`, `Date`, `URL`, `Measurement`
 - `IntentFile`, `IntentItem`, `IntentEnum`
 - `Decimal`, `Data`
+- `Duration`, `PersonNameComponents` (and more) - **native types added in the 27 releases**
 - Optional or array of any of the above
 
 Domain types:
 
 - Any `AppEntity` (single or `[MyEntity]`)
 - Any `AppEnum`
+- An `EntityCollection<MyEntity>` (identifiers only - see below)
+- A `@UnionValue` enum (one parameter, several entity types - see `entities.md`)
+
+### Native types get pickers for free
+
+When a parameter's type is one the system understands, declaring it is all you do - the system supplies a **native picker, Siri understanding, and localization** with no custom UI. The 27 releases extend that built-in support to more types: use `Duration` instead of hand-rolling a time picker, `PersonNameComponents` for structured name input instead of a plain `String`. Each works everywhere the intent does - Siri, Shortcuts, widgets.
 
 ## Parameter options
 
@@ -481,6 +512,35 @@ Parameters can themselves be `AppEntity` arrays for bulk operations:
 ```
 
 Shortcuts renders this as a multi-select list; Siri asks "which articles?" and accepts multiple names.
+
+## `EntityCollection` for large entity parameters (iOS 27+)
+
+Before an intent runs, the system **fully resolves every entity parameter** - it calls your query to populate all properties so `perform()` has everything it might need. For a `[PhotoEntity]` parameter holding a thousand photos, that means resolving a thousand entities even if your code only needs their **ids** to update the data model. At scale, that's slow.
+
+`EntityCollection<Entity>` stores the **identifiers** instead of resolved entities. As a parameter type, it tells the system *not* to resolve each id during parameter resolution - it just hands you the ids:
+
+```swift
+struct TagPhotosIntent: AppIntent {
+    static let title: LocalizedStringResource = "Tag Photos"
+
+    @Parameter(title: "Photos")
+    var photos: EntityCollection<PhotoEntity>
+
+    @Parameter(title: "Tag")
+    var tag: String
+
+    func perform() async throws -> some IntentResult {
+        // Pass identifiers straight to the data layer - no hydration of 1,000 entities.
+        try await photoStore.addTag(tag, toPhotosWith: photos.identifiers)
+        return .result()
+    }
+}
+```
+
+- `photos.identifiers` is the array of ids. When you genuinely need the full entities, call `await photos.resolvedEntities()` (it resolves via your query and caches the result).
+- `EntityCollection` conforms to `Collection` / `Sequence` / `ExpressibleByArrayLiteral`, with `count`, `isEmpty`, `contains`, `append`, `remove`, and `init(entities:)` / `init(identifiers:)`.
+
+The change from `[PhotoEntity]` to `EntityCollection<PhotoEntity>` is tiny; the speedup on large selections is large. Reach for it whenever a parameter can hold many entities and your `perform()` mostly needs ids. For a handful of entities where you use their properties, a plain `[Entity]` array is fine.
 
 ## Keep perform() typed
 

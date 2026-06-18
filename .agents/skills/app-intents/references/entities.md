@@ -271,7 +271,23 @@ struct NavigateIntent: AppIntent {
 
 Each `@UnionValue` case has exactly one associated value, and that value is a distinct type. Shortcuts shows a combined picker; Siri asks a disambiguation question. Preferable to writing two sibling intents that differ only in the parameter type.
 
-Same macro is used for `IntentValueQuery` results (see `assistant-schemas.md` for visual-intelligence examples).
+Customize how the union appears in the picker with `typeDisplayRepresentation` (the label for the union type) and `caseDisplayRepresentations` (the label per case) - the macro generates the rest (type info, case metadata, picker support):
+
+```swift
+@UnionValue
+enum PhotoSource {
+    case landmarkCollection(LandmarkCollectionEntity)
+    case photoAlbum(PhotoAlbumEntity)
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Photo Source")
+    static let caseDisplayRepresentations: [PhotoSource: DisplayRepresentation] = [
+        .landmarkCollection: "Landmark Collection",
+        .photoAlbum: "Photo Album"
+    ]
+}
+```
+
+`@UnionValue` parameters work everywhere your intent does - Shortcuts, Siri, **and widgets** (one widget configuration backing two entity types). The same macro is used for `IntentValueQuery` results (see `assistant-schemas.md` for visual-intelligence examples).
 
 ## Transferable entities
 
@@ -317,6 +333,25 @@ extension JournalEntryEntity: Transferable {
 Shorter than the closure form; works for any property whose type is itself `Transferable` (`String`, `Data`, `URL`, another entity). The exported content type comes from the property's type.
 
 Use `ProxyRepresentation` for plain passthrough; drop to `DataRepresentation` / `FileRepresentation` closures when the exported bytes are computed from multiple fields or require formatting.
+
+### `IntentValueRepresentation` / `ValueRepresentation` for structured system types (iOS 26.4+)
+
+`FileRepresentation` and `DataRepresentation` only carry known *file formats* (PDF, image, text). A coordinate, a contact, or a person's name has no file format - Maps can't navigate to a `.plainText` blob, it needs a `PlaceDescriptor`. `IntentValueRepresentation` (built with the `ValueRepresentation` builder) bridges your entity to a **system intent value** - `IntentPerson`, `PlaceDescriptor` (GeoToolbox), `PersonNameComponents` - and supports import as well as export. Add it alongside your other representations:
+
+```swift
+static var transferRepresentation: some TransferRepresentation {
+    // Key-path form when the entity already stores the system type as a @Property:
+    ValueRepresentation(exporting: \.place)        // place: PlaceDescriptor
+
+    // Or closure form for export + import:
+    ValueRepresentation(
+        exporting:  { contact in IntentPerson(name: .displayName(contact.name)) },
+        importing:  { person in ContactEntity(name: person.name.displayString) }
+    )
+}
+```
+
+This is what makes "get directions to this landmark" and "call this contact" cross the app boundary. Full treatment - including resolve-existing (`IntentValueQuery`) vs. import-as-new - is in `onscreen-awareness.md`.
 
 ## `DisplayRepresentation` anatomy
 
@@ -554,6 +589,52 @@ struct ArticleEntity: AppEntity {
 ```
 
 Without `defaultQuery`, parameter pickers are empty and Siri cannot resolve named entities.
+
+## Cross-device identity: `SyncableEntity` (iOS 27+)
+
+Siri can continue a conversation across devices ("add a photo" on iPhone, "tag that photo" on iPad). For that to work, the same entity must have the **same id on every device**. Locally-generated ids (Core Data row ids, per-device UUIDs) break this - each device invents its own.
+
+`SyncableEntity` declares that an entity's id is stable everywhere. If your id is *already* consistent across devices (a server-assigned UUID, a CloudKit record id), just adopt the protocol - no other change:
+
+```swift
+struct Article: AppEntity, SyncableEntity {
+    var id: UUID          // already stable (from your server) - nothing else to do
+    var title: String
+    // ...
+}
+```
+
+If you use a **local** id on-device but have a separate stable id, pair them with `SyncableEntityIdentifier`. Your code keeps using the local id; the system uses the stable one to refer to the entity across devices:
+
+```swift
+struct Photo: AppEntity, SyncableEntity {
+    var id: SyncableEntityIdentifier<String, String>   // <Local, Stable>
+    var creationDate: Date
+
+    init(localID: String, stableID: String, creationDate: Date) {
+        self.id = SyncableEntityIdentifier(local: localID, stable: stableID)
+        self.creationDate = creationDate
+    }
+}
+```
+
+Adopt `SyncableEntity` on any entity Siri might reference in a conversation that can hop devices.
+
+## Suggesting relevant entities: `RelevantEntities` (iOS 27+)
+
+Spotlight makes content **findable**; interaction donation teaches the system **patterns**. Neither helps with content nobody has searched for or used yet - a brand-new high-tempo playlist that's perfect for a run, but has never been played. `RelevantEntities` lets you *proactively hint* which entities are relevant in a given context, so the system can surface them at the right moment (e.g. as a suggested workout playlist in Fitness).
+
+```swift
+// Suggest the running playlists; the system surfaces them in the right context.
+let workoutContext = AppEntityContext.audio(.workout(activityType: .running))
+try await RelevantEntities.shared.updateEntities(runningPlaylists, for: workoutContext)
+```
+
+- Provide the full set at once with `updateEntities(_:for:)` - each call **replaces** your previous suggestions for that context (pass `[]` to clear).
+- Entities stay registered until you remove them: `removeEntities(_:from:)`, `removeAllEntities(for:)`, or `removeAllEntities()`. The system also auto-expires suggestions after roughly four weeks if the app isn't launched.
+- Build the context from `AppEntityContext` - e.g. `AppEntityContext.audio(.workout(activityType: .running))` for a running workout. Each domain exposes its own nested context cases.
+
+Choosing between the three discovery mechanisms: **Spotlight** when content should be searchable/retrievable by Siri; **interaction donation** to teach the system how people use the app (see `siri-intelligence.md`); **`RelevantEntities`** to hint which content matters in a specific situation.
 
 ## Indexed entities (Spotlight)
 

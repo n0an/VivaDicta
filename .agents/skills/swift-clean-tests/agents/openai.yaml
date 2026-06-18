@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Tests"
+  short_description: "Checks FIRST principles, AAA, naming, mocking for Swift tests."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-tests to review test quality in this Swift test file."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,6 +1,11 @@
 # Testing App Intents
 
-App Intents are plain Swift structs — they're directly testable with Swift Testing (or XCTest). The surface that's *not* unit-testable (Siri phrase recognition, Spotlight ranking) needs to be validated on device or via tooling.
+There are two complementary layers:
+
+1. **Direct struct unit tests** - App Intents are plain Swift structs; instantiate them, set `@Parameter`s, call `perform()`, assert. Fast, host-testable (macOS), great for the *logic inside* `perform()` and for queries in isolation. Covered first below.
+2. **`AppIntentsTesting`** (iOS 27+, new framework) - runs your real intents **out-of-process on a device/simulator** through the full App Intents stack, the same code path Siri and Shortcuts hit. This is how you cover entity queries, Spotlight indexing, view annotations, and multi-intent composition end-to-end, in CI, without Siri. Covered in its own section below.
+
+Use both: struct tests for pure logic you can run anywhere; `AppIntentsTesting` for the integration surface that only behaves correctly on-device.
 
 ## Unit-testing an intent
 
@@ -68,7 +73,7 @@ struct RefreshFeedIntentTests {
 
 Design dependencies as *protocols*, not concrete classes. The intent declares `@Dependency var store: FeedStoreType`; production registers the real store; tests register a mock. No need to subclass or stub closures.
 
-Reset between tests by re-registering in `init()` — the registry replaces prior bindings:
+Reset between tests by re-registering in `init()` - the registry replaces prior bindings:
 
 ```swift
 @Suite
@@ -169,7 +174,7 @@ func missingFolderThrows() async throws {
 }
 ```
 
-Prefer specific error types over `Error.self` — the assertion actually verifies the intent threw the right error, not just *any* error.
+Prefer specific error types over `Error.self` - the assertion actually verifies the intent threw the right error, not just *any* error.
 
 ## Testing the `AppShortcutsProvider`
 
@@ -191,7 +196,7 @@ Use this as a guard against someone accidentally removing a shortcut during a re
 
 ## Testing snippet intents
 
-`SnippetIntent.perform()` is supposed to be pure — perfect for unit tests. Call it, inspect the returned view via `result.view`:
+`SnippetIntent.perform()` is supposed to be pure - perfect for unit tests. Call it, inspect the returned view via `result.view`:
 
 ```swift
 @Test
@@ -210,16 +215,146 @@ func snippetRendersCurrentCount() async throws {
 }
 ```
 
-Do **not** try to assert on SwiftUI view hierarchies — use the dependency's observed state as the proxy.
+Do **not** try to assert on SwiftUI view hierarchies - use the dependency's observed state as the proxy.
+
+## `AppIntentsTesting`: the official integration framework (iOS 27+)
+
+`AppIntentsTesting` runs your real intents **out-of-process**, on a device or simulator, through the full App Intents stack - no mocks, no stubs, the same path Siri and Shortcuts use. It's the way to regression-test the integration surface (queries, Spotlight, view annotations) that struct unit tests can't reach.
+
+How it's wired:
+
+- Tests live in a **UI Testing bundle (XCUITest)** - create one (or add to your existing UI tests). They run in their own process; your app runs in a separate process and executes the intents on-device. The runner ferries results across the process boundary.
+- The test target **never imports your app code** - you pass a bundle identifier and address everything by string. So your tests don't compile app code in, and they stay stable across releases (no dependency on UI, yours or the system's).
+- The runner and the app must use the **same development team** for code signing.
+- CI picks it up automatically like any XCUITest.
+
+### First test: run an intent
+
+```swift
+import XCTest
+import AppIntentsTesting
+
+final class IntentExecutionTests: XCTestCase {
+    func testCreateCalendar() async throws {
+        let definitions = IntentDefinitions(bundleIdentifier: "com.example.CometCal")
+
+        // Look the intent up by name; make a populated instance.
+        let intent = definitions.intents["CreateCalendarIntent"]
+            .makeIntent(name: "Occupy Saturn", color: "red")   // AppEnum: pass its raw string value
+
+        // Execute it in the app, across the process boundary.
+        let result = try await intent.run()
+
+        // result.value is the perform() return value; dynamic member lookup reads its properties.
+        XCTAssertEqual(result.value.title, "Occupy Saturn")
+    }
+}
+```
+
+Notes:
+
+- `makeIntent(...)` populates parameters. Because the test doesn't build against your app, **parameter names/types don't autocomplete** - fill them in correctly by hand against the intent's declaration. Most types convert from their Swift value; an `AppEnum` is passed as its **raw string value**; for custom parameter types see `IntentValueConvertibleWrapper`.
+- `.run()` returns a `ResolvedIntentResult`; `result.value` plus dynamic member lookup (`result.value.title`) reads the returned entity's properties.
+
+### Test entity queries (string, identifier, suggested)
+
+```swift
+let events = definitions.entities["EventEntity"]
+let matches = try await events.entities(matching: "Cosmic Ray")   // runs the EntityStringQuery on-device
+XCTAssertEqual(matches.count, 1)
+XCTAssertEqual(matches.first?.title, "Cosmic Ray Calibration")    // dynamic member lookup
+```
+
+`AppEntityDefinition` exposes `entities(matching:)`, `entities(identifiers:)`, `allEntities()`, `suggestedEntities()`, and `makeReference(identifier:)`. This is exactly the surface Shortcuts/Siri hit when resolving a parameter - a great target for test-driven query development (write the failing `entities(matching:)` test, then implement `EntityStringQuery`).
+
+### Compose intents (chaining, like Shortcuts)
+
+Pass an entity returned from one run straight into the next - mirroring how people build shortcuts:
+
+```swift
+let created = try await definitions.intents["CreateEventIntent"]
+    .makeIntent(title: "Asteroid Dodgeball", startDate: date, calendar: "Deep Space")  // string auto-resolves to CalendarEntity
+    .run()
+
+let updated = try await definitions.intents["UpdateEventIntent"]
+    .makeIntent(event: created.value, title: "Asteroid Dodgeball - Rules")             // pass the returned entity directly
+    .run()
+
+XCTAssertEqual(updated.value.title, "Asteroid Dodgeball - Rules")
+```
+
+When a parameter expects an entity (`CalendarEntity`) you can pass a plain string; the runtime calls that entity's `EntityStringQuery` and fills in the first match.
+
+### Test Spotlight indexing
+
+`spotlightQuery(_:)` queries the real Spotlight index, so you can guard against the classic "I commented out the indexing call and never noticed" regression:
+
+```swift
+let events = definitions.entities["EventEntity"]
+XCTAssertTrue(try await events.spotlightQuery("Dark Matter Symposium").isEmpty)   // not created yet
+
+_ = try await definitions.intents["CreateEventIntent"].makeIntent(title: "Dark Matter Symposium", /* ... */).run()
+
+let indexed = try await events.spotlightQuery("Dark Matter Symposium")
+XCTAssertEqual(indexed.count, 1)
+XCTAssertEqual(indexed.first?.title, "Dark Matter Symposium")
+```
+
+### Test view annotations (onscreen awareness)
+
+`viewAnnotations()` returns the entities the system currently reports as on screen - so you can prove "Siri knows which event is on screen" after navigation:
+
+```swift
+_ = try await definitions.intents["OpenEventIntent"].makeIntent(target: someEventReference).run()
+// (Because this is an XCUITest bundle, you can also drive/assert UI with XCUIApplication here.)
+
+let annotations = try await definitions.entities["EventEntity"].viewAnnotations()
+XCTAssertEqual(annotations.count, 1)
+XCTAssertEqual(annotations.first?.entity.title, "Meteor Shower Watch Party")
+```
+
+A `ViewAnnotation` has `.entity` (with dynamic member lookup) and `.isSelected`. This is how you'd catch a bug like passing the wrong `EntityIdentifier` (e.g. the calendar id instead of the event id) into a `.appEntityIdentifier` modifier.
+
+### Test-only intents
+
+Because these tests run the real stack, each test must be **self-contained**. Test-only intents make that practical: small intents that exist purely to support tests.
+
+- **Seed/reset data** - e.g. a `SeedSampleEventsIntent` that wipes app data and inserts a known set, run from `setUp()`. No leftovers, no flakiness.
+- **Jump to any view** without UI navigation - survives screen redesigns.
+- **Wrap functionality you haven't exposed as an intent yet** - internal navigation, data management, state manipulation - so it's reachable from `AppIntentsTesting`.
+
+Make any intent test-only by marking it `isDiscoverable: false` (so the system never surfaces it) and wrapping it in `#if DEBUG` (so it ships in no release build):
+
+```swift
+#if DEBUG
+struct SeedSampleEventsIntent: AppIntent {
+    static let title: LocalizedStringResource = "Seed Sample Events"
+    static let isDiscoverable: Bool = false
+
+    @Dependency var store: CalendarManager
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        try store.resetAndSeedSampleEvents()
+        return .result()
+    }
+}
+#endif
+```
+
+### Where it fits
+
+The recommended progression: build the fundamental types → cover them with `AppIntentsTesting` as **unit tests** → integrate deeper (annotate views, donate to Spotlight, transfer content) → cover those as **integration tests** → finally exercise the real thing manually in Shortcuts and Siri. The framework tests intents, entities, enums, queries, and system integrations all out-of-process and automated; manual Siri/Shortcuts testing is still the last step for the natural-language experience.
 
 ## What you can't unit-test
 
-These require a device (or a specific test harness) and aren't amenable to `@Test`:
+These require a device (or a specific test harness) and aren't amenable to direct `@Test` struct calls. Several are now reachable with `AppIntentsTesting` (above) instead:
 
 - **Siri phrase recognition.** Speech recognition is integrated with the OS. Use Xcode's App Shortcuts Preview tool (macOS Sonoma + Xcode 15+) to exercise phrase matching without voice; for voice, test on a real device.
-- **Spotlight ranking.** The system's semantic similarity index runs opaquely. Donate entities, query Spotlight, and inspect — there's no programmatic ranking API.
-- **Snippet rendering as a system overlay.** Unit tests can verify the view is constructed; only the snippet host shows the overlay visually.
-- **Apple Intelligence invocations.** Most assistant-schema surfaces roll out gradually. Test via the Shortcuts app (filter by "AssistantSchemas") until Siri consumer surfaces ship.
+- **Spotlight indexing.** Whether an entity *is* indexed is now testable with `AppIntentsTesting`'s `spotlightQuery(_:)` (on-device). *Ranking* within the semantic index is still opaque - there's no programmatic ranking API.
+- **View annotations / onscreen awareness.** Now testable with `AppIntentsTesting`'s `viewAnnotations()` - assert which entity the system reports on screen. (Phrase resolution against those annotations still needs Siri.)
+- **Snippet rendering as a system overlay.** Tests can verify the view is constructed; only the snippet host shows the overlay visually.
+- **Apple Intelligence invocations.** Most assistant-schema surfaces roll out gradually. Test the intent itself with `AppIntentsTesting`, or via the Shortcuts app (filter by "AssistantSchemas"), until Siri consumer surfaces ship.
 - **Visual Intelligence pixel-buffer matching.** Requires the camera / screenshot context. Stub `IntentValueQuery.values(for:)` at the boundary and unit-test the stubbed function; integration-test on device.
 - **Widget + control redraw cycles.** Test the intent's mutation; the widget's visual refresh needs a device or the widget simulator.
 

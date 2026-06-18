@@ -12,17 +12,21 @@ Domains shipped so far:
 
 - `.books` - read position, annotations, library
 - `.browser` - tabs, bookmarks, history
+- `.calendar` - events, calendars, attendees (`.calendar.event`, `.calendar.calendar`, `.calendar.attendee`, `createEvent`, `updateEvent`, `deleteEvent`, ...)
 - `.camera` - capture flows
 - `.files` - document operations
 - `.journal` - entry composition and search
-- `.mail` - compose, reply, search
+- `.mail` - compose, reply, search (`sendMessage` pairs with `draftMessage` - see "A schema can require its siblings" below)
+- `.messages` - send / draft messages
 - `.photos` - assets, albums, persons
 - `.presentations` - slides, decks
 - `.spreadsheets` - cells, ranges, templates
-- `.system` - search (`.system.search`), share, print
+- `.system` - search (`.system.searchInApp`), share, print, `.system.open`
 - `.systemSearch` - search queries and suggestions
 - `.visualIntelligence` - semantic content search
 - (Others roll out in later iOS releases.)
+
+The autocomplete-driven snippets (below) are the authoritative list - Apple adds domains and schemas in minor OS releases. In the code-along workflow, you type the domain prefix (`calendar_`, `photos_`, ...) and Xcode offers every schema in that domain.
 
 Adopt the most specific domain that matches your app. A reading app uses `.books`; a markdown-notes app uses `.journal`; a scanner app uses `.files` + `.photos`.
 
@@ -175,6 +179,14 @@ The schema dictates:
 
 `@AppIntent(schema:)` is the modern syntax; `@AssistantIntent(schema:)` works too and is equivalent. New code should use `@AppIntent(schema:)`.
 
+## A schema can require its siblings (Xcode enforces it)
+
+Some Siri flows are incomplete with a single schema. If you adopt `.messages.sendMessage` but **not** `.messages.draftMessage`, the project **fails to build** with a diagnostic - sending a message via Siri also needs a draft step (for confirmation before sending). This is a deliberate design hint surfaced at compile time rather than failing silently at runtime.
+
+Click the error and Xcode offers a **fix-it** that generates a correctly-wired stub adoption of the missing schema - the intent definition, the required parameters, and a `perform()` stub. You then fill in the app-specific pieces: connect entities, inject dependencies (`@Dependency`), process the input, open the right view. If the action mutates UI state, mark its `perform()` `@MainActor`.
+
+Treat these errors as a checklist toward a complete, high-quality integration. The build system tells you what's missing and helps you scaffold it.
+
 ## Testing schema intents before Apple Intelligence reaches users
 
 Assistant-schema intents light up in Siri / Apple Intelligence gradually as Apple rolls each schema's consumer out. Before that happens, test them **inside the Shortcuts app**:
@@ -285,7 +297,7 @@ struct SearchAssetsIntent: ShowInAppSearchResultsIntent {
 
 Routes a system search query into the app's in-app search UI. Siri / Spotlight / visual intelligence can invoke this so results surface inside the app's native search rather than as external cards.
 
-`.system.search` is the generic version of this schema, usable by any app type. Photo and mail apps use the domain-specific variants (`.photos.search`, `.mail.search`). iOS 18+.
+`.system.searchInApp` is the generic version of this schema, usable by any app type. It is the **new name** (the 27 releases) for the `.system.search` schema introduced in iOS 17 - update references if you adopted the old name. Photo and mail apps use the domain-specific variants (`.photos.search`, `.mail.search`). It works regardless of which other domains you adopt, even if you index nothing.
 
 ## Apple Intelligence through Shortcuts: the Use Model action
 
@@ -365,7 +377,35 @@ extension ShowSearchResultsIntent: TargetContentProvidingIntent {}
 #endif
 ```
 
-Guard the whole visual-intelligence surface with `#if canImport(VisualIntelligence)` - the framework is iOS-only and relatively new.
+Guard the visual-intelligence surface with `#if canImport(VisualIntelligence)` if you support OS versions before the feature existed.
+
+### Now on iPad and macOS
+
+As of the 27 releases, Visual Intelligence runs on **iOS, iPadOS, and macOS** - the same `IntentValueQuery`, entities, and `OpenIntent` work across all three with no code changes. Platform differences to handle:
+
+- **Entry point.** iOS is camera-first (physical objects - vinyl, posters); macOS and iPad are screenshot-first (digital media). Make sure your search handles both kinds of input well.
+- **Image size.** On Mac the input pixel buffer can be much larger than on iPhone; consider resizing before feeding it to your matcher.
+
+### Result display and continuation
+
+- The `DisplayRepresentation` is the first thing shown - roughly **three lines of text** (title + subtitle) plus a thumbnail. Put the most identifying info first. Serve a **thumbnail-sized** image, not your full-resolution asset (faster load, fine in the two-column layout). If you return a single result, that image takes the full width of the sheet.
+- Return results **fast and ranked**; limit the count to keep them relevant; return an empty array when there's no good match (the system shows an empty state).
+- The `OpenIntent` runs as the app foregrounds - keep it lightweight; do navigation, defer heavy loading until after the view appears. Reuse an existing `OpenIntent`; you don't need a Visual-Intelligence-specific one.
+- Offer a way into your **full** in-app search with the `.visualIntelligence.semanticContentSearch` schema (the "More results" button). The system provides the `SemanticContentDescriptor`; pre-populate your search view from it rather than starting blank.
+
+### Receiving data from Visual Intelligence: system stores
+
+There's a second direction. Beyond *providing* results through image search, your app can *receive* data Visual Intelligence writes into shared **system stores** - automatically, if you already read from them:
+
+- **Events** via EventKit (`EKEventStore`) - e.g. a concert captured from a poster appears in your calendar reads.
+- **Contacts** via Contacts (`CNContactStore`) - e.g. a contact captured from a business card.
+- **Medical-device readings** via HealthKit (`HKHealthStore`) - e.g. blood-pressure/glucose/scale readings captured from a display.
+
+Add a notification observer (e.g. `EKEventStoreChanged`) so newly-captured items - including ones created by Visual Intelligence - surface in your app without manual entry. No App Intents code is required for this side; it's a benefit you get for free if your app already reads those stores.
+
+## Making onscreen content available to Siri
+
+The on-screen awareness story (which view annotation API to use, content transfer with `Transferable` / `IntentValueRepresentation`, entity annotations on notifications / Now Playing / AlarmKit) now has its own reference: **`onscreen-awareness.md`**. The legacy `userActivity(_:element:)` pattern below remains the right choice for a single primary onscreen item and for older OS versions.
 
 ## Making onscreen content available to Siri: `userActivity(_:element:)`
 

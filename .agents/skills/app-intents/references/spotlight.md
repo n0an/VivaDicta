@@ -107,6 +107,35 @@ If your content is effectively static (curated catalogue, preset library), index
 
 Apple's explicit recommendation (WWDC24) is to perform the initial index inside `App.init()` - this guarantees indexing runs before any intent, widget, or Siri invocation can surface a stale or missing entity. For mutable content, pair the startup index with per-change updates (see the previous two strategies).
 
+## Spotlight is the semantic index for Siri
+
+As of the 27 releases, indexing into Spotlight is the **primary way Siri retrieves your content** - and depending on the App Intents domain, it provides **semantic search**: Siri matches on *meaning*, not just keywords ("messages about movies" finds messages mentioning film titles), understands relationships between entities, and can answer questions over your content. Adopt `IndexedEntity` and keep the index current; that's what unlocks the best Siri experience. For content you can't index ahead of time (large, server-side, or volatile), fall back to `IntentValueQuery` - see `siri-intelligence.md`. The same index is also queryable by on-device LLMs: once indexed, your content can be searched through `SpotlightSearchTool` in the Foundation Models framework (WWDC 2026 Session 246), which is a Foundation Models topic rather than an App Intents one.
+
+## Supporting reindexing: `IndexedEntityQuery` (iOS 27+)
+
+Spotlight occasionally needs your app to **reindex** its content (the index hit a problem, or needs rebuilding). Conform your entity's query to `IndexedEntityQuery` - a refinement of `EntityQuery` for `IndexedEntity` types - and the system calls your reindex methods when needed:
+
+```swift
+struct PhotoEntityQuery: IndexedEntityQuery {
+    @Dependency var photoStore: PhotoStore
+
+    // ... entities(for:), suggestedEntities() as usual ...
+
+    func reindexEntities(for identifiers: [PhotoEntity.ID],
+                         indexDescription: CSSearchableIndexDescription) async throws {
+        let photos = try await photoStore.fetch(ids: identifiers)
+        try await CSSearchableIndex(name: "MyPhotosApp").indexAppEntities(photos)
+    }
+
+    func reindexAllEntities(indexDescription: CSSearchableIndexDescription) async throws {
+        let all = try await photoStore.fetchAll()
+        try await CSSearchableIndex(name: "MyPhotosApp").indexAppEntities(all)
+    }
+}
+```
+
+When **not** to bother: if you already support reindexing through Core Spotlight-level APIs - i.e. a `CSSearchableIndexDelegate`, or you donated via `CSSearchableItem` + `associateAppEntity` - the system keeps using that path and you don't need `IndexedEntityQuery`. Adopt it when your indexing goes through `indexAppEntities(_:)` and you want first-class reindex support without a delegate.
+
 ## Mapping properties to indexing keys: `@ComputedProperty(indexingKey:)`
 
 If you've already declared entity computed properties with `@ComputedProperty` (see `entities.md`), you can map them directly to Spotlight attribute-set keys without writing any `attributeSet` code:

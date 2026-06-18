@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Functions"
+  short_description: "Audits Swift function size, SRP, argument count, side effects, DRY."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-functions to review function design in this Swift code."
+
+policy:
+  allow_implicit_invocation: true

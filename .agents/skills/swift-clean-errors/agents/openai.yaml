@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Errors"
+  short_description: "Audits Swift throws/optionals/Result usage and custom Error types."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-errors to review error handling in this Swift code."
+
+policy:
+  allow_implicit_invocation: true

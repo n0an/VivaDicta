@@ -740,3 +740,126 @@ var attributeSet: CSSearchableItemAttributeSet {
     return set
 }
 ```
+
+## Resolving thousands of entities when you only need their ids
+
+A `[MyEntity]` parameter forces the system to fully resolve every entity (run the query, populate all properties) before `perform()` runs. For a parameter holding hundreds or thousands of entities where your code only needs the **ids**, that's a large, pointless cost. Use `EntityCollection` (iOS 27+).
+
+```swift
+// WRONG - the system resolves 1,000 PhotoEntity instances before perform() even starts
+struct TagPhotosIntent: AppIntent {
+    @Parameter var photos: [PhotoEntity]
+    func perform() async throws -> some IntentResult {
+        try await store.addTag(tag, toPhotosWith: photos.map(\.id))   // only needed the ids
+        return .result()
+    }
+}
+
+// CORRECT - identifiers only; no resolution during parameter handling
+struct TagPhotosIntent: AppIntent {
+    @Parameter var photos: EntityCollection<PhotoEntity>
+    func perform() async throws -> some IntentResult {
+        try await store.addTag(tag, toPhotosWith: photos.identifiers)
+        return .result()
+    }
+}
+```
+
+Call `await photos.resolvedEntities()` when you genuinely need the full entities. Keep `[Entity]` for small selections where you read properties.
+
+## `LongRunningIntent` that goes quiet (no progress)
+
+`LongRunningIntent` keeps its extended-runtime grant only while you **report progress**. If you do the work without updating `progress`, the system assumes the task stalled and cancels the extension - the intent dies as if it never adopted the protocol.
+
+```swift
+// WRONG - no progress updates; the runtime extension gets revoked mid-upload
+func perform() async throws -> some IntentResult {
+    try await performBackgroundTask {
+        for chunk in chunks { await upload(chunk) }   // silent - system thinks it stalled
+    }
+    return .result()
+}
+
+// CORRECT - report progress as the heartbeat that keeps the extension alive
+func perform() async throws -> some IntentResult {
+    try await performBackgroundTask {
+        progress.totalUnitCount = Int64(chunks.count)
+        for (i, chunk) in chunks.enumerated() {
+            try Task.checkCancellation()
+            await upload(chunk)
+            progress.completedUnitCount = Int64(i + 1)
+        }
+    }
+    return .result()
+}
+```
+
+Relatedly: don't try to beat the 30-second limit by spawning a detached `Task` - unmanaged tasks aren't covered by the background-execution extension and get suspended when the app backgrounds. Adopt `LongRunningIntent`.
+
+## Plain `nil` check instead of `valueState` in update intents
+
+In an update intent, an optional parameter that's `nil` is ambiguous: "leave this field alone" or "clear it"? A `nil` check collapses both into one behavior - usually a bug where the user can never clear a field by voice.
+
+```swift
+// WRONG - can't distinguish "don't touch recurrence" from "remove recurrence"
+if let recurrence { store.setRecurrence(recurrence, on: event.id) }
+// else: do nothing - so "make this not repeat" silently does nothing
+
+// CORRECT - valueState distinguishes the three cases
+switch $recurrence.valueState {
+case .set(let rule?): store.setRecurrence(rule, on: event.id)   // new value
+case .set(nil):       store.clearRecurrence(on: event.id)        // explicitly cleared
+case .unset:          break                                      // not in the request
+}
+```
+
+## Two processes writing the same store (missing `allowedExecutionTargets`)
+
+When intents live in a shared package linked by both the app and a widget extension, the system may run a write-intent in *either* process. If only one process is supposed to own writes (e.g. the widget has read-only access to the store), letting the intent run in the widget extension causes conflicts.
+
+```swift
+// WRONG - "favorite" can run in the widget extension and write a store it shouldn't
+struct FavoritePhotoIntent: AppIntent {
+    @Parameter var photo: PhotoEntity
+    func perform() async throws -> some IntentResult { try await library.toggleFavorite(photo.id); return .result() }
+}
+
+// CORRECT - pin write-intents to the process that owns the store (iOS 27+)
+struct FavoritePhotoIntent: AppIntent {
+    static var allowedExecutionTargets: IntentExecutionTargets { [.app] }
+    @Parameter var photo: PhotoEntity
+    func perform() async throws -> some IntentResult { try await library.toggleFavorite(photo.id); return .result() }
+}
+```
+
+## `TransientAppEntity` where a persistent identifier is required
+
+Several iOS 27 integrations key off `EntityIdentifier`: on-screen view annotations and entity annotations on User Notifications, Now Playing, and AlarmKit. `TransientAppEntity` has **no** persistent identifier, so it can't be used in any of them.
+
+```swift
+// WRONG - transient entities have no EntityIdentifier to annotate with
+notificationContent.appEntityIdentifier = EntityIdentifier(for: summaryTransientEntity)   // no id
+
+// CORRECT - annotate with a real AppEntity / IndexedEntity
+notificationContent.appEntityIdentifier = EntityIdentifier(for: messageEntity)
+```
+
+Use `TransientAppEntity` for computed/returned values only. Anything the system needs to *refer back to* (annotations, syncable identity, ownership) must be a real `AppEntity`.
+
+## Over-donating interactions
+
+Interaction donations (`IntentDonationManager`) should reflect **real, completed** user actions, and only ones taken through your app's UI (the system already donates Siri/Shortcuts runs). Donating on every render, every tap, or re-donating system-run intents floods the system, which may then **ignore your donations** entirely.
+
+```swift
+// WRONG - donates on every view appearance, not on a completed action
+.onAppear { IntentDonationManager.shared.donate(intent: SendMessageIntent()) }
+
+// CORRECT - donate once, after the user actually sends, from the UI path only
+func sendFromUI(_ body: String, to contact: ContactEntity) async throws {
+    let message = try await messenger.send(body, to: contact)
+    var intent = SendMessageIntent(); intent.recipient = contact; intent.content = body
+    IntentDonationManager.shared.donate(intent: intent, result: .resolved(value: message.entity))
+}
+```
+
+Delete stale donations with `deleteDonations(matching:)` when the data is removed or the action is undone.

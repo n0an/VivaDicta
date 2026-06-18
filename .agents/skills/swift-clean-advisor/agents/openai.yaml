@@ -1,0 +1,8 @@
+interface:
+  display_name: "Swift Clean Advisor"
+  short_description: "Auto-applies Clean Code guidance when writing or editing Swift."
+  brand_color: "#F05138"
+  default_prompt: "Use $swift-clean-advisor to apply Clean Code principles while editing Swift."
+
+policy:
+  allow_implicit_invocation: true
