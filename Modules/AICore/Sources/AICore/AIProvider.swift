@@ -31,6 +31,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     case kimi
     case minimax
     case vercelAIGateway
+    case opencodeZen
     case huggingFace
     case copilot
     case ollama
@@ -81,6 +82,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "MiniMax"
         case .vercelAIGateway:
             "Vercel AI Gateway"
+        case .opencodeZen:
+            "OpenCode Zen"
         case .huggingFace:
             "HuggingFace"
         case .copilot:
@@ -139,6 +142,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "assemblyai-color"
         case .vercelAIGateway:
             "vercel"
+        case .opencodeZen:
+            "opencode"
         case .huggingFace:
             "huggingface-color"
         case .copilot:
@@ -174,6 +179,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
              .kimi,
              .minimax,
              .vercelAIGateway,
+             .opencodeZen,
              .huggingFace,
              .ollama,
              .ollamaCloud,
@@ -201,6 +207,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cerebras: URL(string: "https://cloud.cerebras.ai/")
         case .grok: URL(string: "https://console.x.ai/")
         case .vercelAIGateway: URL(string: "https://vercel.com/account/tokens")
+        case .opencodeZen: URL(string: "https://opencode.ai/auth")
         case .huggingFace: URL(string: "https://huggingface.co/settings/tokens")
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
@@ -235,6 +242,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .minimax,
         .openRouter,
         .vercelAIGateway,
+        .opencodeZen,
         .huggingFace,
         .ollama,
         .ollamaCloud,
@@ -246,7 +254,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// (`json_schema`) outputs, which Ollama Cloud does not support
     /// (https://docs.ollama.com/capabilities/structured-outputs). Local Ollama
     /// does support them, so it stays eligible.
-    public static let reminderExtractorCloudProviders: [AIProvider] = cloudProviders.filter { $0 != .ollamaCloud }
+    ///
+    /// Also excludes OpenCode Zen: its free-tier models reject `json_schema`
+    /// response formats ("This response_format type is unavailable now",
+    /// verified 2026-06-19), so the structured reminder extraction would fail on
+    /// the models most Zen users run.
+    public static let reminderExtractorCloudProviders: [AIProvider] =
+        cloudProviders.filter { $0 != .ollamaCloud && $0 != .opencodeZen }
 
     /// Local AI providers that run on-device or local network (no API key needed)
     public static let localProviders: [AIProvider] = [
@@ -272,8 +286,9 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .minimax,
         .openRouter,
         .vercelAIGateway,
+        .opencodeZen,
         .huggingFace]
-    
+
     public var baseURL: String {
         switch self {
         case .apple:
@@ -318,6 +333,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "https://api.assemblyai.com/v2"
         case .vercelAIGateway:
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
+        case .opencodeZen:
+            return "https://opencode.ai/zen/v1/chat/completions"
         case .huggingFace:
             return "https://router.huggingface.co/v1/chat/completions"
         case .copilot:
@@ -382,6 +399,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // (e.g., "claude-sonnet-4-6"). Models are fetched dynamically, so this must
             // match Vercel's actual naming convention.
             return "anthropic/claude-sonnet-4.6"
+        case .opencodeZen:
+            // A free model so a brand-new key (no payment method) verifies and
+            // works out of the box. See `opencodeZenFreeModels`.
+            return "big-pickle"
         case .huggingFace:
             return "openai/gpt-oss-120b"
         case .copilot:
@@ -421,6 +442,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cartesia: "cartesiaAPIKey"
         case .assemblyAI: "assemblyaiAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
+        case .opencodeZen: "opencodeZenAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
         case .ollamaCloud: "ollamaCloudAPIKey"
@@ -541,6 +563,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return []
         case .vercelAIGateway:
             return []
+        case .opencodeZen:
+            // Curated OpenCode Zen catalog: the always-free models first, then
+            // the pay-as-you-go models. Tier classification lives in
+            // `opencodeZenFreeModels` / `opencodeZenPaidModels` below.
+            return Self.opencodeZenFreeModels + Self.opencodeZenPaidModels
         case .huggingFace:
             return []
         case .copilot:
@@ -627,5 +654,69 @@ public extension AIProvider {
     /// a stale classification never blocks a genuinely-free model.
     static func isOllamaCloudModelFree(_ model: String) -> Bool {
         !ollamaCloudSubscriptionModels.contains(model)
+    }
+}
+
+// MARK: - OpenCode Zen free / paid tiers
+
+public extension AIProvider {
+    /// OpenCode Zen models usable with the API key alone, at no cost (no payment
+    /// method required).
+    ///
+    /// Verified against the live Zen API on 2026-06-19: each model returned
+    /// HTTP 200 with `"cost": "0"` and no "No payment method" error. `big-pickle`
+    /// is Zen's promoted anonymous free model (currently routes to
+    /// deepseek-v4-flash). See https://opencode.ai/zen.
+    ///
+    /// Note: the catalog also lists `minimax-m3-free` and `qwen3.6-plus-free`,
+    /// but their free promotion has ended - both now return "Free promotion has
+    /// ended ... subscribe to OpenCode Go", so they are intentionally omitted.
+    static let opencodeZenFreeModels: [String] = [
+        "big-pickle",
+        "deepseek-v4-flash-free",
+        "nemotron-3-ultra-free",
+        "mimo-v2.5-free",
+        "north-mini-code-free"
+    ]
+
+    /// OpenCode Zen models that bill pay-as-you-go and require a workspace with a
+    /// payment method. Selecting one without billing set up returns
+    /// "No payment method. Add a payment method here ..." (verified 2026-06-19).
+    /// Token pricing passes through the provider's list price with zero markup.
+    static let opencodeZenPaidModels: [String] = [
+        "claude-fable-5",
+        "claude-opus-4-8",
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        "claude-sonnet-4-5",
+        "claude-haiku-4-5",
+        "gpt-5.5",
+        "gpt-5.4",
+        "gpt-5.4-mini",
+        "gpt-5.1",
+        "gpt-5-nano",
+        "gemini-3.1-pro",
+        "gemini-3.5-flash",
+        "gemini-3-flash",
+        "deepseek-v4-pro",
+        "deepseek-v4-flash",
+        "glm-5.1",
+        "glm-5",
+        "kimi-k2.6",
+        "kimi-k2.5",
+        "minimax-m2.7",
+        "minimax-m2.5",
+        "qwen3.6-plus",
+        "qwen3.5-plus",
+        "grok-build-0.1"
+    ]
+
+    /// Whether the given OpenCode Zen model is usable for free with the API key.
+    ///
+    /// Uses an explicit allowlist (unlike Ollama Cloud's deny-list): Zen's free
+    /// set is a small, fixed promotion while the paid catalog is large and
+    /// growing, so anything not explicitly free is treated as pay-as-you-go.
+    static func isOpencodeZenModelFree(_ model: String) -> Bool {
+        opencodeZenFreeModels.contains(model)
     }
 }

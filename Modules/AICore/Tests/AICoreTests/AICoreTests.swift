@@ -10,7 +10,7 @@ struct AIProviderTests {
     // MARK: - Catalog integrity
 
     @Test func allCasesCountIsStable() {
-        #expect(AIProvider.allCases.count == 26)
+        #expect(AIProvider.allCases.count == 27)
     }
 
     @Test func rawValuesRoundTripForCodableAndDefaultsCompatibility() {
@@ -53,6 +53,7 @@ struct AIProviderTests {
             .kimi: "kimiAPIKey",
             .minimax: "minimaxAPIKey",
             .vercelAIGateway: "vercelAIGatewayAPIKey",
+            .opencodeZen: "opencodeZenAPIKey",
             .huggingFace: "huggingFaceAPIKey",
             .copilot: "",
             .ollama: "",
@@ -118,8 +119,31 @@ struct AIProviderTests {
         #expect(AIProvider.reminderExtractorCloudProviders.contains(.ollama))
     }
 
+    @Test func reminderExtractorExcludesOpencodeZen() {
+        // Zen's free-tier models reject json_schema response formats.
+        #expect(!AIProvider.reminderExtractorCloudProviders.contains(.opencodeZen))
+    }
+
     @Test func generalProvidersContainAppleAndOpenAI() {
         #expect(AIProvider.generalProviders.contains(.apple))
         #expect(AIProvider.generalProviders.contains(.openAI))
+    }
+
+    // MARK: - OpenCode Zen tiers
+
+    @Test func opencodeZenTiersDoNotOverlapAndCoverAvailableModels() {
+        let free = Set(AIProvider.opencodeZenFreeModels)
+        let paid = Set(AIProvider.opencodeZenPaidModels)
+        #expect(free.isDisjoint(with: paid), "a model cannot be both free and paid")
+        #expect(Set(AIProvider.opencodeZen.availableModels) == free.union(paid))
+    }
+
+    @Test func opencodeZenFreeClassificationUsesAllowlist() {
+        #expect(AIProvider.isOpencodeZenModelFree("big-pickle"))
+        #expect(!AIProvider.isOpencodeZenModelFree("claude-opus-4-8"))
+        // Unknown models are treated as paid (Zen's free set is a fixed promotion).
+        #expect(!AIProvider.isOpencodeZenModelFree("some-future-model"))
+        // The default model must be free so a brand-new key verifies and works.
+        #expect(AIProvider.isOpencodeZenModelFree(AIProvider.opencodeZen.defaultModel))
     }
 }
