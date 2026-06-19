@@ -6,6 +6,7 @@
 //
 
 import Keychain
+import Analytics
 import Networking
 import Presets
 import SwiftUI

@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 import Foundation
+import Analytics
 import FirebaseAnalytics
 import os
 

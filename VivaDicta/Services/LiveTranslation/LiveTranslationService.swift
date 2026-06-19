@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import Analytics
 import Foundation
 import Keychain
 import os

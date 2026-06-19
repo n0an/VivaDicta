@@ -42,6 +42,7 @@ flowchart TB
     TranscriptionCore:::core
     AICore:::core
     AudioRecording:::core
+    Analytics:::core
     AppGroup:::core
     DesignSystem:::core
     TestUtilities:::core
@@ -70,6 +71,7 @@ graph BT
   AICore[AICore]:::core
   AudioRecording[AudioRecording]:::core
   AppGroup[AppGroup]:::core
+  Analytics[Analytics]:::core
   DesignSystem[DesignSystem]:::core
   TestUtilities[TestUtilities]:::core
 
@@ -124,6 +126,7 @@ graph BT
   VivaDicta --> Presets
   VivaDicta --> AudioRecording
   VivaDicta --> AppGroup
+  VivaDicta --> Analytics
   VivaDicta --> DesignSystem
 ```
 
@@ -139,6 +142,7 @@ graph BT
 | `Presets` | core | Preset domain types + management (Regular, Summary, ...). | `PresetsMocks` |
 | `TranscriptionCore` | core | Pure protocol + value types: `TranscriptionService`, `TranscriptionServiceResult`. | n/a |
 | `AICore` | core | AI-stack API + kernel (Foundation only): `AITextProvider` protocol, `AIProvider` id enum, `EnhancementError`, `AIEnhancementOutputFilter`, `ReasoningConfig`, Apple FM sampling types. | n/a |
+| `Analytics` | core | `AnalyticsService` protocol + `AnalyticsEvent` catalogue (stable Firebase event names/params). Pure Foundation, no deps. `DefaultAnalyticsService` (Firebase) stays app-side. | `AnalyticsMocks` |
 | `AppGroup` | core | App-Group coordination keys shared between the app and extensions. | n/a |
 | `DesignSystem` | core | SwiftUI design tokens, colors, typography, shared components. | n/a |
 | `AudioRecording` | core | `AudioRecordingService` + `AudioFileService` protocols + `Default*` impls. | `MockAudioRecordingService`, `MockAudioFileService` |

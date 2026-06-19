@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Analytics
 import FoundationModels
 import SwiftData
 import TipKit

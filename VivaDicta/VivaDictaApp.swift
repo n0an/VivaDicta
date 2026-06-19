@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Analytics
 import AppGroup
 import SwiftData
 import os

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Presets
 
 /// Strongly-typed catalog of every analytics event the app reports.
 ///
@@ -15,9 +14,9 @@ import Presets
 /// 2. Map it in `name` and `parameters`.
 /// 3. Track it via the injected `analytics` (or `DefaultAnalyticsService.live`):
 ///    `analytics.track(.yourEvent(...))`.
-enum AnalyticsEvent {
+public enum AnalyticsEvent: Sendable {
 
-    enum ChatType: String {
+    public enum ChatType: String, Sendable {
         case singleNote = "single_note"
         case multiNote = "multi_note"
         case allNotes = "all_notes"
@@ -125,7 +124,7 @@ extension AnalyticsEvent {
 
     /// The Firebase event name. Keep names stable - changing one breaks
     /// historical reporting in the Firebase console.
-    nonisolated var name: String {
+    public nonisolated var name: String {
         switch self {
         case .onboardingCompleted: "onboarding_completed"
         case .unrecognizedHostApp: "unrecognized_host_app"
@@ -156,7 +155,7 @@ extension AnalyticsEvent {
     /// device state is meaningful. False for the MetricKit-sourced events, whose
     /// payloads are aggregated over the past day - the device state at delivery
     /// time is unrelated to when the metrics were recorded.
-    nonisolated var attachesDeviceConditions: Bool {
+    public nonisolated var attachesDeviceConditions: Bool {
         switch self {
         case .appLaunchMetric, .appHangMetric, .appMemoryMetric,
              .appHangDiagnostic, .appCPUExceptionDiagnostic:
@@ -169,7 +168,7 @@ extension AnalyticsEvent {
     /// Parameters attached to the event. Keep keys snake_case and consistent
     /// across events (`provider`, `model`, `chat_type`, ...). Do not include
     /// raw user content - only counts, lengths, enum values, and IDs.
-    nonisolated var parameters: [String: Any]? {
+    public nonisolated var parameters: [String: Any]? {
         switch self {
         case .onboardingCompleted:
             return nil
@@ -289,6 +288,6 @@ extension AnalyticsEvent {
 ///
 /// Production wires `DefaultAnalyticsService` (Firebase); tests wire
 /// `MockAnalyticsService` to assert which events fired.
-protocol AnalyticsService: Sendable {
+public protocol AnalyticsService: Sendable {
     func track(_ event: AnalyticsEvent)
 }
