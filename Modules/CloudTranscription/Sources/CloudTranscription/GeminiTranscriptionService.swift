@@ -149,19 +149,22 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
         let data: String
     }
 
-    private struct GeminiResponse: Codable {
+    // Response types are `internal` (not `private`) so consumer tests can
+    // construct a decoded `GeminiResponse` to stub `NetworkService.sendJSON`,
+    // which returns an already-decoded value rather than raw `Data`.
+    struct GeminiResponse: Codable {
         let candidates: [GeminiCandidate]
     }
 
-    private struct GeminiCandidate: Codable {
+    struct GeminiCandidate: Codable {
         let content: GeminiResponseContent
     }
 
-    private struct GeminiResponseContent: Codable {
+    struct GeminiResponseContent: Codable {
         let parts: [GeminiResponsePart]
     }
 
-    private struct GeminiResponsePart: Codable {
+    struct GeminiResponsePart: Codable {
         let text: String
     }
 }
