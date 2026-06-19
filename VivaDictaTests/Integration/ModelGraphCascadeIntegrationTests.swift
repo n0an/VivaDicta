@@ -40,6 +40,9 @@ struct ModelGraphCascadeIntegrationTests {
 
         let assignment = TranscriptionTagAssignment(tagId: UUID(), transcription: transcription)
 
+        let reminder = ExtractedReminderDraft(title: "buy milk")
+        reminder.transcription = transcription
+
         let multiNote = MultiNoteConversation()
         multiNote.transcriptions = [transcription]
 
@@ -48,8 +51,17 @@ struct ModelGraphCascadeIntegrationTests {
         writeContext.insert(conversation)
         writeContext.insert(message)
         writeContext.insert(assignment)
+        writeContext.insert(reminder)
         writeContext.insert(multiNote)
         try writeContext.save()
+
+        // Pre-delete control: prove the owned graph was actually linked + persisted,
+        // so the post-delete `isEmpty` checks can't pass for the wrong reason.
+        #expect(try writeContext.fetch(FetchDescriptor<TranscriptionVariation>()).count == 1)
+        #expect(try writeContext.fetch(FetchDescriptor<ChatConversation>()).count == 1)
+        #expect(try writeContext.fetch(FetchDescriptor<ChatMessage>()).count == 1)
+        #expect(try writeContext.fetch(FetchDescriptor<TranscriptionTagAssignment>()).count == 1)
+        #expect(try writeContext.fetch(FetchDescriptor<ExtractedReminderDraft>()).count == 1)
 
         writeContext.delete(transcription)
         try writeContext.save()
@@ -60,6 +72,7 @@ struct ModelGraphCascadeIntegrationTests {
         #expect(try read.fetch(FetchDescriptor<ChatConversation>()).isEmpty)             // .cascade
         #expect(try read.fetch(FetchDescriptor<ChatMessage>()).isEmpty)                  // two-level cascade
         #expect(try read.fetch(FetchDescriptor<TranscriptionTagAssignment>()).isEmpty)   // .cascade
+        #expect(try read.fetch(FetchDescriptor<ExtractedReminderDraft>()).isEmpty)       // .cascade
 
         // .nullify: the multi-note conversation survives, just loses the link.
         let survivor = try #require(try read.fetch(FetchDescriptor<MultiNoteConversation>()).first)
@@ -77,6 +90,8 @@ struct ModelGraphCascadeIntegrationTests {
         writeContext.insert(transcription)
         writeContext.insert(conversation)
         try writeContext.save()
+
+        #expect(try writeContext.fetch(FetchDescriptor<ChatMessage>()).count == 2)   // linked & persisted
 
         writeContext.delete(conversation)
         try writeContext.save()
@@ -101,12 +116,16 @@ struct ModelGraphCascadeIntegrationTests {
         writeContext.insert(multiNote)
         try writeContext.save()
 
+        #expect(try writeContext.fetch(FetchDescriptor<ChatMessage>()).count == 1)   // linked & persisted
+
         writeContext.delete(multiNote)
         try writeContext.save()
 
         let read = ModelContext(container)
         #expect(try read.fetch(FetchDescriptor<MultiNoteConversation>()).isEmpty)
         #expect(try read.fetch(FetchDescriptor<ChatMessage>()).isEmpty)         // .cascade
+        // `transcriptions` has no explicit deleteRule, so this pins the IMPLICIT
+        // default (.nullify): a future "tidy-up" adding an explicit rule must keep it.
         #expect(try read.fetch(FetchDescriptor<Transcription>()).count == 2)    // many-to-many: notes survive
     }
 }
