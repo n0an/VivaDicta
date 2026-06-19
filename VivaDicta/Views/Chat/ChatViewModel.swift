@@ -146,6 +146,7 @@ final class ChatViewModel {
     let transcription: Transcription
     private let aiService: any AIChatService
     private let modelContext: ModelContext
+    private let analytics: any AnalyticsService
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
     private let notesSearchToolCaptureID = UUID()
@@ -161,11 +162,12 @@ final class ChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext) {
+    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext, analytics: any AnalyticsService = DefaultAnalyticsService()) {
         self.conversation = conversation
         self.transcription = transcription
         self.aiService = aiService
         self.modelContext = modelContext
+        self.analytics = analytics
 
         loadMessages()
         hasLoggedConversationStart = messages.contains { $0.role == "user" }
@@ -240,7 +242,7 @@ final class ChatViewModel {
 
         let turnCount = messages.filter { $0.role == "user" }.count
         if !hasLoggedConversationStart {
-            AnalyticsService.track(.chatConversationStarted(
+            analytics.track(.chatConversationStarted(
                 chatType: .singleNote,
                 provider: provider.rawValue,
                 model: model,
@@ -248,7 +250,7 @@ final class ChatViewModel {
             ))
             hasLoggedConversationStart = true
         }
-        AnalyticsService.track(.chatMessageSent(
+        analytics.track(.chatMessageSent(
             chatType: .singleNote,
             provider: provider.rawValue,
             model: model,

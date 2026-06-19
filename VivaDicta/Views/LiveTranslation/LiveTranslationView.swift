@@ -60,7 +60,7 @@ private struct LiveTranslationSessionView: View {
             }
             .onAppear {
                 hasSonioxKey = checkSonioxKey()
-                AnalyticsService.track(.liveTranslationOpened)
+                DefaultAnalyticsService().track(.liveTranslationOpened)
             }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
                 headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
@@ -451,7 +451,7 @@ private struct LiveTranslationSessionView: View {
         do {
             try modelContext.save()
             savedSnapshot = SavedSnapshot()
-            AnalyticsService.track(.liveTranslationSavedAsNote)
+            DefaultAnalyticsService().track(.liveTranslationSavedAsNote)
         } catch {
             // Roll the insert out of the context so the same Transcription
             // instance isn't dangling in memory and won't auto-save next

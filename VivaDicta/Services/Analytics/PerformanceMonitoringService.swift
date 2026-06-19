@@ -66,10 +66,10 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
         for payload in payloads {
             for hang in payload.hangDiagnostics ?? [] {
                 let seconds = hang.hangDuration.converted(to: .seconds).value
-                AnalyticsService.track(.appHangDiagnostic(hangSeconds: seconds))
+                DefaultAnalyticsService().track(.appHangDiagnostic(hangSeconds: seconds))
             }
             for cpu in payload.cpuExceptionDiagnostics ?? [] {
-                AnalyticsService.track(.appCPUExceptionDiagnostic(
+                DefaultAnalyticsService().track(.appCPUExceptionDiagnostic(
                     cpuSeconds: cpu.totalCPUTime.converted(to: .seconds).value,
                     sampledSeconds: cpu.totalSampledTime.converted(to: .seconds).value
                 ))
@@ -82,13 +82,13 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
     nonisolated private func reportLaunchTime(_ payload: MXMetricPayload) {
         guard let launch = payload.applicationLaunchMetrics,
               let stats = weightedAverageMs(launch.histogrammedTimeToFirstDraw) else { return }
-        AnalyticsService.track(.appLaunchMetric(averageMs: stats.averageMs, sampleCount: stats.count))
+        DefaultAnalyticsService().track(.appLaunchMetric(averageMs: stats.averageMs, sampleCount: stats.count))
     }
 
     nonisolated private func reportHangTime(_ payload: MXMetricPayload) {
         guard let responsiveness = payload.applicationResponsivenessMetrics,
               let stats = weightedAverageMs(responsiveness.histogrammedApplicationHangTime) else { return }
-        AnalyticsService.track(.appHangMetric(averageMs: stats.averageMs, sampleCount: stats.count))
+        DefaultAnalyticsService().track(.appHangMetric(averageMs: stats.averageMs, sampleCount: stats.count))
     }
 
     nonisolated private func reportMemory(_ payload: MXMetricPayload) {
@@ -98,7 +98,7 @@ final class PerformanceMonitoringService: NSObject, MXMetricManagerSubscriber, @
         // and the Jetsam limit, both of which are MiB-based.
         let peakMB = Int(memory.peakMemoryUsage.converted(to: .bytes).value) / (1024 * 1024)
         let suspendedMB = Int(memory.averageSuspendedMemory.averageMeasurement.converted(to: .bytes).value) / (1024 * 1024)
-        AnalyticsService.track(.appMemoryMetric(peakMB: peakMB, averageSuspendedMB: suspendedMB))
+        DefaultAnalyticsService().track(.appMemoryMetric(peakMB: peakMB, averageSuspendedMB: suspendedMB))
     }
 
     /// Collapses a duration histogram into a single bucket-weighted average (in

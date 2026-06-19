@@ -233,7 +233,7 @@ class ModelDownloadManager {
             downloadStatuses[model.name] = .downloaded
             logger.logNotice("✅ Successfully downloaded \(model.displayName)")
 
-            AnalyticsService.track(.modelDownloaded(name: model.displayName, type: "parakeet"))
+            DefaultAnalyticsService().track(.modelDownloaded(name: model.displayName, type: "parakeet"))
 
             try? await Task.sleep(for: .seconds(0.5))
 
@@ -330,7 +330,7 @@ class ModelDownloadManager {
             logger.logNotice("✅ Successfully downloaded and prepared \(displayName)")
             logger.logNotice("⏱️ Preparation time: prewarm: \(phaseState.prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(phaseState.loadDuration.formatted(.number.precision(.fractionLength(2))))s")
 
-            AnalyticsService.track(.modelDownloaded(name: displayName, type: "whisperkit"))
+            DefaultAnalyticsService().track(.modelDownloaded(name: displayName, type: "whisperkit"))
 
             try? await Task.sleep(for: .seconds(0.5))
 
