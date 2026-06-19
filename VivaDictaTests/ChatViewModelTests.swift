@@ -40,9 +40,10 @@ struct ChatViewModelTests {
         let sut: ChatViewModel
         let mockAIService: MockAIChatService
         let container: ModelContainer
+        let analytics: MockAnalyticsService
     }
 
-    private func makeFixture(stubMode: VivaMode = .defaultMode) throws -> Fixture {
+    private func makeFixture(stubMode: VivaMode = .defaultMode, analytics: MockAnalyticsService = MockAnalyticsService()) throws -> Fixture {
         let container = try makeContainer()
         let conversation = ChatConversation()
         let transcription = Transcription(text: "Test note", audioDuration: 5)
@@ -56,9 +57,10 @@ struct ChatViewModelTests {
             conversation: conversation,
             transcription: transcription,
             aiService: mockAIService,
-            modelContext: container.mainContext
+            modelContext: container.mainContext,
+            analytics: analytics
         )
-        return Fixture(sut: sut, mockAIService: mockAIService, container: container)
+        return Fixture(sut: sut, mockAIService: mockAIService, container: container, analytics: analytics)
     }
 
     @Test func selectedProvider_reflectsMockSelectedMode() throws {
@@ -80,5 +82,32 @@ struct ChatViewModelTests {
             stubMode: makeMode(provider: .openAI, model: "")
         )
         #expect(fixture.sut.selectedModel == nil)
+    }
+
+    /// The capability the Analytics seam unlocks: assert which events fired by
+    /// injecting a recording `MockAnalyticsService` (impossible with the old
+    /// static facade). `sendMessage` logs conversation-started + message-sent
+    /// synchronously, before the streaming task runs.
+    @Test func sendMessage_tracksConversationStartedAndMessageSent() async throws {
+        let fixture = try makeFixture(
+            stubMode: makeMode(provider: .openAI, model: "gpt-4")
+        )
+        fixture.sut.inputText = "hello there"
+
+        fixture.sut.sendMessage()
+
+        // Events fire synchronously, before the streaming task starts.
+        #expect(fixture.analytics.trackedEventNames.contains("chat_conversation_started"))
+        #expect(fixture.analytics.trackedEventNames.contains("chat_message_sent"))
+
+        // Drain the background streaming task so it finishes while the in-memory
+        // container is still alive (otherwise it touches a reset ModelContext).
+        fixture.sut.cancelStreaming()
+        var spins = 0
+        while fixture.sut.isStreaming && spins < 1000 {
+            await Task.yield()
+            spins += 1
+        }
+        #expect(!fixture.sut.isStreaming)   // drained for real, not just hit the spin cap
     }
 }

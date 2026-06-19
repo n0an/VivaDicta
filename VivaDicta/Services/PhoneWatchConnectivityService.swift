@@ -169,7 +169,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
-            AnalyticsService.track(.watchRecordingReceived(
+            DefaultAnalyticsService.live.track(.watchRecordingReceived(
                 durationSeconds: duration,
                 hasModeId: modeId != nil
             ))

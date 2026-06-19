@@ -929,7 +929,7 @@ class AIService {
         let duration = Date().timeIntervalSince(startTime)
         Task { await AIVariationsDiscoveryTip.variationGeneratedEvent.donate() }
 
-        AnalyticsService.track(.variationGenerated(
+        DefaultAnalyticsService.live.track(.variationGenerated(
             presetId: preset.isBuiltIn ? preset.id : "custom",
             isBuiltInPreset: preset.isBuiltIn,
             provider: mode.aiProvider?.rawValue ?? "unknown",

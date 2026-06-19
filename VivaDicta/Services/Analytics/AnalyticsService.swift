@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import FirebaseAnalytics
-import os
 import Presets
 
 /// Strongly-typed catalog of every analytics event the app reports.
@@ -15,7 +13,8 @@ import Presets
 /// Adding a new event:
 /// 1. Add a case here with the parameters you want to attach.
 /// 2. Map it in `name` and `parameters`.
-/// 3. Call `AnalyticsService.track(.yourEvent(...))` from the relevant call site.
+/// 3. Track it via the injected `analytics` (or `DefaultAnalyticsService.live`):
+///    `analytics.track(.yourEvent(...))`.
 enum AnalyticsEvent {
 
     enum ChatType: String {
@@ -284,30 +283,12 @@ extension AnalyticsEvent {
     }
 }
 
-/// Single chokepoint for reporting analytics events. Wraps Firebase Analytics
-/// behind a typed API so call sites can't typo event names or drift in
-/// parameter keys.
+/// Reports analytics events through one typed chokepoint, so call sites can't
+/// typo event names or drift in parameter keys. `track` is safe to call from any
+/// context.
 ///
-/// `Analytics.logEvent` is thread-safe; `track` can be called from any context.
-enum AnalyticsService {
-    nonisolated private static let logger = Logger(category: .analytics)
-
-    nonisolated static func track(_ event: AnalyticsEvent) {
-        let name = event.name
-
-        var merged = event.parameters ?? [:]
-        if event.attachesDeviceConditions {
-            // Event-specific keys win on the (unexpected) collision.
-            merged.merge(DeviceConditions.parameters) { current, _ in current }
-        }
-        let params: [String: Any]? = merged.isEmpty ? nil : merged
-
-        Analytics.logEvent(name, parameters: params)
-
-        if let params {
-            logger.logDebug("📊 \(name) \(params)")
-        } else {
-            logger.logDebug("📊 \(name)")
-        }
-    }
+/// Production wires `DefaultAnalyticsService` (Firebase); tests wire
+/// `MockAnalyticsService` to assert which events fired.
+protocol AnalyticsService: Sendable {
+    func track(_ event: AnalyticsEvent)
 }

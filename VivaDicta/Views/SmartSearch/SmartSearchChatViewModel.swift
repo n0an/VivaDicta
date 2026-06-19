@@ -172,7 +172,7 @@ final class SmartSearchChatViewModel {
 
         let turnCount = messages.filter { $0.role == "user" }.count
         if !hasLoggedConversationStart {
-            AnalyticsService.track(.chatConversationStarted(
+            DefaultAnalyticsService.live.track(.chatConversationStarted(
                 chatType: .smartSearch,
                 provider: provider.rawValue,
                 model: model,
@@ -180,7 +180,7 @@ final class SmartSearchChatViewModel {
             ))
             hasLoggedConversationStart = true
         }
-        AnalyticsService.track(.chatMessageSent(
+        DefaultAnalyticsService.live.track(.chatMessageSent(
             chatType: .smartSearch,
             provider: provider.rawValue,
             model: model,
