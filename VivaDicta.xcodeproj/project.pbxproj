@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		186C057F2FB779AA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C057E2FB779AA00102432 /* Keychain */; };
+		616CAFAEA09DF203BD975158 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = FFEA7C00964E1EA320FCD72F /* Analytics */; };
+		F0D8E2E3874C477CBF276D61 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0FADDDCF6E2B224D91D572E3 /* Analytics */; };
+		1A8DED2E097CE6867571F84D /* AnalyticsMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 80C6FC953001FC4053588FDB /* AnalyticsMocks */; };
 		186C05812FB779AA00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05802FB779AA00102432 /* Presets */; };
 		186C05832FB779BA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05822FB779BA00102432 /* Keychain */; };
 		186C05852FB779BA00102432 /* KeychainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05842FB779BA00102432 /* KeychainMocks */; };
@@ -209,6 +212,7 @@
 				AICore,
 				AIKit,
 				AIProviders,
+				Analytics,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
@@ -230,6 +234,7 @@
 				AICore,
 				AIKit,
 				AIProviders,
+				Analytics,
 				AppGroup,
 				AudioRecording,
 				CloudTranscription,
@@ -494,6 +499,7 @@
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
+				616CAFAEA09DF203BD975158 /* Analytics in Frameworks */,
 				18AABBCC0011223344556602 /* Networking in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
@@ -515,6 +521,8 @@
 				18F75FC42FB79A4400280269 /* CloudTranscription in Frameworks */,
 				186C05872FB779BA00102432 /* Presets in Frameworks */,
 				186C05852FB779BA00102432 /* KeychainMocks in Frameworks */,
+				F0D8E2E3874C477CBF276D61 /* Analytics in Frameworks */,
+				1A8DED2E097CE6867571F84D /* AnalyticsMocks in Frameworks */,
 				18F75FC62FB79A4B00280269 /* CloudTranscriptionMocks in Frameworks */,
 				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
 				18AABBCC0011223344556604 /* NetworkingMocks in Frameworks */,
@@ -707,6 +715,7 @@
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
 				186C057E2FB779AA00102432 /* Keychain */,
+				FFEA7C00964E1EA320FCD72F /* Analytics */,
 				186C05802FB779AA00102432 /* Presets */,
 				186C0C9B2FB7829A00102432 /* OAuth */,
 				18F75FBD2FB79A2B00280269 /* TranscriptionCore */,
@@ -745,6 +754,8 @@
 			packageProductDependencies = (
 				186C05822FB779BA00102432 /* Keychain */,
 				186C05842FB779BA00102432 /* KeychainMocks */,
+				0FADDDCF6E2B224D91D572E3 /* Analytics */,
+				80C6FC953001FC4053588FDB /* AnalyticsMocks */,
 				186C05862FB779BA00102432 /* Presets */,
 				186C05882FB779BA00102432 /* PresetsMocks */,
 				186C0C9D2FB782A000102432 /* OAuthMocks */,
@@ -2429,6 +2440,18 @@
 		186C057E2FB779AA00102432 /* Keychain */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Keychain;
+		};
+		FFEA7C00964E1EA320FCD72F /* Analytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Analytics;
+		};
+		0FADDDCF6E2B224D91D572E3 /* Analytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Analytics;
+		};
+		80C6FC953001FC4053588FDB /* AnalyticsMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AnalyticsMocks;
 		};
 		186C05802FB779AA00102432 /* Presets */ = {
 			isa = XCSwiftPackageProductDependency;

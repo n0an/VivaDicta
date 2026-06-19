@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Analytics
+import AnalyticsMocks
 import SwiftData
 import Testing
 @testable import VivaDicta

@@ -6,6 +6,7 @@
 //
 
 import CryptoKit
+import Analytics
 import Foundation
 import Observation
 import SwiftData

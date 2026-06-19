@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Analytics
 import WatchConnectivity
 import os
 

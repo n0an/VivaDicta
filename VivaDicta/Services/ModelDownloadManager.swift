@@ -6,6 +6,7 @@
 //
 
 import LocalTranscription
+import Analytics
 import SwiftUI
 import TranscriptionCore
 import os
