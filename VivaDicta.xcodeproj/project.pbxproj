@@ -8,9 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		186C057F2FB779AA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C057E2FB779AA00102432 /* Keychain */; };
-		616CAFAEA09DF203BD975158 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = FFEA7C00964E1EA320FCD72F /* Analytics */; };
-		F0D8E2E3874C477CBF276D61 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0FADDDCF6E2B224D91D572E3 /* Analytics */; };
-		1A8DED2E097CE6867571F84D /* AnalyticsMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 80C6FC953001FC4053588FDB /* AnalyticsMocks */; };
+		A0C0A617EC509E09382B22A3 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 8412CA347E0626D9F232A9F9 /* TextProcessing */; };
+		A550F1578E1AC857FD9F8997 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 13C43197A5BB2CDB00824303 /* TextProcessing */; };
 		186C05812FB779AA00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05802FB779AA00102432 /* Presets */; };
 		186C05832FB779BA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05822FB779BA00102432 /* Keychain */; };
 		186C05852FB779BA00102432 /* KeychainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05842FB779BA00102432 /* KeychainMocks */; };
@@ -58,6 +57,8 @@
 		18F76A3A2FB85C2300280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A392FB85C2300280269 /* AppGroup */; };
 		18F76A3C2FB85C2A00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76A3B2FB85C2A00280269 /* AppGroup */; };
 		18F76D862FB8617C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76D852FB8617C00280269 /* AppGroup */; };
+		1A8DED2E097CE6867571F84D /* AnalyticsMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 80C6FC953001FC4053588FDB /* AnalyticsMocks */; };
+		616CAFAEA09DF203BD975158 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = FFEA7C00964E1EA320FCD72F /* Analytics */; };
 		BFBF000000000000000000C1 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C1 /* AICore */; };
 		BFBF000000000000000000C2 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C2 /* AICore */; };
 		BFBF000000000000000000C3 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C3 /* AICore */; };
@@ -68,6 +69,7 @@
 		BFBF000000000000000000E1 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E1 /* AIKit */; };
 		BFBF000000000000000000E2 /* AIKit in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000E2 /* AIKit */; };
 		E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */ = {isa = PBXBuildFile; productRef = F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */; };
+		F0D8E2E3874C477CBF276D61 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = 0FADDDCF6E2B224D91D572E3 /* Analytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -223,6 +225,7 @@
 				OAuth,
 				Presets,
 				TestUtilities,
+				TextProcessing,
 				TranscriptionCore,
 				TranscriptionKit,
 			);
@@ -245,6 +248,7 @@
 				OAuth,
 				Presets,
 				TestUtilities,
+				TextProcessing,
 				TranscriptionCore,
 				TranscriptionKit,
 			);
@@ -499,6 +503,7 @@
 				18F75FC02FB79A3200280269 /* CloudTranscription in Frameworks */,
 				18F7637F2FB7D5E300280269 /* LocalTranscription in Frameworks */,
 				186C057F2FB779AA00102432 /* Keychain in Frameworks */,
+				A0C0A617EC509E09382B22A3 /* TextProcessing in Frameworks */,
 				616CAFAEA09DF203BD975158 /* Analytics in Frameworks */,
 				18AABBCC0011223344556602 /* Networking in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
@@ -527,6 +532,7 @@
 				186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */,
 				18AABBCC0011223344556604 /* NetworkingMocks in Frameworks */,
 				186C05832FB779BA00102432 /* Keychain in Frameworks */,
+				A550F1578E1AC857FD9F8997 /* TextProcessing in Frameworks */,
 				18F75FC22FB79A3E00280269 /* TranscriptionCore in Frameworks */,
 				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
@@ -715,6 +721,7 @@
 				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
 				186C057E2FB779AA00102432 /* Keychain */,
+				8412CA347E0626D9F232A9F9 /* TextProcessing */,
 				FFEA7C00964E1EA320FCD72F /* Analytics */,
 				186C05802FB779AA00102432 /* Presets */,
 				186C0C9B2FB7829A00102432 /* OAuth */,
@@ -753,6 +760,7 @@
 			name = VivaDictaTests;
 			packageProductDependencies = (
 				186C05822FB779BA00102432 /* Keychain */,
+				13C43197A5BB2CDB00824303 /* TextProcessing */,
 				186C05842FB779BA00102432 /* KeychainMocks */,
 				0FADDDCF6E2B224D91D572E3 /* Analytics */,
 				80C6FC953001FC4053588FDB /* AnalyticsMocks */,
@@ -2437,21 +2445,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		186C057E2FB779AA00102432 /* Keychain */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Keychain;
-		};
-		FFEA7C00964E1EA320FCD72F /* Analytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Analytics;
-		};
 		0FADDDCF6E2B224D91D572E3 /* Analytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Analytics;
 		};
-		80C6FC953001FC4053588FDB /* AnalyticsMocks */ = {
+		186C057E2FB779AA00102432 /* Keychain */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = AnalyticsMocks;
+			productName = Keychain;
+		};
+		8412CA347E0626D9F232A9F9 /* TextProcessing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TextProcessing;
+		};
+		13C43197A5BB2CDB00824303 /* TextProcessing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TextProcessing;
 		};
 		186C05802FB779AA00102432 /* Presets */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2594,6 +2602,10 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = AppGroup;
 		};
+		80C6FC953001FC4053588FDB /* AnalyticsMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AnalyticsMocks;
+		};
 		AEAE000000000000000000C1 /* AICore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AICore;
@@ -2633,6 +2645,10 @@
 		F4E0FCBD69B741548F9F6B15 /* TranscriptionKitMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TranscriptionKitMocks;
+		};
+		FFEA7C00964E1EA320FCD72F /* Analytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Analytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

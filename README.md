@@ -175,6 +175,7 @@ graph BT
   AICore[AICore]:::core
   AudioRecording[AudioRecording]:::core
   Analytics[Analytics]:::core
+  TextProcessing[TextProcessing]:::core
   AppGroup[AppGroup]:::core
   DesignSystem[DesignSystem]:::core
   TestUtilities[TestUtilities]:::core
@@ -228,12 +229,13 @@ graph BT
   VivaDicta --> AudioRecording
   VivaDicta --> AppGroup
   VivaDicta --> Analytics
+  VivaDicta --> TextProcessing
   VivaDicta --> DesignSystem
 ```
 
 | Layer | Modules |
 |-------|---------|
-| **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `Analytics` · `AudioRecording` · `AppGroup` · `DesignSystem` |
+| **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `Analytics` · `TextProcessing` · `AudioRecording` · `AppGroup` · `DesignSystem` |
 | **Adapters** (protocol + `Default` impl + `Mock`) | `OAuth` · `CloudTranscription` · `LocalTranscription` · `AIProviders` |
 | **Orchestrators** (compose adapters) | `TranscriptionKit` · `AIKit` |
 | **App** (composition root) | `VivaDicta` + keyboard / widget / share / action / watch targets |
@@ -344,6 +346,7 @@ VivaDicta/
 │   ├── AudioRecording/     # AudioRecordingService + AudioFileService
 │   ├── Presets/            # Preset domain + management
 │   ├── Analytics/            # AnalyticsService protocol + AnalyticsEvent + AnalyticsMocks
+│   ├── TextProcessing/      # TextFormatter, TranscriptionOutputFilter, LanguageDetector (pure)
 │   └── AppGroup · DesignSystem · TestUtilities
 ├── documentation/          # Architecture docs, references
 └── .github/workflows/      # CI: build check, Claude review, GitGuardian

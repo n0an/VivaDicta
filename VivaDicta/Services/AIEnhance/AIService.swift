@@ -6,6 +6,7 @@
 //
 
 import Keychain
+import TextProcessing
 import Analytics
 import Networking
 import Presets
