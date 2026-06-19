@@ -15,4 +15,13 @@ extension Tag {
     /// Marks suites that build a real SwiftData `ModelContainer`. Heavier than
     /// pure-value tests, lighter than full integration runs.
     @Tag static var database: Self
+
+    /// Marks integration suites: real collaborators (a real in-memory SwiftData
+    /// store, real file IO), happy path, asserting persistence across contexts.
+    @Tag static var integration: Self
+
+    /// Marks acceptance suites: a composed flow driven through its public seams,
+    /// with test doubles only at the system boundary (network, transcription
+    /// engine), against a real in-memory store.
+    @Tag static var acceptance: Self
 }
