@@ -565,3 +565,67 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         }
     }
 }
+
+// MARK: - Ollama Cloud free / subscription tiers
+
+public extension AIProvider {
+    /// Ollama Cloud models usable with a free API key (no paid subscription).
+    ///
+    /// Verified against the live Ollama Cloud API on 2026-06-19: each model was
+    /// sent a minimal chat request and returned HTTP 200. The split tracks
+    /// roughly with model size/recency - open-weight community models are free
+    /// while the newest flagship models require a subscription.
+    /// See https://ollama.com/upgrade.
+    static let ollamaCloudFreeModels: [String] = [
+        "gpt-oss:20b",
+        "gpt-oss:120b",
+        "gemma3:4b",
+        "gemma3:12b",
+        "gemma3:27b",
+        "gemma4:31b",
+        "qwen3-coder-next",
+        "qwen3-coder:480b",
+        "nemotron-3-nano:30b",
+        "nemotron-3-super",
+        "nemotron-3-ultra",
+        "ministral-3:3b",
+        "ministral-3:8b",
+        "ministral-3:14b",
+        "devstral-small-2:24b",
+        "devstral-2:123b",
+        "minimax-m2.1",
+        "minimax-m2.5",
+        "minimax-m3",
+        "glm-4.7",
+        "rnj-1:8b"
+    ]
+
+    /// Ollama Cloud models that require a paid subscription. Selecting one
+    /// without a plan returns HTTP 403 "this model requires a subscription,
+    /// upgrade for access" (verified 2026-06-19). See https://ollama.com/upgrade.
+    static let ollamaCloudSubscriptionModels: [String] = [
+        "deepseek-v3.1:671b",
+        "deepseek-v3.2",
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
+        "kimi-k2.5",
+        "kimi-k2.6",
+        "kimi-k2.7-code",
+        "glm-5",
+        "glm-5.1",
+        "glm-5.2",
+        "qwen3.5:397b",
+        "mistral-large-3:675b",
+        "minimax-m2.7",
+        "gemini-3-flash-preview"
+    ]
+
+    /// Whether the given Ollama Cloud model name is usable on the free tier.
+    ///
+    /// Unknown / newly-added model names are treated as free (optimistic): the
+    /// app surfaces the real "requires a subscription" error at request time, so
+    /// a stale classification never blocks a genuinely-free model.
+    static func isOllamaCloudModelFree(_ model: String) -> Bool {
+        !ollamaCloudSubscriptionModels.contains(model)
+    }
+}

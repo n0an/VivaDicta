@@ -179,7 +179,11 @@ struct AddAPIKeyView: View {
                 }
             }
 
-            Spacer()
+            if provider == .ollamaCloud {
+                OllamaCloudModelTiersView()
+            } else {
+                Spacer()
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: clearButtonVisible)
         .onAppear {
@@ -268,10 +272,99 @@ struct AddAPIKeyView: View {
     }
 }
 
+/// Shows which Ollama Cloud models are free with the user's API key versus
+/// which require a paid Ollama subscription. Classification lives in AICore
+/// (`AIProvider.ollamaCloudFreeModels` / `ollamaCloudSubscriptionModels`).
+struct OllamaCloudModelTiersView: View {
+    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 8)]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Some Ollama Cloud models are free with your API key. Others need a paid Ollama subscription - choosing one returns a \"requires a subscription\" error.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                OllamaModelTierSection(
+                    title: "Free with your key",
+                    systemImage: "checkmark.seal.fill",
+                    tint: .green,
+                    models: AIProvider.ollamaCloudFreeModels,
+                    columns: columns
+                )
+
+                OllamaModelTierSection(
+                    title: "Requires paid subscription",
+                    systemImage: "lock.fill",
+                    tint: .orange,
+                    models: AIProvider.ollamaCloudSubscriptionModels,
+                    columns: columns
+                )
+
+                Text("The free tier also has usage limits. See ollama.com/upgrade.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
+struct OllamaModelTierSection: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+    let models: [String]
+    let columns: [GridItem]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("\(title) (\(models.count))", systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+                ForEach(models, id: \.self) { model in
+                    OllamaModelChip(name: model, tint: tint)
+                }
+            }
+        }
+    }
+}
+
+struct OllamaModelChip: View {
+    let name: String
+    let tint: Color
+
+    var body: some View {
+        Text(name)
+            .font(.caption.monospaced())
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.vertical, 5)
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity)
+            .background(tint.opacity(0.12), in: .rect(cornerRadius: 8))
+            .foregroundStyle(tint)
+    }
+}
+
 #Preview {
     NavigationStack {
         AddAPIKeyView(
             provider: .openAI,
+            aiService: AIService(),
+            onSave: {_ in })
+    }
+}
+
+#Preview("Ollama Cloud tiers") {
+    NavigationStack {
+        AddAPIKeyView(
+            provider: .ollamaCloud,
             aiService: AIService(),
             onSave: {_ in })
     }
