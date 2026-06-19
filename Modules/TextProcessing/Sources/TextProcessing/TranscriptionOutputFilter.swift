@@ -8,8 +8,8 @@
 import Foundation
 import os
 
-struct TranscriptionOutputFilter {
-    private static let logger = Logger(category: .transcriptionOutputFilter)
+public struct TranscriptionOutputFilter {
+    private static let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "TranscriptionOutputFilter")
 
     private static let hallucinationPatterns = [
         #"\[.*?\]"#,     // []
@@ -37,7 +37,7 @@ struct TranscriptionOutputFilter {
 
     /// Returns true if the text contains meaningful content for a transcription.
     /// Returns false for empty strings, whitespace-only strings, or strings containing only punctuation.
-    static func hasMeaningfulContent(_ text: String) -> Bool {
+    public static func hasMeaningfulContent(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
 
@@ -54,7 +54,7 @@ struct TranscriptionOutputFilter {
     ///   - language: ISO 639-1 code from the active mode (e.g. "en", "ru") or "auto"/nil.
     ///     When unspecified or "auto", `NLLanguageRecognizer` is used; if detection
     ///     also fails, English is the final fallback.
-    static func filter(_ text: String, language: String? = nil) -> String {
+    public static func filter(_ text: String, language: String? = nil) -> String {
         var filteredText = text
 
         // Remove <TAG>...</TAG> blocks
@@ -97,9 +97,9 @@ struct TranscriptionOutputFilter {
 
         // Log results
         if filteredText != text {
-            logger.logNotice("📝 Output filter (\(resolvedLanguage)) result: \(filteredText)")
+            logger.notice("📝 Output filter (\(resolvedLanguage, privacy: .public)) result: \(filteredText, privacy: .public)")
         } else {
-            logger.logNotice("📝 Output filter (\(resolvedLanguage)) result (unchanged): \(filteredText)")
+            logger.notice("📝 Output filter (\(resolvedLanguage, privacy: .public)) result (unchanged): \(filteredText, privacy: .public)")
         }
 
         return filteredText
@@ -112,7 +112,7 @@ struct TranscriptionOutputFilter {
     /// Only the tail is touched: leading and internal whitespace are preserved,
     /// internal periods (acronyms, mid-sentence) are kept, and "?" / "!" carry
     /// their own meaning so they pass through unchanged.
-    static func stripTrailingPeriods(_ text: String) -> String {
+    public static func stripTrailingPeriods(_ text: String) -> String {
         var view = Substring(text)
         // Skip past any trailing whitespace so "Okay.   " is still recognized.
         while let last = view.last, last.isWhitespace {

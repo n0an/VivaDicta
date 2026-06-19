@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TextProcessing
 import SwiftData
 import AVFoundation
 import CoreMedia

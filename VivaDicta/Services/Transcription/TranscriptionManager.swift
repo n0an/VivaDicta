@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TextProcessing
 import Analytics
 import AppGroup
 import CloudTranscription

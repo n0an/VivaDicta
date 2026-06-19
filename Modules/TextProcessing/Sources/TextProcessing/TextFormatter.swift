@@ -46,7 +46,7 @@ import NaturalLanguage
 /// ```
 ///
 /// Note: "Hello.", "Yes.", and "I agree." don't count as significant sentences.
-struct TextFormatter {
+public struct TextFormatter {
 
     // MARK: - Configuration
 
@@ -67,7 +67,7 @@ struct TextFormatter {
     ///
     /// - Parameter text: Raw transcription text to format.
     /// - Returns: Formatted text with paragraphs, or empty string if input is empty.
-    static func format(_ text: String) -> String {
+    public static func format(_ text: String) -> String {
         let detectedLanguage = NLLanguageRecognizer.dominantLanguage(for: text)
         let tokenizerLanguage = detectedLanguage ?? .english
 

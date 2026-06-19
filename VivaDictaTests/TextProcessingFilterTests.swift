@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TextProcessing
 import Testing
 @testable import VivaDicta
 import AICore

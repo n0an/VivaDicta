@@ -7,7 +7,7 @@
 
 import Foundation
 import Testing
-@testable import VivaDicta
+@testable import TextProcessing
 
 struct TextFormatterTests {
 

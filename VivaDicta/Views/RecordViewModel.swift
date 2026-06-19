@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TextProcessing
 import Foundation
 import AppGroup
 import AudioRecording
