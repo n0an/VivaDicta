@@ -22,7 +22,7 @@ import AICore
 final class WatchAudioProcessor {
     private let logger = Logger(category: .watchConnectivity)
 
-    private let transcriptionManager: TranscriptionManager
+    private let transcriptionManager: any Transcriber
     private let aiService: AIService
     private let modelContainer: ModelContainer
 
@@ -30,7 +30,7 @@ final class WatchAudioProcessor {
     private(set) var inFlightFiles: Set<String> = []
 
 
-    init(transcriptionManager: TranscriptionManager,
+    init(transcriptionManager: any Transcriber,
          aiService: AIService,
          modelContainer: ModelContainer) {
         self.transcriptionManager = transcriptionManager
@@ -67,7 +67,7 @@ final class WatchAudioProcessor {
 
             // Transcribe
             let transcriptionStart = Date()
-            let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURL)
+            let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURL, progressHandler: nil)
             let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
             // Validate
