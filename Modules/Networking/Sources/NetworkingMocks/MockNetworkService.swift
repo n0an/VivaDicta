@@ -32,6 +32,12 @@ public final class MockNetworkService: NetworkService, @unchecked Sendable {
     // MARK: - send
 
     public var stubSendResponse: Result<(Data, HTTPURLResponse), Error>?
+    /// Optional FIFO queue of `send` responses, consumed one per call in the
+    /// order added. When non-empty it takes precedence over ``stubSendResponse``
+    /// - use it for multi-call flows (e.g. job APIs that `create` then `poll`)
+    /// that need a different response per call. Falls back to
+    /// ``stubSendResponse`` once the queue is exhausted.
+    public var stubSendResponses: [Result<(Data, HTTPURLResponse), Error>] = []
     public var didSend: (() -> Void)?
     public private(set) var sendCallCount = 0
 
@@ -81,7 +87,12 @@ public final class MockNetworkService: NetworkService, @unchecked Sendable {
         capturedRequest = request
         capturedRequests.append(request)
         capturedAcceptableStatusCodes = acceptableStatusCodes
-        let (data, response): (Data, HTTPURLResponse) = try stubSendResponse.evaluate()
+        let (data, response): (Data, HTTPURLResponse)
+        if stubSendResponses.isEmpty {
+            (data, response) = try stubSendResponse.evaluate()
+        } else {
+            (data, response) = try stubSendResponses.removeFirst().get()
+        }
         try validateStatus(response, body: data, acceptable: acceptableStatusCodes)
         return (data, response)
     }
