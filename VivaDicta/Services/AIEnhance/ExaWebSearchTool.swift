@@ -142,7 +142,7 @@ nonisolated enum ExaSearchClient: Sendable {
     /// URL session used for Exa search requests. Override only from tests.
     nonisolated(unsafe) static var networkService: any NetworkService = DefaultNetworkService(category: "AppClient")
 
-    nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
+    static func search(query: String, apiKey: String) async throws -> [ExaResult] {
         guard let url = URL(string: "https://api.exa.ai/search") else {
             throw ExaError.invalidURL
         }
@@ -174,11 +174,11 @@ nonisolated enum ExaSearchClient: Sendable {
 
 @available(iOS 26, *)
 nonisolated enum ExaAPIClient: Sendable {
-    nonisolated static func search(query: String, apiKey: String) async throws -> [ExaResult] {
+    static func search(query: String, apiKey: String) async throws -> [ExaResult] {
         try await ExaSearchClient.search(query: query, apiKey: apiKey)
     }
 
-    nonisolated static func formatResults(query: String, results: [ExaResult]) -> GeneratedContent {
+    static func formatResults(query: String, results: [ExaResult]) -> GeneratedContent {
         if results.isEmpty {
             return GeneratedContent(properties: [
                 "status": "empty",
@@ -203,7 +203,7 @@ nonisolated enum ExaAPIClient: Sendable {
         ])
     }
 
-    nonisolated static func formatError(_ message: String) -> GeneratedContent {
+    static func formatError(_ message: String) -> GeneratedContent {
         GeneratedContent(properties: [
             "status": "error",
             "summary": message

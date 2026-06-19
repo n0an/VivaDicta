@@ -314,7 +314,7 @@ nonisolated private final class PlaybackBufferQueue: @unchecked Sendable {
     private let lowWaterMark: TimeInterval = 0.05
 
     /// Returns `true` if the caller should resume playback.
-    nonisolated func didQueueBuffer(duration: TimeInterval) -> Bool {
+    func didQueueBuffer(duration: TimeInterval) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         queuedDuration += duration
@@ -328,7 +328,7 @@ nonisolated private final class PlaybackBufferQueue: @unchecked Sendable {
     }
 
     /// Returns `true` if the caller should pause playback (queue starved).
-    nonisolated func didCompleteBuffer(duration: TimeInterval) -> Bool {
+    func didCompleteBuffer(duration: TimeInterval) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         queuedDuration -= duration
@@ -343,13 +343,13 @@ nonisolated private final class PlaybackBufferQueue: @unchecked Sendable {
 
     /// Allows kick-starting playback the very first time without crossing the
     /// refill threshold (so the listener doesn't wait too long for first audio).
-    nonisolated func canStartFresh() -> Bool {
+    func canStartFresh() -> Bool {
         lock.lock()
         defer { lock.unlock() }
         return !hasEverStarted && queuedDuration > 0
     }
 
-    nonisolated func reset() {
+    func reset() {
         lock.lock()
         defer { lock.unlock() }
         queuedDuration = 0
@@ -375,7 +375,7 @@ nonisolated private final class AudioTeardownContext: @unchecked Sendable {
     private let deactivateSession: Bool
     private let logger: Logger
 
-    nonisolated init(
+    init(
         engine: AVAudioEngine,
         playerNode: AVAudioPlayerNode,
         removeTap: Bool,
@@ -389,7 +389,7 @@ nonisolated private final class AudioTeardownContext: @unchecked Sendable {
         self.logger = logger
     }
 
-    nonisolated func perform() {
+    func perform() {
         logger.logInfo("Audio teardown: stopping player node")
         playerNode.stop()
 
@@ -435,13 +435,13 @@ nonisolated private final class TapInstaller: @unchecked Sendable {
     private let captureFormat: AVAudioFormat
     private let continuation: AsyncStream<Data>.Continuation
 
-    nonisolated init(converter: AVAudioConverter, captureFormat: AVAudioFormat, continuation: AsyncStream<Data>.Continuation) {
+    init(converter: AVAudioConverter, captureFormat: AVAudioFormat, continuation: AsyncStream<Data>.Continuation) {
         self.converter = converter
         self.captureFormat = captureFormat
         self.continuation = continuation
     }
 
-    nonisolated func process(_ buffer: AVAudioPCMBuffer) {
+    func process(_ buffer: AVAudioPCMBuffer) {
         let sourceFormat = buffer.format
         let ratio = captureFormat.sampleRate / sourceFormat.sampleRate
         let estimatedFrames = Double(buffer.frameLength) * ratio
