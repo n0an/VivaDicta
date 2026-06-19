@@ -116,6 +116,20 @@
         "identifier" : "AIProvidersTests",
         "name" : "AIProvidersTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/TextProcessing",
+        "identifier" : "TextProcessingTests",
+        "name" : "TextProcessingTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Modules\/Analytics",
+        "identifier" : "AnalyticsTests",
+        "name" : "AnalyticsTests"
+      }
     }
   ],
   "version" : 1
