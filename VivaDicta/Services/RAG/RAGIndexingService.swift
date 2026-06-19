@@ -377,7 +377,7 @@ final class RAGIndexingService {
             let totalChunks = try await _documentCount()
             logger.logInfo("Indexing complete: \(indexed) indexed, \(skipped) skipped, \(orphanedIds.count) orphans removed, \(totalChunks) total chunks")
             await logIndexSnapshot(reason: "bulk-index-complete", using: logger)
-            DefaultAnalyticsService().track(.ragIndexingCompleted(
+            DefaultAnalyticsService.live.track(.ragIndexingCompleted(
                 indexedCount: indexed,
                 skippedCount: skipped,
                 totalChunks: totalChunks,
@@ -577,7 +577,7 @@ final class RAGIndexingService {
                 baseThreshold: threshold,
                 mapping: mapping
             )
-            DefaultAnalyticsService().track(.smartSearchQueryExecuted(
+            DefaultAnalyticsService.live.track(.smartSearchQueryExecuted(
                 queryLength: query.count,
                 topK: topK,
                 resultCount: 0
@@ -632,7 +632,7 @@ final class RAGIndexingService {
             await logIndexSnapshot(reason: "search-unmapped-raw-hits", using: searchLogger)
         }
         searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
-        DefaultAnalyticsService().track(.smartSearchQueryExecuted(
+        DefaultAnalyticsService.live.track(.smartSearchQueryExecuted(
             queryLength: query.count,
             topK: topK,
             resultCount: finalResults.count

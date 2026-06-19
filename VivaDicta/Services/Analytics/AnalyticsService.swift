@@ -13,7 +13,8 @@ import Presets
 /// Adding a new event:
 /// 1. Add a case here with the parameters you want to attach.
 /// 2. Map it in `name` and `parameters`.
-/// 3. Call `AnalyticsService.track(.yourEvent(...))` from the relevant call site.
+/// 3. Track it via the injected `analytics` (or `DefaultAnalyticsService.live`):
+///    `analytics.track(.yourEvent(...))`.
 enum AnalyticsEvent {
 
     enum ChatType: String {

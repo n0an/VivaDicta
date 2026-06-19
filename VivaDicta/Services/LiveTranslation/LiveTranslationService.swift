@@ -147,7 +147,7 @@ final class LiveTranslationService {
         if status == .starting {
             status = .running
             sessionStartedAt = Date()
-            DefaultAnalyticsService().track(.liveTranslationStarted(
+            DefaultAnalyticsService.live.track(.liveTranslationStarted(
                 sourceLanguage: config.sourceLanguage.rawValue,
                 targetLanguage: config.targetLanguage.rawValue,
                 ttsEnabled: config.ttsEnabled,
@@ -185,7 +185,7 @@ final class LiveTranslationService {
         status = .idle
 
         if wasRunning, let startedAt = sessionStartedAt {
-            DefaultAnalyticsService().track(.liveTranslationStopped(
+            DefaultAnalyticsService.live.track(.liveTranslationStopped(
                 durationSeconds: Date().timeIntervalSince(startedAt),
                 originalTokenCount: originalTokens.count,
                 translatedTokenCount: translatedTokens.count,
@@ -463,7 +463,7 @@ final class LiveTranslationService {
         await teardown()
         status = .failed(message)
         sessionStartedAt = nil
-        DefaultAnalyticsService().track(.liveTranslationFailed(reason: category))
+        DefaultAnalyticsService.live.track(.liveTranslationFailed(reason: category))
     }
 
     private func isFailed(_ status: LiveTranslationStatus) -> Bool {

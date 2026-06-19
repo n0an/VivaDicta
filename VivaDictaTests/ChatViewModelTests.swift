@@ -108,5 +108,6 @@ struct ChatViewModelTests {
             await Task.yield()
             spins += 1
         }
+        #expect(!fixture.sut.isStreaming)   // drained for real, not just hit the spin cap
     }
 }

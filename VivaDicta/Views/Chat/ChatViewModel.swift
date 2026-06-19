@@ -162,7 +162,7 @@ final class ChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext, analytics: any AnalyticsService = DefaultAnalyticsService()) {
+    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext, analytics: any AnalyticsService = DefaultAnalyticsService.live) {
         self.conversation = conversation
         self.transcription = transcription
         self.aiService = aiService

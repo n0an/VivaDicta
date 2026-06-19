@@ -185,7 +185,7 @@ class TranscriptionManager: Transcriber {
             result = TranscriptionOutputFilter.stripTrailingPeriods(result)
         }
 
-        DefaultAnalyticsService().track(.transcriptionCompleted(
+        DefaultAnalyticsService.live.track(.transcriptionCompleted(
             engine: model.provider.rawValue,
             isOnDevice: TranscriptionModelProvider.localProviders.contains(model.provider),
             durationSeconds: Date().timeIntervalSince(startTime),

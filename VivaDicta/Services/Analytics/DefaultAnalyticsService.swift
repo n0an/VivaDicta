@@ -10,6 +10,10 @@ import os
 /// Stateless and `Sendable`, so `track` can be called from any context (matching
 /// Firebase's thread-safety) - the same guarantee the previous static facade gave.
 struct DefaultAnalyticsService: AnalyticsService {
+    /// Shared production instance - one symbol to inject as the default and to
+    /// grep when these call sites move to constructor injection / the module.
+    nonisolated static let live = DefaultAnalyticsService()
+
     nonisolated private static let logger = Logger(category: .analytics)
 
     nonisolated func track(_ event: AnalyticsEvent) {

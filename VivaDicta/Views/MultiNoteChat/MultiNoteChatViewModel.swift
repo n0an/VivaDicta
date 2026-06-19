@@ -229,7 +229,7 @@ final class MultiNoteChatViewModel {
         let chatType: AnalyticsEvent.ChatType = conversation.isAllNotes ? .allNotes : .multiNote
         let turnCount = messages.filter { $0.role == "user" }.count
         if !hasLoggedConversationStart {
-            DefaultAnalyticsService().track(.chatConversationStarted(
+            DefaultAnalyticsService.live.track(.chatConversationStarted(
                 chatType: chatType,
                 provider: provider.rawValue,
                 model: model,
@@ -237,7 +237,7 @@ final class MultiNoteChatViewModel {
             ))
             hasLoggedConversationStart = true
         }
-        DefaultAnalyticsService().track(.chatMessageSent(
+        DefaultAnalyticsService.live.track(.chatMessageSent(
             chatType: chatType,
             provider: provider.rawValue,
             model: model,
