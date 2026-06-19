@@ -2,6 +2,7 @@
 
 import Testing
 import Analytics
+import AnalyticsMocks
 
 /// Pins the `AnalyticsEvent` -> Firebase name/parameter mapping. These names are
 /// a stable contract (changing one breaks historical reporting), so the module
@@ -39,5 +40,20 @@ struct AnalyticsEventTests {
     @Test func eventWithoutParameters_returnsNil() {
         #expect(AnalyticsEvent.onboardingCompleted.parameters == nil)
         #expect(AnalyticsEvent.onboardingCompleted.name == "onboarding_completed")
+    }
+}
+
+/// `AnalyticsMocks` is exercised in-module so the recording double is verified
+/// by the module that owns it, not only via the app's test target.
+struct MockAnalyticsServiceTests {
+
+    @Test func track_recordsEventsInOrder() {
+        let sut = MockAnalyticsService()
+
+        sut.track(.onboardingCompleted)
+        sut.track(.liveTranslationOpened)
+
+        #expect(sut.trackedEvents.count == 2)
+        #expect(sut.trackedEventNames == ["onboarding_completed", "live_translation_opened"])
     }
 }

@@ -22,7 +22,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AnalyticsTests",
-            dependencies: ["Analytics"]
+            dependencies: ["Analytics", "AnalyticsMocks"]
         ),
     ],
     swiftLanguageModes: [.v6]

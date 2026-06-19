@@ -14,9 +14,9 @@ import Foundation
 /// 2. Map it in `name` and `parameters`.
 /// 3. Track it via the injected `analytics` (or `DefaultAnalyticsService.live`):
 ///    `analytics.track(.yourEvent(...))`.
-public enum AnalyticsEvent {
+public enum AnalyticsEvent: Sendable {
 
-    public enum ChatType: String {
+    public enum ChatType: String, Sendable {
         case singleNote = "single_note"
         case multiNote = "multi_note"
         case allNotes = "all_notes"
