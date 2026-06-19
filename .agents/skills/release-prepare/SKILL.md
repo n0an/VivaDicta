@@ -201,6 +201,21 @@ Style rules (also in `~/.claude/skills/linkedin-post-style/SKILL.md`):
 
 Publishing happens **after** the App Store build is approved and live, so users hitting the post can install immediately. The draft is prepared during release prep so it's ready to go when approval lands.
 
+### Step 8.7 — Refresh website llms.txt / llms-full.txt
+
+Update the AI-discoverability files in the website repo so they track the current feature set:
+- `/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/vivadicta_website/public/llms.txt` (short summary)
+- `/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/vivadicta_website/public/llms-full.txt` (full doc)
+
+These are easy to forget - nothing auto-generates them, and the major chatbots do **not** auto-fetch `/llms.txt` (it's a voluntary convention; mainly agents/dev tools that deliberately fetch it benefit). Still, on each release re-sync them against this release's changes so anything that does read them sees current data:
+
+- **Transcription providers** - the cloud list + default models (source of truth: iOS `AIProvider.swift` `defaultModel` / `availableModels` and `TranscriptionKit`).
+- **AI enhancement providers** - the `## AI Enhancement Providers` table, the provider count ("N+ AI providers"), and the one-line provider list in `llms.txt` (source: `AIProvider.generalProviders`). Add any provider shipped this release.
+- **Preset count / categories**, **translation languages**, **supported file formats**, **pricing**, **system requirements** - update only if they changed this release.
+- Keep wording aligned with the in-app What's New, App Store notes, and website changelog (Steps 4, 5, 8.5).
+
+Commit and push in the website repo (can be folded into the same commit as Step 8.5, since both touch that repo).
+
 ### Step 9 — CloudKit schema deployment
 
 First, detect whether any SwiftData `@Model` classes changed since the last release tag:
@@ -236,6 +251,7 @@ Before handing off to `asc-release-flow`:
 - [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
 - [ ] Feature changelog updated (Obsidian vault)
 - [ ] iOS website changelog updated (`vivadicta_website/app/ios/changelog/page.tsx` + push)
+- [ ] Website `llms.txt` + `llms-full.txt` refreshed if providers/presets/pricing changed (`vivadicta_website/public/` + push)
 - [ ] LinkedIn announcement drafted - working `.md` + paste-ready `-copy.md` (with `⠀` U+2800 blank lines and `➡️` bullets) in `Projects/VivaDicta/linkedin-posts/` - publish after App Store approval lands
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
