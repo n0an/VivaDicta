@@ -181,6 +181,8 @@ struct AddAPIKeyView: View {
 
             if provider == .ollamaCloud {
                 OllamaCloudModelTiersView()
+            } else if provider == .opencodeZen {
+                OpencodeZenModelTiersView()
             } else {
                 Spacer()
             }
@@ -285,7 +287,7 @@ struct OllamaCloudModelTiersView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                OllamaModelTierSection(
+                ProviderModelTierSection(
                     title: "Free with your key",
                     systemImage: "checkmark.seal.fill",
                     tint: .green,
@@ -293,7 +295,7 @@ struct OllamaCloudModelTiersView: View {
                     columns: columns
                 )
 
-                OllamaModelTierSection(
+                ProviderModelTierSection(
                     title: "Requires paid subscription",
                     systemImage: "lock.fill",
                     tint: .orange,
@@ -313,7 +315,50 @@ struct OllamaCloudModelTiersView: View {
     }
 }
 
-struct OllamaModelTierSection: View {
+/// Shows which OpenCode Zen models are free with the user's API key versus
+/// which bill pay-as-you-go. Classification lives in AICore
+/// (`AIProvider.opencodeZenFreeModels` / `opencodeZenPaidModels`).
+struct OpencodeZenModelTiersView: View {
+    private let columns = [GridItem(.adaptive(minimum: 104), spacing: 8)]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Some OpenCode Zen models are free with your API key. The rest are pay-as-you-go - choosing one without a payment method on your workspace returns a \"No payment method\" error.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                ProviderModelTierSection(
+                    title: "Free with your key",
+                    systemImage: "checkmark.seal.fill",
+                    tint: .green,
+                    models: AIProvider.opencodeZenFreeModels,
+                    columns: columns
+                )
+
+                ProviderModelTierSection(
+                    title: "Pay-as-you-go",
+                    systemImage: "creditcard.fill",
+                    tint: .orange,
+                    models: AIProvider.opencodeZenPaidModels,
+                    columns: columns
+                )
+
+                Text("Paid models bill per token with no markup. Free models have usage limits. See opencode.ai/zen.")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .padding(.top, 8)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
+/// One labelled tier (free / paid) of provider model-name chips. Shared by the
+/// Ollama Cloud and OpenCode Zen API-key screens.
+struct ProviderModelTierSection: View {
     let title: String
     let systemImage: String
     let tint: Color
@@ -328,14 +373,14 @@ struct OllamaModelTierSection: View {
 
             LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
                 ForEach(models, id: \.self) { model in
-                    OllamaModelChip(name: model, tint: tint)
+                    ProviderModelChip(name: model, tint: tint)
                 }
             }
         }
     }
 }
 
-struct OllamaModelChip: View {
+struct ProviderModelChip: View {
     let name: String
     let tint: Color
 
@@ -365,6 +410,15 @@ struct OllamaModelChip: View {
     NavigationStack {
         AddAPIKeyView(
             provider: .ollamaCloud,
+            aiService: AIService(),
+            onSave: {_ in })
+    }
+}
+
+#Preview("OpenCode Zen tiers") {
+    NavigationStack {
+        AddAPIKeyView(
+            provider: .opencodeZen,
             aiService: AIService(),
             onSave: {_ in })
     }
