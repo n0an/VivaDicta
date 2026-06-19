@@ -31,7 +31,7 @@ import AICore
 /// only because the manager serializes access.
 @MainActor
 @Observable
-class TranscriptionManager {
+class TranscriptionManager: Transcriber {
     private let logger = Logger(category: .transcriptionManager)
 
     private let engine: any TranscriptionEngine
