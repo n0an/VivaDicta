@@ -38,6 +38,11 @@ actor LiteRTModelManager {
     private var chat: LiteRTChat?
     #endif
 
+    /// Guards against overlapping generations: a single shared engine/conversation
+    /// cannot serve two streams at once (the second's reset would swap the
+    /// conversation mid-flight). One generation runs at a time.
+    private var isGenerating = false
+
     private init() {}
 
     var isReady: Bool { state == .ready }
@@ -77,14 +82,34 @@ actor LiteRTModelManager {
     /// and single-turn, so without a reset the persistent conversation would
     /// accumulate every prior prompt and overflow the context window (empty
     /// output after a few runs).
-    func stream(prompt: String) async throws -> AsyncThrowingStream<String, Error> {
+    func stream(prompt: String) async throws -> AsyncThrowingStream<String, any Error> {
         #if canImport(LiteRTFoundation)
         guard let chat else { throw LiteRTModelError.notLoaded }
+        guard !isGenerating else { throw LiteRTModelError.busy }
         try await chat.resetConversation()
-        return chat.stream(prompt)
+        isGenerating = true
+        let base = chat.stream(prompt)
+        // Wrap so the in-flight flag clears when the stream finishes or the
+        // consumer abandons it (cancellation), keeping the engine serial.
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await delta in base { continuation.yield(delta) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+                self.endGeneration()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
         #else
         throw LiteRTModelError.unavailable
         #endif
+    }
+
+    private func endGeneration() {
+        isGenerating = false
     }
 
     /// Free the model (e.g. on memory pressure or when backgrounded). The next
@@ -151,6 +176,7 @@ actor LiteRTModelManager {
 enum LiteRTModelError: LocalizedError {
     case unavailable
     case notLoaded
+    case busy
 
     var errorDescription: String? {
         switch self {
@@ -158,6 +184,8 @@ enum LiteRTModelError: LocalizedError {
             "On-device Gemma (LiteRT) is not available in this build."
         case .notLoaded:
             "The on-device Gemma model has not been loaded yet."
+        case .busy:
+            "The on-device Gemma model is already processing another request. Try again in a moment."
         }
     }
 }
