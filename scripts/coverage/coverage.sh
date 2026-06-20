@@ -39,7 +39,7 @@ case "$MODE" in
     echo
     echo "=== OVERALL ==="
     xcrun xccov view --report --json "$RESULT" \
-      | python3 -c 'import json,sys; d=json.load(sys.stdin); print(f"{d[\"lineCoverage\"]*100:.2f}%  ({d[\"coveredLines\"]}/{d[\"executableLines\"]} lines)")'
+      | python3 -c "import json,sys; d=json.load(sys.stdin); print('%.2f%% (%d/%d lines)' % (d['lineCoverage']*100, d['coveredLines'], d['executableLines']))"
 
     echo
     echo "=== PER-TARGET ==="
@@ -58,7 +58,17 @@ case "$MODE" in
   module)
     MODULE="${2:?usage: coverage.sh module <Module>}"
     cd "Modules/$MODULE"
-    xcrun swift test --enable-code-coverage 2>&1 | grep -iE "Test run with|error:" || true
+    # Capture swift test's own exit status (not the pipe's) so a failing build
+    # aborts instead of silently reporting stale coverage from a prior .build.
+    log="${TMPDIR:-/tmp}/coverage-module-$$.log"
+    if ! xcrun swift test --enable-code-coverage > "$log" 2>&1; then
+      grep -iE "error:|Test run with" "$log" >&2 || true
+      echo "swift test failed for $MODULE - aborting so coverage is not reported from a stale build." >&2
+      rm -f "$log"
+      exit 1
+    fi
+    grep -iE "Test run with" "$log" || true
+    rm -f "$log"
     BIN="$(find .build -name "${MODULE}PackageTests" -type f -path '*MacOS*' | head -1)"
     PROF="$(find .build -name default.profdata | head -1)"
     if [ -z "$BIN" ] || [ -z "$PROF" ]; then
