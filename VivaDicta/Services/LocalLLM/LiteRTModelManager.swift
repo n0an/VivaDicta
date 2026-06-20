@@ -72,9 +72,15 @@ actor LiteRTModelManager {
 
     /// Stream a completion for a fully-built prompt. Yields delta chunks (not
     /// cumulative); callers accumulate. Requires `ensureLoaded()` first.
-    func stream(prompt: String) throws -> AsyncThrowingStream<String, Error> {
+    ///
+    /// Each call resets the conversation first: text enhancement is independent
+    /// and single-turn, so without a reset the persistent conversation would
+    /// accumulate every prior prompt and overflow the context window (empty
+    /// output after a few runs).
+    func stream(prompt: String) async throws -> AsyncThrowingStream<String, Error> {
         #if canImport(LiteRTFoundation)
         guard let chat else { throw LiteRTModelError.notLoaded }
+        try await chat.resetConversation()
         return chat.stream(prompt)
         #else
         throw LiteRTModelError.unavailable
