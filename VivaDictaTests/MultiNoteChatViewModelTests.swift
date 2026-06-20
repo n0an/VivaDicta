@@ -188,6 +188,10 @@ struct MultiNoteChatViewModelTests {
     @Test func sendMessage_cloudHappyPath_streamsAndPersistsAssistant() async throws {
         // Skip the implicit cloud cross-note tool so the send stays hermetic
         // (it otherwise consults the global RAG feature flag + tool runtime).
+        // Restore the shared UserDefaults flag so the parallel suite stays
+        // order-independent.
+        let previousSmartSearch = SmartSearchFeature.isEnabled
+        defer { SmartSearchFeature.isEnabled = previousSmartSearch }
         SmartSearchFeature.isEnabled = false
         let fixture = try makeFixture(stubMode: cloudMode())
         fixture.mockAIService.stubMakeChatStreamingRequestPartials = ["Here", "Here is", "Here is the answer."]
@@ -209,6 +213,8 @@ struct MultiNoteChatViewModelTests {
     /// A failing cloud request is caught: the user turn is kept and an error
     /// assistant message is appended rather than the flow crashing.
     @Test func sendMessage_whenCloudRequestFails_appendsErrorAssistantMessage() async throws {
+        let previousSmartSearch = SmartSearchFeature.isEnabled
+        defer { SmartSearchFeature.isEnabled = previousSmartSearch }
         SmartSearchFeature.isEnabled = false
         let fixture = try makeFixture(stubMode: cloudMode())
         fixture.mockAIService.stubMakeChatStreamingRequestResult = .failure(TestError.boom)
