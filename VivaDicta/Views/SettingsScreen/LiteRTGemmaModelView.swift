@@ -4,13 +4,14 @@
 //
 //  Created by Anton Novoselov on 2026.06.20
 //
-//  Settings screen to manage the on-device Gemma (LiteRT) models. Each variant
-//  (E2B, E4B) can be downloaded explicitly with progress instead of incurring a
-//  silent multi-GB fetch on first use, shows its on-disk size, and can be
-//  deleted to reclaim space.
+//  Settings screen to manage the on-device Gemma (LiteRT) models, shown as
+//  standalone cards (one per variant) in the style of the Transcription Models
+//  screen. Each card downloads its variant explicitly with progress, shows its
+//  on-disk size, and can delete it to reclaim space.
 //
 
 import SwiftUI
+import DesignSystem
 
 @MainActor
 @Observable
@@ -79,66 +80,93 @@ struct LiteRTGemmaModelView: View {
     @State private var model = LiteRTGemmaModelViewModel()
 
     var body: some View {
-        Form {
-            ForEach(LiteRTGemmaVariant.allCases, id: \.self) { variant in
-                GemmaVariantSection(variant: variant, model: model)
+        ScrollView {
+            VStack(spacing: 16) {
+                ForEach(LiteRTGemmaVariant.allCases, id: \.self) { variant in
+                    GemmaVariantCard(variant: variant, model: model)
+                        .padding(.horizontal)
+                }
             }
+            .padding(.vertical)
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("On-device Gemma")
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.refresh() }
     }
 }
 
-private struct GemmaVariantSection: View {
+private struct GemmaVariantCard: View {
     let variant: LiteRTGemmaVariant
     let model: LiteRTGemmaModelViewModel
 
     var body: some View {
-        Section {
-            LabeledContent("Status") { statusLabel }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(variant.displayName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                    statusLabel
+                }
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Label(sizeText, systemImage: "internaldrive")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 8)
+                        .background(Color(.systemGray6), in: .capsule)
+
+                    actionButton
+                }
+            }
 
             if case .downloading(let fraction) = model.status(for: variant) {
                 ProgressView(value: fraction)
             }
 
-            let bytes = model.sizeBytes[variant] ?? 0
-            if bytes > 0 {
-                LabeledContent("On disk", value: bytes.formatted(.byteCount(style: .file)))
-            }
-
-            actionButton
-
-            if case .failed(let message) = model.status(for: variant) {
-                Text(message)
-                    .font(.callout)
-                    .foregroundStyle(.red)
-            }
-        } header: {
-            Text(variant.displayName)
-        } footer: {
-            Text("\(variant.subtitle) Downloads \(variant.approxDownloadDescription) once. Private, offline, no API key.")
+            Text(variant.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
+        .padding(20)
+        .modelCardBackground()
+    }
+
+    private var sizeText: String {
+        let bytes = model.sizeBytes[variant] ?? 0
+        return bytes > 0 ? bytes.formatted(.byteCount(style: .file)) : variant.approxDownloadDescription
     }
 
     @ViewBuilder
     private var statusLabel: some View {
         switch model.status(for: variant) {
         case .checking:
-            Text("Checking...").foregroundStyle(.secondary)
+            Text("Checking...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         case .notDownloaded:
-            Text("Not downloaded").foregroundStyle(.secondary)
+            Text("Not downloaded")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         case .downloading(let fraction):
             Text("Downloading \(fraction.formatted(.percent.precision(.fractionLength(0))))")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
         case .preparing:
-            Text("Preparing...").foregroundStyle(.secondary)
+            Text("Preparing...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         case .ready:
             Label("Ready", systemImage: "checkmark.circle.fill")
-                .labelStyle(.titleAndIcon)
+                .font(.subheadline)
                 .foregroundStyle(.green)
         case .failed:
-            Label("Failed", systemImage: "exclamationmark.triangle")
+            Label("Failed - tap to retry", systemImage: "exclamationmark.triangle")
+                .font(.subheadline)
                 .foregroundStyle(.red)
         }
     }
@@ -147,21 +175,26 @@ private struct GemmaVariantSection: View {
     private var actionButton: some View {
         switch model.status(for: variant) {
         case .ready:
-            Button(role: .destructive) {
+            Button {
+                HapticManager.warning()
                 Task { await model.delete(variant) }
             } label: {
-                Label("Delete model", systemImage: "trash")
+                Image(systemName: "trash.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.red)
             }
-            .disabled(model.isBusy(variant))
+        case .checking, .downloading, .preparing:
+            ProgressView()
+                .frame(width: 30, height: 30)
         case .notDownloaded, .failed:
             Button {
+                HapticManager.lightImpact()
                 Task { await model.prepare(variant) }
             } label: {
-                Label("Download model (\(variant.approxDownloadDescription))", systemImage: "arrow.down.circle")
+                Image(systemName: "arrow.down.circle")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.blue)
             }
-            .disabled(model.isBusy(variant))
-        case .checking, .downloading, .preparing:
-            EmptyView()
         }
     }
 }
