@@ -42,7 +42,7 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
     var subtitle: String {
         switch self {
         case .e2b: "Smaller and faster. Runs on 8 GB-class devices."
-        case .e4b: "Larger and higher quality. Needs a 12 GB-class device."
+        case .e4b: "Larger and higher quality. Best on a 12 GB-class device - may not run on smaller ones."
         }
     }
 
@@ -67,16 +67,6 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
         switch self {
         case .e2b: "litert-community/gemma-4-E2B-it-litert-lm"
         case .e4b: "litert-community/gemma-4-E4B-it-litert-lm"
-        }
-    }
-
-    /// Minimum device RAM to attempt loading. E2B targets 8 GB-class devices
-    /// (the SDK catalog enforces its own floor); E4B is far larger and only
-    /// sensible on 12 GB-class devices, so we gate it to avoid jetsam.
-    var minimumDeviceRAM: Int64 {
-        switch self {
-        case .e2b: 7_000_000_000
-        case .e4b: 11_000_000_000
         }
     }
 }
@@ -142,11 +132,12 @@ actor LiteRTModelManager {
                 }
             case .e4b:
                 // Loaded by HuggingFace repo (not in the SDK catalog); text-only
-                // (empty modalities) and RAM-gated to 12 GB-class devices.
+                // (empty modalities). No RAM gate by design: the settings screen
+                // advises E4B is best on a 12 GB-class device, but we let the user
+                // download and try it on smaller devices rather than block them.
                 loaded = try await LiteRTChat(
                     huggingFaceRepo: variant.huggingFaceRepo,
                     fileName: variant.fileName,
-                    minimumDeviceRAM: variant.minimumDeviceRAM,
                     sampler: sampler
                 ) { progress in
                     onDownloadProgress?(progress.fraction)
