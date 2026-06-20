@@ -23,7 +23,7 @@ struct SmartSearchChatViewModelTests {
     private func makeContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: SmartSearchConversation.self, ChatMessage.self,
+            for: SmartSearchConversation.self, ChatMessage.self, Transcription.self,
             configurations: config
         )
     }
@@ -170,5 +170,89 @@ struct SmartSearchChatViewModelTests {
         fixture.sut.clearChat()
 
         #expect(fixture.sut.messages.isEmpty)
+    }
+
+    // MARK: - sendMessage happy / no-evidence / error flows
+
+    private enum TestError: Error { case boom }
+
+    /// Spins the cooperative pool until the fire-and-forget streaming task
+    /// settles. The mock has no real latency, so this converges immediately;
+    /// the spin cap only guards against a hang.
+    private func drainStreaming(_ sut: SmartSearchChatViewModel) async {
+        var spins = 0
+        while sut.isStreaming && spins < 5_000 {
+            await Task.yield()
+            spins += 1
+        }
+    }
+
+    private func ragHit(_ transcriptionId: UUID, _ chunk: String = "apples are a red fruit") -> RAGSearchResult {
+        RAGSearchResult(transcriptionId: transcriptionId, chunkText: chunk, relevanceScore: 0.9)
+    }
+
+    /// The fat path: retrieval returns a hit, so the VM assembles an augmented
+    /// prompt, streams a cloud reply through the injected `AIChatService`, and
+    /// persists both the user turn and the assistant turn with its citations.
+    @Test func sendMessage_cloudHappyPath_searchesStreamsAndPersistsAssistant() async throws {
+        let fixture = try makeFixture(stubMode: cloudMode())
+        let note = Transcription(text: "Note about apples", audioDuration: 3)
+        fixture.container.mainContext.insert(note)
+        fixture.searchService.stubResult = .success([ragHit(note.id)])
+        fixture.mockAIService.stubMakeChatStreamingRequestPartials = ["Apples", "Apples are", "Apples are a fruit."]
+        fixture.mockAIService.stubMakeChatStreamingRequestResult = .success("Apples are a fruit.")
+        fixture.sut.inputText = "tell me about apples"
+
+        fixture.sut.sendMessage()
+        await drainStreaming(fixture.sut)
+
+        #expect(fixture.sut.isStreaming == false)
+        #expect(fixture.searchService.searchCallCount == 1)
+        #expect(fixture.searchService.capturedQueries.first?.query == "tell me about apples")
+        #expect(fixture.mockAIService.makeChatStreamingRequestCallCount == 1)
+        // User turn + assistant reply are both persisted and shown.
+        #expect(fixture.sut.messages.count == 2)
+        #expect(fixture.sut.messages.last?.role == "assistant")
+        #expect(fixture.sut.messages.last?.content == "Apples are a fruit.")
+        #expect(fixture.sut.messages.last?.isError == false)
+        // The retrieved note is cited on the assistant turn.
+        #expect(fixture.sut.messages.last?.sourceTranscriptionIds == [note.id])
+        #expect(fixture.sut.errorMessage == nil)
+    }
+
+    /// Retrieval returns nothing for a grounded query, so the VM short-circuits
+    /// to a deterministic "no evidence" reply and never hits the cloud provider.
+    @Test func sendMessage_noSearchResults_returnsDeterministicNoEvidenceWithoutCloudCall() async throws {
+        let fixture = try makeFixture(stubMode: cloudMode())
+        fixture.searchService.stubResult = .success([]) // no note context
+        fixture.sut.inputText = "anything about quarterly revenue"
+
+        fixture.sut.sendMessage()
+        await drainStreaming(fixture.sut)
+
+        #expect(fixture.searchService.searchCallCount == 1)
+        #expect(fixture.mockAIService.makeChatStreamingRequestCallCount == 0) // no cloud send
+        #expect(fixture.sut.messages.last?.role == "assistant")
+        #expect(fixture.sut.messages.last?.content.localizedStandardContains("could not find") == true)
+        #expect(fixture.sut.messages.last?.isError == false)
+        #expect(fixture.sut.errorMessage == nil)
+    }
+
+    /// A failing cloud request is caught: the user turn is kept and an error
+    /// assistant message is appended rather than the flow crashing.
+    @Test func sendMessage_whenCloudRequestFails_appendsErrorAssistantMessage() async throws {
+        let fixture = try makeFixture(stubMode: cloudMode())
+        let note = Transcription(text: "Note", audioDuration: 1)
+        fixture.container.mainContext.insert(note)
+        fixture.searchService.stubResult = .success([ragHit(note.id)])
+        fixture.mockAIService.stubMakeChatStreamingRequestResult = .failure(TestError.boom)
+        fixture.sut.inputText = "tell me about apples"
+
+        fixture.sut.sendMessage()
+        await drainStreaming(fixture.sut)
+
+        #expect(fixture.mockAIService.makeChatStreamingRequestCallCount == 1)
+        #expect(fixture.sut.isStreaming == false)
+        #expect(fixture.sut.messages.last?.isError == true)
     }
 }
