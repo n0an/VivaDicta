@@ -110,6 +110,7 @@ final class SmartSearchChatViewModel {
     let conversation: SmartSearchConversation
     private let aiService: any AIChatService
     private let modelContext: ModelContext
+    private let searchService: any NoteSearchService
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
     private let webSearchToolCaptureID = UUID()
@@ -117,10 +118,11 @@ final class SmartSearchChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: SmartSearchConversation, aiService: any AIChatService, modelContext: ModelContext) {
+    init(conversation: SmartSearchConversation, aiService: any AIChatService, modelContext: ModelContext, searchService: any NoteSearchService = RAGIndexingService.shared) {
         self.conversation = conversation
         self.aiService = aiService
         self.modelContext = modelContext
+        self.searchService = searchService
 
         loadMessages()
         hasLoggedConversationStart = messages.contains { $0.role == "user" }
@@ -213,7 +215,7 @@ final class SmartSearchChatViewModel {
                 logger.logInfo(
                     "Smart Search retrieval start originalQuery='\(Self.preview(text, limit: 80))' plannedQuery='\(Self.preview(plannedQuery, limit: 80))' topK=\(requestedTopK) smartEnabled=\(SmartSearchFeature.isEnabled)"
                 )
-                let searchResults = try await RAGIndexingService.shared.search(query: plannedQuery, topK: requestedTopK)
+                let searchResults = try await searchService.search(query: plannedQuery, topK: requestedTopK)
                 let transcriptions = resolveTranscriptions(for: searchResults)
                 isSearching = false
 
