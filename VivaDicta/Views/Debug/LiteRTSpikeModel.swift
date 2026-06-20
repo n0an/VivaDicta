@@ -10,12 +10,17 @@
 //  any production provider work. See llmtemp/litert-gemma-integration-plan.md.
 //
 //  All LiteRT-LM calls are isolated behind `#if canImport(LiteRTFoundation)`
-//  so the app compiles before the SPM package is added. Add the package via
-//  Xcode (File > Add Package Dependencies: https://github.com/john-rocky/swift-litert-lm).
+//  so the app compiles before the SPM package is added.
 //
-//  NOTE: the exact SDK symbol names below (LiteRTChat, .gemma4_E2B,
-//  chat.stream, progress.fraction) come from the package README and must be
-//  verified against the resolved SDK once the package is added.
+//  Add the package via Xcode (File > Add Package Dependencies) pointing at the
+//  fork https://github.com/n0an/swift-litert-lm (branch: main), NOT upstream.
+//  The fork excludes the FM-mode folder, which references iOS-27-SDK-only
+//  Foundation Models types and otherwise fails to build on Xcode 26. Select the
+//  LiteRTFoundation product for the VivaDicta target and run on a physical device.
+//
+//  API verified against n0an/swift-litert-lm @ main:
+//  LiteRTChat(_:onDownloadProgress:), ModelDownloader.Progress.fraction,
+//  LiteRTModel.gemma4_E2B, LiteRTChat.stream(_:) -> AsyncThrowingStream<String, Error>.
 //
 
 import Foundation
