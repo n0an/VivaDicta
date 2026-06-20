@@ -12,8 +12,23 @@ import AppGroup
 import AVFoundation
 import os
 
+/// The prewarmed-audio-session surface ``RecordViewModel`` depends on (session
+/// state, real-capture start/stop, level, timeout). ``AudioPrewarmManager`` is
+/// the production conformance; tests inject a mock so the view model's recording
+/// flow can be exercised without a live AVAudioEngine.
+@MainActor
+protocol AudioPrewarmer {
+    var isSessionActive: Bool { get }
+    var audioSessionTimeout: Int { get }
+    var currentAudioLevel: Float { get }
+    var audioEngine: AVAudioEngine? { get }
+    func startRealCapture(to url: URL) throws
+    func stopRealCapture()
+    func rescheduleSessionTimeout()
+}
+
 @Observable
-final class AudioPrewarmManager {
+final class AudioPrewarmManager: AudioPrewarmer {
     static let shared = AudioPrewarmManager()
     
     // MARK: - Properties

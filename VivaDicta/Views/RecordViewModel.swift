@@ -85,7 +85,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
     private let audioRecordingService: AudioRecordingService
     private let audioFileService: AudioFileService
-    private let prewarmManager = AudioPrewarmManager.shared
+    private let prewarmManager: any AudioPrewarmer
     private let logger = Logger(category: .recordViewModel)
 
     var animationTimer: Timer?
@@ -93,7 +93,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     weak var appState: AppState?
     var modelContext: ModelContext
 
-    public let transcriptionManager: TranscriptionManager
+    public let transcriptionManager: any Transcriber
     public let aiService: any AIProcessingService
 
     var selectedModeName: String {
@@ -108,10 +108,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     init(
         appState: AppState,
         modelContainer: ModelContainer,
-        transcriptionManager: TranscriptionManager? = nil,
+        transcriptionManager: (any Transcriber)? = nil,
         aiService: (any AIProcessingService)? = nil,
         audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
-        audioFileService: AudioFileService = DefaultAudioFileService()
+        audioFileService: AudioFileService = DefaultAudioFileService(),
+        prewarmManager: any AudioPrewarmer = AudioPrewarmManager.shared
     ) {
         self.appState = appState
         self.transcriptionManager = transcriptionManager ?? appState.transcriptionManager
@@ -119,6 +120,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         self.modelContext = ModelContext(modelContainer)
         self.audioRecordingService = audioRecordingService
         self.audioFileService = audioFileService
+        self.prewarmManager = prewarmManager
         super.init()
         self.audioRecordingService.onDidFinishUnsuccessfully = { [weak self] in
             guard let self else { return }
@@ -1139,7 +1141,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         logger.logInfo("📝 Processing text from keyboard with mode: \(pending.modeName), preset: \(pending.presetId ?? "nil"), text length: \(pending.text.count)")
 
         // Extend session while processing (same pattern as recording flow)
-        let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
+        let timeoutSeconds = prewarmManager.audioSessionTimeout
         AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
 
         // Temporarily switch to the requested mode, then restore.
