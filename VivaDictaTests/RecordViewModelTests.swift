@@ -73,7 +73,7 @@ struct RecordViewModelTests {
             transcriptionManager: MockTranscriber(),
             aiService: MockAIProcessingService(),
             prewarmManager: MockAudioPrewarmer(),
-            appGroupCoordinator: appGroup
+            appGroupBridge: appGroup
         )
 
         #expect(sut.recordingState == .idle)

@@ -86,7 +86,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private let audioRecordingService: AudioRecordingService
     private let audioFileService: AudioFileService
     private let prewarmManager: any AudioPrewarmer
-    private let appGroupCoordinator: any AppGroupBridge
+    private let appGroupBridge: any AppGroupBridge
     private let logger = Logger(category: .recordViewModel)
 
     var animationTimer: Timer?
@@ -114,7 +114,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
         audioFileService: AudioFileService = DefaultAudioFileService(),
         prewarmManager: any AudioPrewarmer = AudioPrewarmManager.shared,
-        appGroupCoordinator: any AppGroupBridge = AppGroupCoordinator.shared
+        appGroupBridge: any AppGroupBridge = AppGroupCoordinator.shared
     ) {
         self.appState = appState
         self.transcriptionManager = transcriptionManager ?? appState.transcriptionManager
@@ -123,7 +123,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         self.audioRecordingService = audioRecordingService
         self.audioFileService = audioFileService
         self.prewarmManager = prewarmManager
-        self.appGroupCoordinator = appGroupCoordinator
+        self.appGroupBridge = appGroupBridge
         super.init()
         self.audioRecordingService.onDidFinishUnsuccessfully = { [weak self] in
             guard let self else { return }
@@ -155,7 +155,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var recordingState: RecordingState = .idle {
         didSet {
             logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
-            // Recording state is shared with keyboard extension via appGroupCoordinator.updateRecordingState()
+            // Recording state is shared with keyboard extension via appGroupBridge.updateRecordingState()
             // which is called in startCaptureAudio(), stopCaptureAudio(), and cancelTranscribe()
         }
     }
@@ -224,7 +224,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started
-                appGroupCoordinator.updateRecordingState(true)
+                appGroupBridge.updateRecordingState(true)
 
                 do {
                     // Use prewarm manager's AVAudioEngine for recording
@@ -239,7 +239,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                             guard let self = self else { return }
                             let level = Double(self.prewarmManager.currentAudioLevel)
                             self.audioPower = level
-                            self.appGroupCoordinator.updateAudioLevel(level)
+                            self.appGroupBridge.updateAudioLevel(level)
                         }
                     })
 
@@ -269,7 +269,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started (even in normal mode)
-                appGroupCoordinator.updateRecordingState(true)
+                appGroupBridge.updateRecordingState(true)
 
                 do {
                     let settings: [String : Any] = [
@@ -292,7 +292,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                             let rawPower = Double(self.audioRecordingService.currentAudioPower)
                             let power = min(1, max(0, 1 - abs(rawPower / 50)))
                             self.audioPower = power
-                            self.appGroupCoordinator.updateAudioLevel(power)
+                            self.appGroupBridge.updateAudioLevel(power)
                         }
                     })
 
@@ -328,7 +328,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 resetValues()
 
                 // Notify keyboard that recording has stopped
-                appGroupCoordinator.updateRecordingState(false)
+                appGroupBridge.updateRecordingState(false)
 
                 let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
@@ -348,7 +348,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             resetValues()
 
             // Notify keyboard that recording has stopped
-            appGroupCoordinator.updateRecordingState(false)
+            appGroupBridge.updateRecordingState(false)
 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
@@ -387,7 +387,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.transcriptionProgress = nil
 
                 // Notify keyboard that transcription has started
-                appGroupCoordinator.updateTranscriptionStatus(.transcribing)
+                appGroupBridge.updateTranscriptionStatus(.transcribing)
 
                 var audioURLToTranscribe = recordURL
 
@@ -455,8 +455,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     resetValues()
                     aiService.clearCapturedClipboard()
                     recordingState = .idle
-                    appGroupCoordinator.updateRecordingState(false)
-                    appGroupCoordinator.updateTranscriptionStatus(.idle)
+                    appGroupBridge.updateRecordingState(false)
+                    appGroupBridge.updateTranscriptionStatus(.idle)
                     return
                 }
 
@@ -493,7 +493,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     HapticManager.lightImpact()
 
                     // Notify keyboard that AI processing has started
-                    appGroupCoordinator.updateTranscriptionStatus(.enhancing)
+                    appGroupBridge.updateTranscriptionStatus(.enhancing)
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
@@ -579,7 +579,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     mode: aiService.selectedMode
                 )
 
-                appGroupCoordinator.shareTranscribedText(textToShare)
+                appGroupBridge.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
                 RecentNotesCache.addNote(
@@ -609,7 +609,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 resetValues()
 
                 // Notify keyboard of error
-                appGroupCoordinator.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+                appGroupBridge.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
 
                 // Reschedule session timeout even on error
                 self.prewarmManager.rescheduleSessionTimeout()
@@ -631,7 +631,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 if let audioPlayer = self?.audioPlayer {
                     let power = min(1, max(0, 1 - abs(Double(audioPlayer.averagePower(forChannel: 0)) / 160) ))
                     self?.audioPower = power
-                    self?.appGroupCoordinator.updateAudioLevel(power)
+                    self?.appGroupBridge.updateAudioLevel(power)
                 }
             }
         })
@@ -658,8 +658,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         recordingState = .idle
 
         // Notify keyboard that recording was canceled
-        appGroupCoordinator.updateRecordingState(false)
-        appGroupCoordinator.updateTranscriptionStatus(.idle)
+        appGroupBridge.updateRecordingState(false)
+        appGroupBridge.updateTranscriptionStatus(.idle)
 
         // Reschedule session timeout after cancellation
         prewarmManager.rescheduleSessionTimeout()
@@ -695,8 +695,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     logger.logInfo("📱 Pending transcription contains no meaningful content, skipping save")
                     resetValues()
                     recordingState = .idle
-                    appGroupCoordinator.updateRecordingState(false)
-                    appGroupCoordinator.updateTranscriptionStatus(.idle)
+                    appGroupBridge.updateRecordingState(false)
+                    appGroupBridge.updateTranscriptionStatus(.idle)
                     return
                 }
 
@@ -758,7 +758,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     )
 
                     // Share with keyboard
-                    appGroupCoordinator.shareTranscribedText(pending.text)
+                    appGroupBridge.shareTranscribedText(pending.text)
 
                     // Cache for keyboard "Recent Notes" feature
                     RecentNotesCache.addNote(
@@ -779,8 +779,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             recordingState = .idle
 
             // Notify keyboard
-            appGroupCoordinator.updateRecordingState(false)
-            appGroupCoordinator.updateTranscriptionStatus(.idle)
+            appGroupBridge.updateRecordingState(false)
+            appGroupBridge.updateTranscriptionStatus(.idle)
 
             // Reschedule session timeout after cancellation
             prewarmManager.rescheduleSessionTimeout()
@@ -825,7 +825,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
         if sourceTag == SourceTag.keyboard {
             logger.logInfo("📱 Obsidian: delegating to keyboard \(output.url.absoluteString)")
-            appGroupCoordinator.setPendingObsidianHandoff(url: output.url, clipboardText: output.clipboardText)
+            appGroupBridge.setPendingObsidianHandoff(url: output.url, clipboardText: output.clipboardText)
         } else {
             logger.logInfo("📱 Obsidian: opening directly \(output.url.absoluteString)")
             ClipboardManager.copyToClipboard(output.clipboardText)
@@ -1004,7 +1004,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     func resetValues() {
         audioPower = 0
         transcriptionProgress = nil
-        appGroupCoordinator.updateAudioLevel(0)
+        appGroupBridge.updateAudioLevel(0)
 
         _ = audioRecordingService.stopRecording()
 
@@ -1026,7 +1026,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
     private func setupKeyboardRecordingHandlers() {
         // Handle start recording request from keyboard
-        appGroupCoordinator.onStartRecordingRequested = { [weak self] in
+        appGroupBridge.onStartRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             // Only start if prewarm session is active and not already recording
@@ -1043,7 +1043,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle stop recording request from keyboard
-        appGroupCoordinator.onStopRecordingRequested = { [weak self] in
+        appGroupBridge.onStopRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1059,7 +1059,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle cancel recording request from keyboard
-        appGroupCoordinator.onCancelRecordingRequested = { [weak self] in
+        appGroupBridge.onCancelRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             switch self.recordingState {
@@ -1078,7 +1078,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle pause recording request from keyboard
-        appGroupCoordinator.onPauseRecordingRequested = { [weak self] in
+        appGroupBridge.onPauseRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1088,7 +1088,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle resume recording request from keyboard
-        appGroupCoordinator.onResumeRecordingRequested = { [weak self] in
+        appGroupBridge.onResumeRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1098,7 +1098,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle start recording request from Control Center
-        appGroupCoordinator.onStartRecordingFromControl = { [weak self] in
+        appGroupBridge.onStartRecordingFromControl = { [weak self] in
             guard let self = self else { return }
 
             self.logger.logInfo("📱 Starting recording from Control Center request")
@@ -1109,7 +1109,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle VivaMode change from keyboard extension
-        appGroupCoordinator.onVivaModeChanged = { [weak self] in
+        appGroupBridge.onVivaModeChanged = { [weak self] in
             guard let self = self else { return }
 
             self.logger.logInfo("📱 VivaMode changed from keyboard extension")
@@ -1117,7 +1117,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle text processing request from keyboard (rewrite feature)
-        appGroupCoordinator.onTextProcessingRequested = { [weak self] in
+        appGroupBridge.onTextProcessingRequested = { [weak self] in
             guard let self = self else { return }
             self.handleKeyboardTextProcessingRequest()
         }
@@ -1126,14 +1126,17 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     // MARK: - Keyboard Text Processing
 
     private func handleKeyboardTextProcessingRequest() {
-        guard let pending = appGroupCoordinator.getAndConsumePendingTextProcessing() else {
+        guard let pending = appGroupBridge.getAndConsumePendingTextProcessing() else {
             logger.logError("📝 Text processing requested but no pending data found")
-            appGroupCoordinator.shareTextProcessingError("No text to process")
+            appGroupBridge.shareTextProcessingError("No text to process")
             return
         }
 
-        guard let appState else {
-            appGroupCoordinator.shareTextProcessingError("App not ready")
+        // Liveness gate: a nil weak appState means the app context is gone, so
+        // there is nothing to process for. The bound value is intentionally unused -
+        // the AI work routes through the injected aiService.
+        guard appState != nil else {
+            appGroupBridge.shareTextProcessingError("App not ready")
             return
         }
 
@@ -1141,7 +1144,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
         // Extend session while processing (same pattern as recording flow)
         let timeoutSeconds = prewarmManager.audioSessionTimeout
-        appGroupCoordinator.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
+        appGroupBridge.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
 
         // Temporarily switch to the requested mode, then restore.
         // Uses the injected `aiService` (== appState.aiService) so the AI surface
@@ -1166,13 +1169,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")
                 if result.isEmpty {
                     logger.logError("📝 Text processing returned empty result")
-                    appGroupCoordinator.shareTextProcessingError("AI returned empty result")
+                    appGroupBridge.shareTextProcessingError("AI returned empty result")
                 } else {
-                    appGroupCoordinator.shareTextProcessingResult(result)
+                    appGroupBridge.shareTextProcessingResult(result)
                 }
             } catch {
                 logger.logError("📝 Text processing failed: \(error.localizedDescription)")
-                appGroupCoordinator.shareTextProcessingError(error.localizedDescription)
+                appGroupBridge.shareTextProcessingError(error.localizedDescription)
             }
         }
     }
