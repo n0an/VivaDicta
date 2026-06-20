@@ -1,243 +1,136 @@
 {
-  "configurations": [
+  "configurations" : [
     {
-      "id": "9D6DEFC5-3EB9-43B3-A7BA-924E1AC2437D",
-      "name": "Configuration 1",
-      "options": {}
+      "id" : "9D6DEFC5-3EB9-43B3-A7BA-924E1AC2437D",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
     }
   ],
-  "defaultOptions": {
-    "testTimeoutsEnabled": true,
-    "codeCoverage": {
-      "targets": [
-        {
-          "containerPath": "container:Modules/AICore",
-          "identifier": "AICore",
-          "name": "AICore"
-        },
-        {
-          "containerPath": "container:Modules/AIKit",
-          "identifier": "AIKit",
-          "name": "AIKit"
-        },
-        {
-          "containerPath": "container:Modules/AIProviders",
-          "identifier": "AIProviders",
-          "name": "AIProviders"
-        },
-        {
-          "containerPath": "container:Modules/Analytics",
-          "identifier": "Analytics",
-          "name": "Analytics"
-        },
-        {
-          "containerPath": "container:Modules/AppGroup",
-          "identifier": "AppGroup",
-          "name": "AppGroup"
-        },
-        {
-          "containerPath": "container:Modules/AudioRecording",
-          "identifier": "AudioRecording",
-          "name": "AudioRecording"
-        },
-        {
-          "containerPath": "container:Modules/CloudTranscription",
-          "identifier": "CloudTranscription",
-          "name": "CloudTranscription"
-        },
-        {
-          "containerPath": "container:Modules/DesignSystem",
-          "identifier": "DesignSystem",
-          "name": "DesignSystem"
-        },
-        {
-          "containerPath": "container:Modules/Keychain",
-          "identifier": "Keychain",
-          "name": "Keychain"
-        },
-        {
-          "containerPath": "container:Modules/LocalTranscription",
-          "identifier": "LocalTranscription",
-          "name": "LocalTranscription"
-        },
-        {
-          "containerPath": "container:Modules/Networking",
-          "identifier": "Networking",
-          "name": "Networking"
-        },
-        {
-          "containerPath": "container:Modules/OAuth",
-          "identifier": "OAuth",
-          "name": "OAuth"
-        },
-        {
-          "containerPath": "container:Modules/Presets",
-          "identifier": "Presets",
-          "name": "Presets"
-        },
-        {
-          "containerPath": "container:Modules/TextProcessing",
-          "identifier": "TextProcessing",
-          "name": "TextProcessing"
-        },
-        {
-          "containerPath": "container:Modules/TranscriptionCore",
-          "identifier": "TranscriptionCore",
-          "name": "TranscriptionCore"
-        },
-        {
-          "containerPath": "container:Modules/TranscriptionKit",
-          "identifier": "TranscriptionKit",
-          "name": "TranscriptionKit"
-        },
-        {
-          "containerPath": "container:VivaDicta.xcodeproj",
-          "identifier": "181D04D62E3E55E400D357A6",
-          "name": "VivaDicta"
-        },
-        {
-          "containerPath": "container:VivaDicta.xcodeproj",
-          "identifier": "18E1B49D2E8C6FF400BE8A11",
-          "name": "VivaDictaKeyboard"
-        },
-        {
-          "containerPath": "container:VivaDicta.xcodeproj",
-          "identifier": "18E1C7F92E8E793E00BE8A11",
-          "name": "VivaDictaWidgetExtension"
-        },
-        {
-          "containerPath": "container:VivaDicta.xcodeproj",
-          "identifier": "189C7A8A2F0C6822004BAFBF",
-          "name": "ShareExtension"
-        },
-        {
-          "containerPath": "container:VivaDicta.xcodeproj",
-          "identifier": "189C7AAD2F0D84E2004BAFBF",
-          "name": "ActionExtension"
-        }
-      ]
-    }
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
   },
-  "testTargets": [
+  "testTargets" : [
     {
-      "target": {
-        "containerPath": "container:VivaDicta.xcodeproj",
-        "identifier": "18351E562E634FF000944940",
-        "name": "VivaDictaTests"
+      "target" : {
+        "containerPath" : "container:VivaDicta.xcodeproj",
+        "identifier" : "18351E562E634FF000944940",
+        "name" : "VivaDictaTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/Presets",
-        "identifier": "PresetsTests",
-        "name": "PresetsTests"
+      "target" : {
+        "containerPath" : "container:Modules\/Presets",
+        "identifier" : "PresetsTests",
+        "name" : "PresetsTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/OAuth",
-        "identifier": "OAuthTests",
-        "name": "OAuthTests"
+      "target" : {
+        "containerPath" : "container:Modules\/OAuth",
+        "identifier" : "OAuthTests",
+        "name" : "OAuthTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/CloudTranscription",
-        "identifier": "CloudTranscriptionTests",
-        "name": "CloudTranscriptionTests"
+      "target" : {
+        "containerPath" : "container:Modules\/CloudTranscription",
+        "identifier" : "CloudTranscriptionTests",
+        "name" : "CloudTranscriptionTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/TranscriptionKit",
-        "identifier": "TranscriptionKitTests",
-        "name": "TranscriptionKitTests"
+      "target" : {
+        "containerPath" : "container:Modules\/TranscriptionKit",
+        "identifier" : "TranscriptionKitTests",
+        "name" : "TranscriptionKitTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/TranscriptionCore",
-        "identifier": "TranscriptionCoreTests",
-        "name": "TranscriptionCoreTests"
+      "target" : {
+        "containerPath" : "container:Modules\/TranscriptionCore",
+        "identifier" : "TranscriptionCoreTests",
+        "name" : "TranscriptionCoreTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/TestUtilities",
-        "identifier": "TestUtilitiesTests",
-        "name": "TestUtilitiesTests"
+      "target" : {
+        "containerPath" : "container:Modules\/TestUtilities",
+        "identifier" : "TestUtilitiesTests",
+        "name" : "TestUtilitiesTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/Keychain",
-        "identifier": "KeychainTests",
-        "name": "KeychainTests"
+      "target" : {
+        "containerPath" : "container:Modules\/Keychain",
+        "identifier" : "KeychainTests",
+        "name" : "KeychainTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/Networking",
-        "identifier": "NetworkingTests",
-        "name": "NetworkingTests"
+      "target" : {
+        "containerPath" : "container:Modules\/Networking",
+        "identifier" : "NetworkingTests",
+        "name" : "NetworkingTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/LocalTranscription",
-        "identifier": "LocalTranscriptionTests",
-        "name": "LocalTranscriptionTests"
+      "target" : {
+        "containerPath" : "container:Modules\/LocalTranscription",
+        "identifier" : "LocalTranscriptionTests",
+        "name" : "LocalTranscriptionTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/AppGroup",
-        "identifier": "AppGroupTests",
-        "name": "AppGroupTests"
+      "target" : {
+        "containerPath" : "container:Modules\/AppGroup",
+        "identifier" : "AppGroupTests",
+        "name" : "AppGroupTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/AudioRecording",
-        "identifier": "AudioRecordingTests",
-        "name": "AudioRecordingTests"
+      "target" : {
+        "containerPath" : "container:Modules\/AudioRecording",
+        "identifier" : "AudioRecordingTests",
+        "name" : "AudioRecordingTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/AIKit",
-        "identifier": "AIKitTests",
-        "name": "AIKitTests"
+      "target" : {
+        "containerPath" : "container:Modules\/AIKit",
+        "identifier" : "AIKitTests",
+        "name" : "AIKitTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/AICore",
-        "identifier": "AICoreTests",
-        "name": "AICoreTests"
+      "target" : {
+        "containerPath" : "container:Modules\/AICore",
+        "identifier" : "AICoreTests",
+        "name" : "AICoreTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/AIProviders",
-        "identifier": "AIProvidersTests",
-        "name": "AIProvidersTests"
+      "target" : {
+        "containerPath" : "container:Modules\/AIProviders",
+        "identifier" : "AIProvidersTests",
+        "name" : "AIProvidersTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/TextProcessing",
-        "identifier": "TextProcessingTests",
-        "name": "TextProcessingTests"
+      "target" : {
+        "containerPath" : "container:Modules\/TextProcessing",
+        "identifier" : "TextProcessingTests",
+        "name" : "TextProcessingTests"
       }
     },
     {
-      "target": {
-        "containerPath": "container:Modules/Analytics",
-        "identifier": "AnalyticsTests",
-        "name": "AnalyticsTests"
+      "target" : {
+        "containerPath" : "container:Modules\/Analytics",
+        "identifier" : "AnalyticsTests",
+        "name" : "AnalyticsTests"
       }
     }
   ],
-  "version": 1
+  "version" : 1
 }
