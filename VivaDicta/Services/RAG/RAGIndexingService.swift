@@ -27,6 +27,15 @@ private struct RankedChunkCandidate {
     let semanticScore: Float
 }
 
+/// The note-search capability `SmartSearchChatViewModel` depends on.
+/// `RAGIndexingService` is the production conformance; tests inject a mock.
+/// Segregated to just `search` (Interface Segregation) so consumers do not
+/// depend on the full indexing surface.
+@MainActor
+protocol NoteSearchService {
+    func search(query: String, topK: Int) async throws -> [RAGSearchResult]
+}
+
 /// Manages the vector index for RAG-based Smart Search.
 ///
 /// Indexes transcription notes into a local vector database using LumoKit/VecturaKit.
@@ -34,7 +43,7 @@ private struct RankedChunkCandidate {
 /// and semantic search for the Smart Search chat feature.
 @Observable
 @MainActor
-final class RAGIndexingService {
+final class RAGIndexingService: NoteSearchService {
     static let shared = RAGIndexingService()
     private static let previewCharacterLimit = 180
     private static let maxLoggedChunksPerNote = 3
