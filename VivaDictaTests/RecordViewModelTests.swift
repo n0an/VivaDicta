@@ -86,12 +86,20 @@ struct RecordViewModelTests {
 
     // MARK: - transcribeSpeechTask flow
 
+    /// Note: the tail of the success path touches a few process-global singletons
+    /// that are NOT seamed (ClipboardManager, RecentNotesCache, FolderExportService,
+    /// RateAppManager, HapticManager). They are non-fatal and gated under test, so
+    /// this is tolerated for now - the next seam candidates if any turns flaky in CI.
     @MainActor
     private func makeSUT(
         transcriber: MockTranscriber,
         aiService: MockAIProcessingService = MockAIProcessingService(),
         appGroup: MockAppGroupBridge = MockAppGroupBridge()
     ) throws -> (sut: RecordViewModel, container: ModelContainer) {
+        // `saveNewTranscription` kicks off fire-and-forget RAGIndexingService vector
+        // indexing when SmartSearch is on (default), which would do real LumoKit I/O
+        // and leak work past the test. Disable it so the flow stays hermetic.
+        SmartSearchFeature.isEnabled = false
         let container = try ModelContainer(
             for: Transcription.self,
             configurations: .init(isStoredInMemoryOnly: true)
@@ -148,6 +156,7 @@ struct RecordViewModelTests {
         #expect(saved.count == 1)
         #expect(saved.first?.text == "hello world")
         #expect(saved.first?.enhancedText == "HELLO WORLD enhanced")
+        #expect(sut.recordingState == .idle) // flow ends idle
     }
 
     @MainActor
@@ -194,6 +203,12 @@ struct RecordViewModelTests {
         #expect(saved.first?.text == "kept transcript")
         #expect(saved.first?.enhancedText == nil)
         #expect(sut.isShowingAlert == true)
+        // The right alert is shown, and enhancement failure is non-fatal: the flow
+        // still ends idle rather than erroring out.
+        if case .aiEnhancement = sut.recordError {} else {
+            Issue.record("expected recordError == .aiEnhancement, got \(String(describing: sut.recordError))")
+        }
+        #expect(sut.recordingState == .idle)
     }
 
     @MainActor
