@@ -59,6 +59,7 @@ class AIService {
 
     private enum StreamingRoute {
         case apple
+        case localGemma
         case anthropic
         case copilot
         case geminiOAuth
@@ -755,6 +756,10 @@ class AIService {
                 logger.logWarning("No Ollama model selected")
                 return false
             }
+        } else if aiProvider == .localGemma {
+            // On-device Gemma (LiteRT) needs no API key; the model downloads on
+            // first use and the runtime enforces device memory limits at load.
+            // A model is always set for this provider, so it is ready to use.
         } else if aiProvider == .customOpenAI {
             // Custom OpenAI needs URL and model configured
             guard !customOpenAIEndpointURL.isEmpty else {
@@ -998,6 +1003,8 @@ class AIService {
         switch aiProvider {
         case .apple:
             return .apple
+        case .localGemma:
+            return .localGemma
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1103,6 +1110,11 @@ class AIService {
             } else {
                 throw EnhancementError.notConfigured
             }
+        case .localGemma:
+            logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
+            let provider = LiteRTGemmaTextProvider()
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
             logger.logDebug("AI Processing - Using Anthropic streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
@@ -1258,6 +1270,17 @@ class AIService {
             } else {
                 throw EnhancementError.notConfigured
             }
+        }
+
+        // Handle on-device Gemma (LiteRT) - same prompt as cloud providers
+        if aiProvider == .localGemma {
+            let sysMsg = systemMessage ?? getSystemMessage()
+            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+            lastSystemMessageSent = sysMsg
+            lastUserMessageSent = userMsg
+            logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
+            let result = try await LiteRTGemmaTextProvider().enhance(systemMessage: sysMsg, userMessage: userMsg)
+            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
         // Handle Ollama (local server)
@@ -1627,6 +1650,10 @@ class AIService {
 
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
+
+        // Add on-device Gemma (LiteRT) provider (always available; the model
+        // downloads on first use and the runtime enforces device memory limits)
+        providers.append(.localGemma)
 
         // Add Custom OpenAI provider if configured AND verified
         if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {
