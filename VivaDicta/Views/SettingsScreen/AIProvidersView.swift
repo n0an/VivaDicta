@@ -8,6 +8,7 @@
 import SwiftUI
 import AICore
 import AIProviders
+import DesignSystem
 
 private enum AIProviderType: String, CaseIterable, Identifiable {
     case local
@@ -20,6 +21,7 @@ struct AIProviders: View {
     @Environment(AppState.self) private var appState
     @State private var refreshID = UUID()
     @State private var providerType: AIProviderType = .local
+    @State private var gemmaModel = LiteRTGemmaModelViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,60 +37,21 @@ struct AIProviders: View {
                 HapticManager.selectionChanged()
             }
 
-            List {
-                if providerType == .local {
-            // On-Device Section (Apple Foundation Model)
-            if AppleFoundationModelAvailability.isAvailable {
-                Section {
-                    HStack(spacing: 12) {
-                        Image(systemName: "apple.logo")
-                            .font(.title2)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28, height: 28)
-
-                        Text(AIProvider.apple.displayName)
-
-                        Spacer()
-
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark.shield.fill")
-                                .foregroundStyle(.green.gradient)
-                            Text("Ready to use. Private & Free.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+            if providerType == .local {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        AppleProviderCard()
+                            .padding(.horizontal)
+                        GemmaVariantCard(variant: .e2b, model: gemmaModel)
+                            .padding(.horizontal)
+                        GemmaVariantCard(variant: .e4b, model: gemmaModel)
+                            .padding(.horizontal)
                     }
-                } header: {
-                    Text("On-Device")
-                } footer: {
-                    Text("Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or account required — it's completely free.")
+                    .padding(.vertical)
                 }
+                .background(Color(.systemGroupedBackground))
             } else {
-                AppleIntelligenceSetupSection()
-            }
-
-            // On-Device Open Model (Gemma via LiteRT)
-            Section {
-                NavigationLink {
-                    LiteRTGemmaModelView()
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "cpu")
-                            .font(.title2)
-                            .foregroundStyle(.primary)
-                            .frame(width: 28, height: 28)
-
-                        Text(AIProvider.localGemma.displayName)
-
-                        Spacer()
-                    }
-                }
-            } header: {
-                Text("On-Device - Open Model")
-            } footer: {
-                Text("Run Google's Gemma model on-device via LiteRT - private, offline, and free, with no API key. Downloads about 2.6 GB once. Tap to manage.")
-            }
-                } else {
+                List {
             // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
@@ -281,6 +244,9 @@ struct AIProviders: View {
             refreshID = UUID()
             appState.aiService.refreshConnectedProviders()
         }
+        .task {
+            await gemmaModel.refresh()
+        }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
         .navigationDestination(for: AIProvider.self) { provider in
@@ -309,106 +275,67 @@ struct AIProviders: View {
 
 // MARK: - Apple Intelligence Setup
 
-private struct AppleIntelligenceSetupSection: View {
-    private var status: AppleFoundationModelAvailability {
-        AppleFoundationModelAvailability.currentStatus
-    }
+/// Card-style row for Apple's on-device Foundation Model, matching the Gemma
+/// cards. Shows the privacy/free description inside the card. Hidden on devices
+/// that can't run Apple Intelligence at all.
+private struct AppleProviderCard: View {
+    private var status: AppleFoundationModelAvailability { AppleFoundationModelAvailability.currentStatus }
 
     private var shouldShow: Bool {
         switch status {
-        case .appleIntelligenceNotEnabled, .modelNotReady:
-            return true
-        case .available, .deviceNotEligible, .unavailable:
-            return false
-        }
-    }
-
-    private var isAIEnabled: Bool {
-        status == .modelNotReady
-    }
-
-    private var footerText: String {
-        if status == .modelNotReady {
-            return "Apple Intelligence is enabled but the Foundation Model is still downloading. It will be available shortly."
-        } else {
-            return "Go to Settings > Apple Intelligence & Siri to enable Apple Intelligence and use the free, private on-device Foundation Model."
+        case .available, .appleIntelligenceNotEnabled, .modelNotReady: true
+        case .deviceNotEligible, .unavailable: false
         }
     }
 
     var body: some View {
         if shouldShow {
-            Section {
-                HStack(spacing: 12) {
-                    Image(systemName: "apple.logo")
-                        .font(.title2)
-                        .foregroundStyle(.primary)
-                        .frame(width: 28, height: 28)
-
-                    Text(AIProvider.apple.displayName)
-
-                    Spacer()
-
-                    if status == .modelNotReady {
-                        HStack(spacing: 4) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Downloading...")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "apple.logo")
+                                .font(.title3)
+                            Text(AIProvider.apple.displayName)
+                                .font(.title3)
+                                .fontWeight(.semibold)
                         }
-                    } else {
-                        HStack(spacing: 4) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text("Setup Required")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+                        statusLabel
                     }
+                    Spacer()
                 }
 
-                AppleIntelligenceRequirementRow(
-                    icon: "iphone",
-                    text: "Compatible Apple device",
-                    isMet: true
-                )
-
-                AppleIntelligenceRequirementRow(
-                    icon: "gearshape",
-                    text: "iOS 26 or later",
-                    isMet: true
-                )
-
-                AppleIntelligenceRequirementRow(
-                    icon: "sparkles",
-                    text: "Apple Intelligence enabled in Settings",
-                    isMet: isAIEnabled
-                )
-            } header: {
-                Text("On-Device")
-            } footer: {
-                Text(footerText)
+                Text(descriptionText)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
+            .padding(20)
+            .modelCardBackground()
         }
     }
-}
 
-private struct AppleIntelligenceRequirementRow: View {
-    let icon: String
-    let text: String
-    let isMet: Bool
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundStyle(isMet ? .green : .secondary)
-                .frame(width: 24)
-            Text(text)
+    @ViewBuilder
+    private var statusLabel: some View {
+        switch status {
+        case .available:
+            Label("Ready to use. Private & Free.", systemImage: "checkmark.shield.fill")
                 .font(.subheadline)
-            Spacer()
-            Image(systemName: isMet ? "checkmark" : "xmark")
-                .font(.subheadline.bold())
-                .foregroundStyle(isMet ? .green : .red)
+                .foregroundStyle(.green)
+        default:
+            Label("Setup needed", systemImage: "gear")
+                .font(.subheadline)
+                .foregroundStyle(.orange)
+        }
+    }
+
+    private var descriptionText: String {
+        switch status {
+        case .available:
+            "Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or account required — it's completely free."
+        case .modelNotReady:
+            "Apple Intelligence is enabled but the Foundation Model is still downloading. It will be available shortly."
+        default:
+            "Go to Settings > Apple Intelligence & Siri to enable Apple Intelligence and use the free, private on-device Foundation Model."
         }
     }
 }

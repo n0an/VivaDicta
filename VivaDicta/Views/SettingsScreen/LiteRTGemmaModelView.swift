@@ -76,27 +76,9 @@ final class LiteRTGemmaModelViewModel {
     }
 }
 
-struct LiteRTGemmaModelView: View {
-    @State private var model = LiteRTGemmaModelViewModel()
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                ForEach(LiteRTGemmaVariant.allCases, id: \.self) { variant in
-                    GemmaVariantCard(variant: variant, model: model)
-                        .padding(.horizontal)
-                }
-            }
-            .padding(.vertical)
-        }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle("On-device Gemma")
-        .navigationBarTitleDisplayMode(.inline)
-        .task { await model.refresh() }
-    }
-}
-
-private struct GemmaVariantCard: View {
+/// One card per on-device Gemma variant (E2B/E4B), shown inline in the AI
+/// Providers "Local" tab. Styled like the Transcription Models cards.
+struct GemmaVariantCard: View {
     let variant: LiteRTGemmaVariant
     let model: LiteRTGemmaModelViewModel
 
@@ -201,8 +183,10 @@ private struct GemmaVariantCard: View {
 
 #if DEBUG
 #Preview {
-    NavigationStack {
-        LiteRTGemmaModelView()
+    VStack(spacing: 16) {
+        GemmaVariantCard(variant: .e2b, model: LiteRTGemmaModelViewModel())
+        GemmaVariantCard(variant: .e4b, model: LiteRTGemmaModelViewModel())
     }
+    .padding()
 }
 #endif
