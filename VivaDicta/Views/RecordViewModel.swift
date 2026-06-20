@@ -1031,11 +1031,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.logger.logInfo("📱 Starting recording from keyboard request")
 
                 // Reload the selected VivaMode from extension before starting
-                self.appState?.aiService.reloadSelectedModeFromExtension()
+                self.aiService.reloadSelectedModeFromExtension()
                 // Update TranscriptionManager with the reloaded mode
-                if let selectedMode = self.appState?.aiService.selectedMode {
-                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
-                }
+                self.transcriptionManager.setCurrentMode(self.aiService.selectedMode)
 
                 self.startCaptureAudio(sourceTag: SourceTag.keyboard)
             }
@@ -1049,11 +1047,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.logger.logInfo("📱 Stopping recording from keyboard request")
 
                 // Reload the selected VivaMode from extension before transcription
-                self.appState?.aiService.reloadSelectedModeFromExtension()
+                self.aiService.reloadSelectedModeFromExtension()
                 // Update TranscriptionManager with the reloaded mode
-                if let selectedMode = self.appState?.aiService.selectedMode {
-                    self.appState?.transcriptionManager.setCurrentMode(selectedMode)
-                }
+                self.transcriptionManager.setCurrentMode(self.aiService.selectedMode)
 
                 self.stopCaptureAudio(modelContext: modelContext)
             }
@@ -1114,7 +1110,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             guard let self = self else { return }
 
             self.logger.logInfo("📱 VivaMode changed from keyboard extension")
-            self.appState?.aiService.reloadSelectedModeFromExtension()
+            self.aiService.reloadSelectedModeFromExtension()
         }
 
         // Handle text processing request from keyboard (rewrite feature)
