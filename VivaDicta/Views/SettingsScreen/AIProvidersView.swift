@@ -45,6 +45,28 @@ struct AIProviders: View {
                 AppleIntelligenceSetupSection()
             }
 
+            // On-Device Open Model (Gemma via LiteRT)
+            Section {
+                NavigationLink {
+                    LiteRTGemmaModelView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "cpu")
+                            .font(.title2)
+                            .foregroundStyle(.primary)
+                            .frame(width: 28, height: 28)
+
+                        Text(AIProvider.localGemma.displayName)
+
+                        Spacer()
+                    }
+                }
+            } header: {
+                Text("On-Device - Open Model")
+            } footer: {
+                Text("Run Google's Gemma model on-device via LiteRT - private, offline, and free, with no API key. Downloads about 2.6 GB once. Tap to manage.")
+            }
+
             // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in

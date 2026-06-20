@@ -97,6 +97,47 @@ actor LiteRTModelManager {
         logger.logInfo("LiteRT Gemma model unloaded")
     }
 
+    /// Whether the model file has already been downloaded to on-disk cache
+    /// (independent of whether it is currently loaded into memory).
+    var isDownloaded: Bool {
+        #if canImport(LiteRTFoundation)
+        guard let dir = try? LiteRTChat.defaultStorageDirectory() else { return false }
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
+        return files.contains { $0.hasSuffix(".litertlm") }
+        #else
+        return false
+        #endif
+    }
+
+    /// Approximate on-disk size of the downloaded model in bytes (0 if absent).
+    var downloadedBytes: Int64 {
+        #if canImport(LiteRTFoundation)
+        guard let dir = try? LiteRTChat.defaultStorageDirectory(),
+              let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else {
+            return 0
+        }
+        return files.reduce(0) { total, url in
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            return total + Int64(size)
+        }
+        #else
+        return 0
+        #endif
+    }
+
+    /// Unload the model and delete its on-disk cache, reclaiming the ~2.6 GB.
+    /// The next `ensureLoaded()` re-downloads.
+    func deleteModel() throws {
+        unload()
+        #if canImport(LiteRTFoundation)
+        let dir = try LiteRTChat.defaultStorageDirectory()
+        if FileManager.default.fileExists(atPath: dir.path) {
+            try FileManager.default.removeItem(at: dir)
+            logger.logInfo("LiteRT Gemma model deleted from disk")
+        }
+        #endif
+    }
+
     /// Current process memory footprint in MB (phys_footprint), for diagnostics.
     nonisolated static func memoryFootprintMB() -> Double {
         #if canImport(LiteRTFoundation)
