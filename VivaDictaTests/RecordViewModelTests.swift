@@ -171,4 +171,46 @@ struct RecordViewModelTests {
         #expect(saved.first?.text == "just a note")
         #expect(saved.first?.enhancedText == nil)
     }
+
+    private enum FlowTestError: Error { case boom }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenEnhancementFails_persistsTranscriptAndAlerts() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "kept transcript")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = true
+        ai.stubEnhanceResult = .failure(FlowTestError.boom)
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(ai.enhanceCallCount == 1)
+        // Enhancement failed, but the transcript is still saved (text only) and the
+        // user is alerted.
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        #expect(saved.first?.text == "kept transcript")
+        #expect(saved.first?.enhancedText == nil)
+        #expect(sut.isShowingAlert == true)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptHasNoMeaningfulContent_doesNotPersist() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "   ")
+        let ai = MockAIProcessingService()
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(transcriber.transcribeCallCount == 1)
+        #expect(ai.enhanceCallCount == 0) // skipped - no meaningful content
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.isEmpty)
+        #expect(sut.recordingState == .idle)
+        #expect(appGroup.transcriptionStatuses.contains(.idle))
+    }
 }
