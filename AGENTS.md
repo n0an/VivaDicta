@@ -26,6 +26,47 @@ Canonical custom skills live in `.agents/skills/` as directories containing `SKI
 - Run tests: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' test 2>&1 | xcsift`
 - Run single test: `xcodebuild -scheme VivaDicta -configuration Debug -workspace ./VivaDicta.xcodeproj/project.xcworkspace -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' test -only-testing:VivaDictaTests/TestClassName/testMethodName 2>&1 | xcsift`
 
+## Test Coverage
+
+**Coverage is a runtime metric — you MUST run the tests to get it.** It measures which executable lines were actually *executed*, so it cannot be derived by reading the codebase. Do not confuse it with the test/prod **LOC ratio** (`test_loc ÷ prod_loc`), which is a static line count (a proxy for test *effort*, not *effectiveness*) — that one you compute without running anything via `python3 llmtemp/loc_history.py`.
+
+### Per SPM module (fast — runs on the macOS host, no simulator)
+
+```bash
+cd Modules/<Module>
+xcrun swift test --enable-code-coverage
+BIN=$(find .build -name "<Module>PackageTests" -type f -path "*MacOS*" | head -1)
+PROF=$(find .build -name "default.profdata" | head -1)
+xcrun llvm-cov report "$BIN" -instr-profile="$PROF" -ignore-filename-regex='Tests|\.build|Mocks' Sources/<Module>/
+# one file: end with Sources/<Module>/<File>.swift instead of the dir
+# annotated source (which lines are uncovered): swap `report` -> `show --format=text`
+```
+
+`llvm-cov` needs both halves: the **test binary** (carries the counter→source-line mapping) and **`default.profdata`** (the runtime hit counts SPM merges under `.build/<arch>/debug/codecov/`).
+
+Caveat: the macOS-host run **excludes iOS-only files**, so a module's total differs slightly from Xcode's simulator number (e.g. CloudTranscription reads ~2,231 lines here vs ~3,073 in Xcode). Use it for *relative* per-file progress; treat Xcode/`xccov` as the canonical total. After a toolchain bump, `rm -rf .build` once (stale `.swiftmodule` import error).
+
+### Whole app / test plan (slow — simulator, canonical number)
+
+```bash
+xcodebuild test -scheme VivaDicta \
+  -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
+  -enableCodeCoverage YES -resultBundlePath /tmp/cov.xcresult
+xcrun xccov view --report --only-targets /tmp/cov.xcresult   # one row per target
+# variants: drop --only-targets for per-file; add --json for machine-readable; `--file <abs path>` for one file
+```
+
+`xccov` reads the `.xcresult` bundle directly (it finds the binaries + profile inside), so you don't pass them by hand. It respects the test plan's coverage-target list.
+
+### Test plan coverage config — keep it first-party-only
+
+`VivaDicta/VivaDictaTestPlan.xctestplan` must pin `defaultOptions.codeCoverage` to an explicit **`targets` list of only first-party targets** (the 16 SPM modules + `VivaDicta` app + the 4 extensions = 21 targets). **If that key is absent, Xcode gathers coverage for ALL targets** — Firebase / Google / GUL\* / KeyboardKit / LumoKit / Transformers get swept in and the headline % is meaningless (e.g. FirebaseCrashlytics alone is ~10,653 lines). Exclude all `*Mocks` and `*Tests` targets too — only production targets belong in the list. The file is JSON; validate edits with `python3 -c "import json; json.load(open('VivaDicta/VivaDictaTestPlan.xctestplan'))"` (`plutil -lint` rejects the `.xctestplan` extension even when the JSON is valid).
+
+### Whole-number reality
+
+The overall app coverage is dominated by the **~73k-line `VivaDicta.app` target (~7%)**, so module-level test work barely moves the global %. Judge progress by **per-logic-module coverage**, not the headline number. UI/Views are covered by acceptance + snapshot tests, never unit line-coverage.
+
 ## App Overview
 
 VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet) and cloud transcription, AI text processing via multiple providers, and CloudKit sync with a companion macOS app (VivaDictaMac).
