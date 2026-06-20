@@ -9,12 +9,34 @@ import SwiftUI
 import AICore
 import AIProviders
 
+private enum AIProviderType: String, CaseIterable, Identifiable {
+    case local
+    case cloud
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct AIProviders: View {
     @Environment(AppState.self) private var appState
     @State private var refreshID = UUID()
+    @State private var providerType: AIProviderType = .local
 
     var body: some View {
-        List {
+        VStack(spacing: 0) {
+            Picker("Provider type", selection: $providerType) {
+                ForEach(AIProviderType.allCases) { type in
+                    Text(type.title).tag(type)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .onChange(of: providerType) { _, _ in
+                HapticManager.selectionChanged()
+            }
+
+            List {
+                if providerType == .local {
             // On-Device Section (Apple Foundation Model)
             if AppleFoundationModelAvailability.isAvailable {
                 Section {
@@ -66,7 +88,7 @@ struct AIProviders: View {
             } footer: {
                 Text("Run Google's Gemma model on-device via LiteRT - private, offline, and free, with no API key. Downloads about 2.6 GB once. Tap to manage.")
             }
-
+                } else {
             // Cloud Section
             Section("Cloud") {
                 ForEach(AIProvider.cloudProviders) { provider in
@@ -250,6 +272,8 @@ struct AIProviders: View {
                 Text("Server")
             } footer: {
                 Text("Route AI processing through CLI agents (Anthropic, Codex, Gemini) running on your Mac or remote server. Uses your existing accounts — no API keys needed.")
+            }
+                }
             }
         }
         .id(refreshID)
