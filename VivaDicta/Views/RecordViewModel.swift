@@ -94,7 +94,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var modelContext: ModelContext
 
     public let transcriptionManager: TranscriptionManager
-    public let aiService: AIService
+    public let aiService: any AIProcessingService
 
     var selectedModeName: String {
         get { aiService.selectedModeName }
@@ -109,7 +109,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         appState: AppState,
         modelContainer: ModelContainer,
         transcriptionManager: TranscriptionManager? = nil,
-        aiService: AIService? = nil,
+        aiService: (any AIProcessingService)? = nil,
         audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
         audioFileService: AudioFileService = DefaultAudioFileService()
     ) {
@@ -970,7 +970,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         let extractionMode = aiService.selectedMode
-        let extractionService = ReminderExtractionService(aiService: aiService)
+        // Reminder extraction needs the full AIService (provider config + auth),
+        // a wider surface than AIProcessingService - route it through the concrete
+        // service on appState rather than the narrowed seam.
+        guard let appState else { return }
+        let extractionService = ReminderExtractionService(aiService: appState.aiService)
         guard extractionService.canExtractReminders(using: extractionMode) else {
             logger.logDebug("Reminder extraction - Auto extraction skipped because no extractor is available for mode \(extractionMode.name)")
             return
@@ -1138,22 +1142,24 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
         AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
 
-        // Temporarily switch to the requested mode, then restore
-        let previousMode = appState.aiService.selectedMode
-        let requestedMode = appState.aiService.getMode(name: pending.modeName)
-        appState.aiService.selectedMode = requestedMode
+        // Temporarily switch to the requested mode, then restore.
+        // Uses the injected `aiService` (== appState.aiService) so the AI surface
+        // is reached through one mockable seam.
+        let previousMode = aiService.selectedMode
+        let requestedMode = aiService.getMode(name: pending.modeName)
+        aiService.selectedMode = requestedMode
 
         Task {
-            defer { appState.aiService.selectedMode = previousMode }
+            defer { aiService.selectedMode = previousMode }
             do {
                 let result: String
                 // If a preset ID is specified, use generateVariation with that preset
                 if let presetId = pending.presetId,
-                   let preset = appState.aiService.presetManager?.preset(for: presetId) {
-                    let (text, _) = try await appState.aiService.generateVariation(text: pending.text, preset: preset)
+                   let preset = aiService.presetManager?.preset(for: presetId) {
+                    let (text, _) = try await aiService.generateVariation(text: pending.text, preset: preset)
                     result = text
                 } else {
-                    let (text, _, _) = try await appState.aiService.enhance(pending.text)
+                    let (text, _, _) = try await aiService.enhance(pending.text)
                     result = text
                 }
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")
