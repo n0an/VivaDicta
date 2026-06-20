@@ -58,7 +58,13 @@ actor LiteRTModelManager {
         }
         state = .loading
         do {
-            let loaded = try await LiteRTChat(.gemma4_E2B) { progress in
+            // Low temperature: on-device Gemma does extractive text cleanup. The
+            // SDK default (0.8) ran hot enough for this small (2B) model to
+            // occasionally bleed prompt artifacts into output - e.g. injecting a
+            // spurious "Speaker A:" prefix from the prompt's speaker-label rule.
+            // 0.3 mirrors Apple FM's "balanced" profile and is far steadier.
+            let sampler = try SamplerConfig(topK: 40, topP: 0.95, temperature: 0.3)
+            let loaded = try await LiteRTChat(.gemma4_E2B, sampler: sampler) { progress in
                 onDownloadProgress?(progress.fraction)
             }
             chat = loaded
