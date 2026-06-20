@@ -9,27 +9,13 @@
 //  memory, latency, tokens/sec, and output quality on a real device before
 //  any production provider work. See llmtemp/litert-gemma-integration-plan.md.
 //
-//  All LiteRT-LM calls are isolated behind `#if canImport(LiteRTFoundation)`
-//  so the app compiles before the SPM package is added.
-//
-//  Add the package via Xcode (File > Add Package Dependencies) pointing at the
-//  fork https://github.com/n0an/swift-litert-lm (branch: main), NOT upstream.
-//  The fork excludes the FM-mode folder, which references iOS-27-SDK-only
-//  Foundation Models types and otherwise fails to build on Xcode 26. Select the
-//  LiteRTFoundation product for the VivaDicta target and run on a physical device.
-//
-//  API verified against n0an/swift-litert-lm @ main:
-//  LiteRTChat(_:onDownloadProgress:), ModelDownloader.Progress.fraction,
-//  LiteRTModel.gemma4_E2B, LiteRTChat.stream(_:) -> AsyncThrowingStream<String, Error>.
+//  Drives the shared `LiteRTModelManager` (the production engine layer) so the
+//  spike measures the real code path rather than a parallel implementation.
+//  Physical device only - the Simulator has no Metal GPU and falls back to CPU.
 //
 
 import Foundation
-import Darwin
 import os
-
-#if canImport(LiteRTFoundation)
-import LiteRTFoundation
-#endif
 
 /// Fixed sample transcripts for repeatable spike runs across languages.
 enum LiteRTSpikeSamples {
@@ -126,10 +112,6 @@ final class LiteRTSpikeModel {
         }
     }
 
-    #if canImport(LiteRTFoundation)
-    private var chat: LiteRTChat?
-    #endif
-
     /// Combined system + user prompt, mirroring the real enhancement pipeline:
     /// `PromptsTemplates.systemPrompt(with:)` as instructions, transcript wrapped
     /// in <TRANSCRIPT> tags as the user message.
@@ -140,55 +122,44 @@ final class LiteRTSpikeModel {
     }
 
     func loadModel() async {
-        #if canImport(LiteRTFoundation)
-        guard chat == nil else { return }
-        metrics.baselineFootprintMB = currentFootprintMB()
+        metrics.baselineFootprintMB = LiteRTModelManager.memoryFootprintMB()
         let started = Date()
         phase = .downloading(0)
         do {
-            // VERIFY against SDK: init case, progress closure, progress.fraction.
-            let loaded = try await LiteRTChat(.gemma4_E2B) { [weak self] progress in
+            try await LiteRTModelManager.shared.ensureLoaded { [weak self] fraction in
                 Task { @MainActor in
                     guard let self else { return }
-                    if progress.fraction >= 1.0 {
-                        self.phase = .compiling
-                    } else {
-                        self.phase = .downloading(progress.fraction)
-                    }
+                    self.phase = fraction >= 1.0 ? .compiling : .downloading(fraction)
                 }
             }
-            chat = loaded
             metrics.loadSeconds = Date().timeIntervalSince(started)
+            metrics.peakFootprintMB = max(metrics.peakFootprintMB, LiteRTModelManager.memoryFootprintMB())
             phase = .ready
-            logger.log("LiteRT Gemma loaded in \(self.metrics.loadSeconds, format: .fixed(precision: 1))s")
+            logger.logInfo("LiteRT Gemma loaded in \(metrics.loadSeconds.formatted(.number.precision(.fractionLength(1))))s")
         } catch {
             phase = .failed(error.localizedDescription)
-            logger.error("LiteRT load failed: \(error.localizedDescription, privacy: .public)")
+            logger.logError("LiteRT load failed: \(error.localizedDescription)")
         }
-        #else
-        phase = .failed("LiteRTFoundation package not installed. Add swift-litert-lm via Xcode.")
-        #endif
     }
 
     func run() async {
-        #if canImport(LiteRTFoundation)
-        guard let chat else {
+        guard isModelLoaded else {
             phase = .failed("Load the model first.")
             return
         }
         output = ""
         phase = .generating
         var chunks = 0
-        var peak = currentFootprintMB()
+        var peak = LiteRTModelManager.memoryFootprintMB()
         let started = Date()
         var firstChunkAt: Date?
         do {
-            // VERIFY against SDK: stream(_:) signature and element type.
-            for try await piece in chat.stream(resolvedPrompt) {
+            let stream = try await LiteRTModelManager.shared.stream(prompt: resolvedPrompt)
+            for try await piece in stream {
                 if firstChunkAt == nil { firstChunkAt = Date() }
                 output += piece
                 chunks += 1
-                peak = max(peak, currentFootprintMB())
+                peak = max(peak, LiteRTModelManager.memoryFootprintMB())
             }
             let ended = Date()
             let firstAt = firstChunkAt ?? ended
@@ -196,38 +167,19 @@ final class LiteRTSpikeModel {
             metrics.firstTokenSeconds = firstAt.timeIntervalSince(started)
             metrics.emittedChunks = chunks
             metrics.decodeTokensPerSecond = decodeWindow > 0 ? Double(chunks) / decodeWindow : 0
-            metrics.peakFootprintMB = peak
+            metrics.peakFootprintMB = max(metrics.peakFootprintMB, peak)
             phase = .ready
-            logger.log("LiteRT run: \(chunks) chunks, \(self.metrics.decodeTokensPerSecond, format: .fixed(precision: 1)) chunk/s, peak \(Int(peak)) MB")
+            logger.logInfo("LiteRT run: \(chunks) chunks, peak \(Int(peak)) MB")
         } catch {
             phase = .failed(error.localizedDescription)
-            logger.error("LiteRT run failed: \(error.localizedDescription, privacy: .public)")
+            logger.logError("LiteRT run failed: \(error.localizedDescription)")
         }
-        #else
-        phase = .failed("LiteRTFoundation package not installed.")
-        #endif
     }
 
     func unload() {
-        #if canImport(LiteRTFoundation)
-        chat = nil
-        #endif
+        Task { await LiteRTModelManager.shared.unload() }
         phase = .idle
         output = ""
         metrics = Metrics()
     }
-}
-
-/// App memory footprint in MB via `phys_footprint` (the jetsam-relevant metric).
-@MainActor
-private func currentFootprintMB() -> Double {
-    var info = task_vm_info_data_t()
-    var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
-    let result = withUnsafeMutablePointer(to: &info) { pointer in
-        pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { reboundPointer in
-            task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), reboundPointer, &count)
-        }
-    }
-    guard result == KERN_SUCCESS else { return 0 }
-    return Double(info.phys_footprint) / 1_048_576.0
 }
