@@ -86,6 +86,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private let audioRecordingService: AudioRecordingService
     private let audioFileService: AudioFileService
     private let prewarmManager: any AudioPrewarmer
+    private let appGroupCoordinator: any AppGroupBridge
     private let logger = Logger(category: .recordViewModel)
 
     var animationTimer: Timer?
@@ -112,7 +113,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         aiService: (any AIProcessingService)? = nil,
         audioRecordingService: AudioRecordingService = DefaultAudioRecordingService(),
         audioFileService: AudioFileService = DefaultAudioFileService(),
-        prewarmManager: any AudioPrewarmer = AudioPrewarmManager.shared
+        prewarmManager: any AudioPrewarmer = AudioPrewarmManager.shared,
+        appGroupCoordinator: any AppGroupBridge = AppGroupCoordinator.shared
     ) {
         self.appState = appState
         self.transcriptionManager = transcriptionManager ?? appState.transcriptionManager
@@ -121,6 +123,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         self.audioRecordingService = audioRecordingService
         self.audioFileService = audioFileService
         self.prewarmManager = prewarmManager
+        self.appGroupCoordinator = appGroupCoordinator
         super.init()
         self.audioRecordingService.onDidFinishUnsuccessfully = { [weak self] in
             guard let self else { return }
@@ -152,7 +155,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     var recordingState: RecordingState = .idle {
         didSet {
             logger.logInfo("📱 Recording state changed: \(String(describing: self.recordingState))")
-            // Recording state is shared with keyboard extension via AppGroupCoordinator.shared.updateRecordingState()
+            // Recording state is shared with keyboard extension via appGroupCoordinator.updateRecordingState()
             // which is called in startCaptureAudio(), stopCaptureAudio(), and cancelTranscribe()
         }
     }
@@ -221,7 +224,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started
-                AppGroupCoordinator.shared.updateRecordingState(true)
+                appGroupCoordinator.updateRecordingState(true)
 
                 do {
                     // Use prewarm manager's AVAudioEngine for recording
@@ -236,7 +239,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                             guard let self = self else { return }
                             let level = Double(self.prewarmManager.currentAudioLevel)
                             self.audioPower = level
-                            AppGroupCoordinator.shared.updateAudioLevel(level)
+                            self.appGroupCoordinator.updateAudioLevel(level)
                         }
                     })
 
@@ -266,7 +269,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 HapticManager.mediumImpact()
 
                 // Notify keyboard that recording has started (even in normal mode)
-                AppGroupCoordinator.shared.updateRecordingState(true)
+                appGroupCoordinator.updateRecordingState(true)
 
                 do {
                     let settings: [String : Any] = [
@@ -289,7 +292,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                             let rawPower = Double(self.audioRecordingService.currentAudioPower)
                             let power = min(1, max(0, 1 - abs(rawPower / 50)))
                             self.audioPower = power
-                            AppGroupCoordinator.shared.updateAudioLevel(power)
+                            self.appGroupCoordinator.updateAudioLevel(power)
                         }
                     })
 
@@ -325,7 +328,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 resetValues()
 
                 // Notify keyboard that recording has stopped
-                AppGroupCoordinator.shared.updateRecordingState(false)
+                appGroupCoordinator.updateRecordingState(false)
 
                 let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
                 do {
@@ -345,7 +348,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             resetValues()
 
             // Notify keyboard that recording has stopped
-            AppGroupCoordinator.shared.updateRecordingState(false)
+            appGroupCoordinator.updateRecordingState(false)
 
             let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
             do {
@@ -384,7 +387,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.transcriptionProgress = nil
 
                 // Notify keyboard that transcription has started
-                AppGroupCoordinator.shared.updateTranscriptionStatus(.transcribing)
+                appGroupCoordinator.updateTranscriptionStatus(.transcribing)
 
                 var audioURLToTranscribe = recordURL
 
@@ -452,8 +455,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     resetValues()
                     aiService.clearCapturedClipboard()
                     recordingState = .idle
-                    AppGroupCoordinator.shared.updateRecordingState(false)
-                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    appGroupCoordinator.updateRecordingState(false)
+                    appGroupCoordinator.updateTranscriptionStatus(.idle)
                     return
                 }
 
@@ -490,7 +493,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     HapticManager.lightImpact()
 
                     // Notify keyboard that AI processing has started
-                    AppGroupCoordinator.shared.updateTranscriptionStatus(.enhancing)
+                    appGroupCoordinator.updateTranscriptionStatus(.enhancing)
 
                     do {
                         let (enhanced, enhancementDuration, prompt) = try await aiService.enhance(transcribedText)
@@ -576,7 +579,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     mode: aiService.selectedMode
                 )
 
-                AppGroupCoordinator.shared.shareTranscribedText(textToShare)
+                appGroupCoordinator.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
                 RecentNotesCache.addNote(
@@ -606,7 +609,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 resetValues()
 
                 // Notify keyboard of error
-                AppGroupCoordinator.shared.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+                appGroupCoordinator.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
 
                 // Reschedule session timeout even on error
                 self.prewarmManager.rescheduleSessionTimeout()
@@ -628,7 +631,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 if let audioPlayer = self?.audioPlayer {
                     let power = min(1, max(0, 1 - abs(Double(audioPlayer.averagePower(forChannel: 0)) / 160) ))
                     self?.audioPower = power
-                    AppGroupCoordinator.shared.updateAudioLevel(power)
+                    self?.appGroupCoordinator.updateAudioLevel(power)
                 }
             }
         })
@@ -655,8 +658,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         recordingState = .idle
 
         // Notify keyboard that recording was canceled
-        AppGroupCoordinator.shared.updateRecordingState(false)
-        AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+        appGroupCoordinator.updateRecordingState(false)
+        appGroupCoordinator.updateTranscriptionStatus(.idle)
 
         // Reschedule session timeout after cancellation
         prewarmManager.rescheduleSessionTimeout()
@@ -692,8 +695,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     logger.logInfo("📱 Pending transcription contains no meaningful content, skipping save")
                     resetValues()
                     recordingState = .idle
-                    AppGroupCoordinator.shared.updateRecordingState(false)
-                    AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+                    appGroupCoordinator.updateRecordingState(false)
+                    appGroupCoordinator.updateTranscriptionStatus(.idle)
                     return
                 }
 
@@ -755,7 +758,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     )
 
                     // Share with keyboard
-                    AppGroupCoordinator.shared.shareTranscribedText(pending.text)
+                    appGroupCoordinator.shareTranscribedText(pending.text)
 
                     // Cache for keyboard "Recent Notes" feature
                     RecentNotesCache.addNote(
@@ -776,8 +779,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             recordingState = .idle
 
             // Notify keyboard
-            AppGroupCoordinator.shared.updateRecordingState(false)
-            AppGroupCoordinator.shared.updateTranscriptionStatus(.idle)
+            appGroupCoordinator.updateRecordingState(false)
+            appGroupCoordinator.updateTranscriptionStatus(.idle)
 
             // Reschedule session timeout after cancellation
             prewarmManager.rescheduleSessionTimeout()
@@ -822,7 +825,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
         if sourceTag == SourceTag.keyboard {
             logger.logInfo("📱 Obsidian: delegating to keyboard \(output.url.absoluteString)")
-            AppGroupCoordinator.shared.setPendingObsidianHandoff(url: output.url, clipboardText: output.clipboardText)
+            appGroupCoordinator.setPendingObsidianHandoff(url: output.url, clipboardText: output.clipboardText)
         } else {
             logger.logInfo("📱 Obsidian: opening directly \(output.url.absoluteString)")
             ClipboardManager.copyToClipboard(output.clipboardText)
@@ -1001,7 +1004,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     func resetValues() {
         audioPower = 0
         transcriptionProgress = nil
-        AppGroupCoordinator.shared.updateAudioLevel(0)
+        appGroupCoordinator.updateAudioLevel(0)
 
         _ = audioRecordingService.stopRecording()
 
@@ -1023,7 +1026,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
     private func setupKeyboardRecordingHandlers() {
         // Handle start recording request from keyboard
-        AppGroupCoordinator.shared.onStartRecordingRequested = { [weak self] in
+        appGroupCoordinator.onStartRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             // Only start if prewarm session is active and not already recording
@@ -1040,7 +1043,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle stop recording request from keyboard
-        AppGroupCoordinator.shared.onStopRecordingRequested = { [weak self] in
+        appGroupCoordinator.onStopRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1056,7 +1059,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle cancel recording request from keyboard
-        AppGroupCoordinator.shared.onCancelRecordingRequested = { [weak self] in
+        appGroupCoordinator.onCancelRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             switch self.recordingState {
@@ -1075,7 +1078,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle pause recording request from keyboard
-        AppGroupCoordinator.shared.onPauseRecordingRequested = { [weak self] in
+        appGroupCoordinator.onPauseRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1085,7 +1088,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle resume recording request from keyboard
-        AppGroupCoordinator.shared.onResumeRecordingRequested = { [weak self] in
+        appGroupCoordinator.onResumeRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
             if self.recordingState == .recording {
@@ -1095,7 +1098,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle start recording request from Control Center
-        AppGroupCoordinator.shared.onStartRecordingFromControl = { [weak self] in
+        appGroupCoordinator.onStartRecordingFromControl = { [weak self] in
             guard let self = self else { return }
 
             self.logger.logInfo("📱 Starting recording from Control Center request")
@@ -1106,7 +1109,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle VivaMode change from keyboard extension
-        AppGroupCoordinator.shared.onVivaModeChanged = { [weak self] in
+        appGroupCoordinator.onVivaModeChanged = { [weak self] in
             guard let self = self else { return }
 
             self.logger.logInfo("📱 VivaMode changed from keyboard extension")
@@ -1114,7 +1117,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
 
         // Handle text processing request from keyboard (rewrite feature)
-        AppGroupCoordinator.shared.onTextProcessingRequested = { [weak self] in
+        appGroupCoordinator.onTextProcessingRequested = { [weak self] in
             guard let self = self else { return }
             self.handleKeyboardTextProcessingRequest()
         }
@@ -1123,14 +1126,14 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     // MARK: - Keyboard Text Processing
 
     private func handleKeyboardTextProcessingRequest() {
-        guard let pending = AppGroupCoordinator.shared.getAndConsumePendingTextProcessing() else {
+        guard let pending = appGroupCoordinator.getAndConsumePendingTextProcessing() else {
             logger.logError("📝 Text processing requested but no pending data found")
-            AppGroupCoordinator.shared.shareTextProcessingError("No text to process")
+            appGroupCoordinator.shareTextProcessingError("No text to process")
             return
         }
 
         guard let appState else {
-            AppGroupCoordinator.shared.shareTextProcessingError("App not ready")
+            appGroupCoordinator.shareTextProcessingError("App not ready")
             return
         }
 
@@ -1138,7 +1141,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
         // Extend session while processing (same pattern as recording flow)
         let timeoutSeconds = prewarmManager.audioSessionTimeout
-        AppGroupCoordinator.shared.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
+        appGroupCoordinator.refreshKeyboardSessionExpiry(timeoutSeconds: timeoutSeconds)
 
         // Temporarily switch to the requested mode, then restore.
         // Uses the injected `aiService` (== appState.aiService) so the AI surface
@@ -1163,13 +1166,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 logger.logInfo("📝 Text processing completed, result length: \(result.count)")
                 if result.isEmpty {
                     logger.logError("📝 Text processing returned empty result")
-                    AppGroupCoordinator.shared.shareTextProcessingError("AI returned empty result")
+                    appGroupCoordinator.shareTextProcessingError("AI returned empty result")
                 } else {
-                    AppGroupCoordinator.shared.shareTextProcessingResult(result)
+                    appGroupCoordinator.shareTextProcessingResult(result)
                 }
             } catch {
                 logger.logError("📝 Text processing failed: \(error.localizedDescription)")
-                AppGroupCoordinator.shared.shareTextProcessingError(error.localizedDescription)
+                appGroupCoordinator.shareTextProcessingError(error.localizedDescription)
             }
         }
     }
