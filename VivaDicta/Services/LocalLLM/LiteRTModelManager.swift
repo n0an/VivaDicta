@@ -21,6 +21,66 @@ import os
 import LiteRTFoundation
 #endif
 
+/// The on-device Gemma variants the app can run. Raw values match the
+/// `AIProvider.localGemma` model identifiers (`AIProvider.availableModels`).
+nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
+    case e2b = "gemma-4-E2B"
+    case e4b = "gemma-4-E4B"
+
+    init(modelID: String) {
+        self = LiteRTGemmaVariant(rawValue: modelID) ?? .e2b
+    }
+
+    var displayName: String {
+        switch self {
+        case .e2b: "Gemma 4 E2B"
+        case .e4b: "Gemma 4 E4B"
+        }
+    }
+
+    /// Short description of what the variant is good for, for settings UI.
+    var subtitle: String {
+        switch self {
+        case .e2b: "Smaller and faster. Runs on 8 GB-class devices."
+        case .e4b: "Larger and higher quality. Needs a 12 GB-class device."
+        }
+    }
+
+    /// Approximate download size, shown before downloading.
+    var approxDownloadDescription: String {
+        switch self {
+        case .e2b: "~2.6 GB"
+        case .e4b: "~4.4 GB"
+        }
+    }
+
+    /// On-disk filename the SDK caches the `.litertlm` under.
+    var fileName: String {
+        switch self {
+        case .e2b: "gemma-4-E2B-it.litertlm"
+        case .e4b: "gemma-4-E4B-it.litertlm"
+        }
+    }
+
+    /// HuggingFace repo for variants loaded outside the SDK catalog (E4B).
+    var huggingFaceRepo: String {
+        switch self {
+        case .e2b: "litert-community/gemma-4-E2B-it-litert-lm"
+        case .e4b: "litert-community/gemma-4-E4B-it-litert-lm"
+        }
+    }
+
+    /// Minimum device RAM to attempt loading. E2B targets 8 GB-class devices
+    /// (the SDK catalog enforces its own floor); E4B is far larger and only
+    /// sensible on 12 GB-class devices, so we gate it to avoid jetsam.
+    var minimumDeviceRAM: Int64 {
+        switch self {
+        case .e2b: 7_000_000_000
+        case .e4b: 11_000_000_000
+        }
+    }
+}
+
 actor LiteRTModelManager {
     static let shared = LiteRTModelManager()
 
@@ -38,6 +98,9 @@ actor LiteRTModelManager {
     private var chat: LiteRTChat?
     #endif
 
+    /// The variant currently loaded into memory (nil when unloaded).
+    private(set) var loadedVariant: LiteRTGemmaVariant?
+
     /// Guards against overlapping generations: a single shared engine/conversation
     /// cannot serve two streams at once (the second's reset would swap the
     /// conversation mid-flight). One generation runs at a time.
@@ -47,32 +110,55 @@ actor LiteRTModelManager {
 
     var isReady: Bool { state == .ready }
 
-    /// Download (first launch only) and load the model. Idempotent - returns
-    /// immediately when already loaded.
-    /// - Parameter onDownloadProgress: 0...1 fraction during the first-launch download.
-    func ensureLoaded(onDownloadProgress: (@Sendable (Double) -> Void)? = nil) async throws {
+    /// Download (first launch only) and load the requested variant. Idempotent
+    /// for the same variant; loading a different variant unloads the previous one
+    /// (only one fits in memory at a time).
+    /// - Parameters:
+    ///   - variant: which Gemma model to load (E2B or E4B).
+    ///   - onDownloadProgress: 0...1 fraction during the first-launch download.
+    func ensureLoaded(variant: LiteRTGemmaVariant = .e2b, onDownloadProgress: (@Sendable (Double) -> Void)? = nil) async throws {
         #if canImport(LiteRTFoundation)
-        if chat != nil {
+        if chat != nil, loadedVariant == variant {
             state = .ready
             return
         }
+        // Switching variants: drop the previously-loaded model first.
+        chat = nil
+        loadedVariant = nil
         state = .loading
         do {
             // Low temperature: on-device Gemma does extractive text cleanup. The
-            // SDK default (0.8) ran hot enough for this small (2B) model to
-            // occasionally bleed prompt artifacts into output - e.g. injecting a
-            // spurious "Speaker A:" prefix from the prompt's speaker-label rule.
-            // 0.3 mirrors Apple FM's "balanced" profile and is far steadier.
+            // SDK default (0.8) ran hot enough for the small model to occasionally
+            // bleed prompt artifacts into output - e.g. injecting a spurious
+            // "Speaker A:" prefix from the prompt's speaker-label rule. 0.3 mirrors
+            // Apple FM's "balanced" profile and is far steadier.
             let sampler = try SamplerConfig(topK: 40, topP: 0.95, temperature: 0.3)
-            let loaded = try await LiteRTChat(.gemma4_E2B, sampler: sampler) { progress in
-                onDownloadProgress?(progress.fraction)
+            let loaded: LiteRTChat
+            switch variant {
+            case .e2b:
+                // First-class SDK catalog model (enforces its own RAM floor).
+                loaded = try await LiteRTChat(.gemma4_E2B, sampler: sampler) { progress in
+                    onDownloadProgress?(progress.fraction)
+                }
+            case .e4b:
+                // Loaded by HuggingFace repo (not in the SDK catalog); text-only
+                // (empty modalities) and RAM-gated to 12 GB-class devices.
+                loaded = try await LiteRTChat(
+                    huggingFaceRepo: variant.huggingFaceRepo,
+                    fileName: variant.fileName,
+                    minimumDeviceRAM: variant.minimumDeviceRAM,
+                    sampler: sampler
+                ) { progress in
+                    onDownloadProgress?(progress.fraction)
+                }
             }
             chat = loaded
+            loadedVariant = variant
             state = .ready
-            logger.logInfo("LiteRT Gemma model ready")
+            logger.logInfo("LiteRT Gemma \(variant.rawValue) ready")
         } catch {
             state = .failed(error.localizedDescription)
-            logger.logError("LiteRT Gemma load failed: \(error.localizedDescription)")
+            logger.logError("LiteRT Gemma \(variant.rawValue) load failed: \(error.localizedDescription)")
             throw error
         }
         #else
@@ -124,47 +210,45 @@ actor LiteRTModelManager {
         #if canImport(LiteRTFoundation)
         chat = nil
         #endif
+        loadedVariant = nil
         state = .notLoaded
         logger.logInfo("LiteRT Gemma model unloaded")
     }
 
-    /// Whether the model file has already been downloaded to on-disk cache
+    /// Whether the given variant has already been downloaded to on-disk cache
     /// (independent of whether it is currently loaded into memory).
-    var isDownloaded: Bool {
+    func isDownloaded(_ variant: LiteRTGemmaVariant) -> Bool {
         #if canImport(LiteRTFoundation)
         guard let dir = try? LiteRTChat.defaultStorageDirectory() else { return false }
-        let files = (try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? []
-        return files.contains { $0.hasSuffix(".litertlm") }
+        return FileManager.default.fileExists(atPath: dir.appendingPathComponent(variant.fileName).path)
         #else
         return false
         #endif
     }
 
-    /// Approximate on-disk size of the downloaded model in bytes (0 if absent).
-    var downloadedBytes: Int64 {
+    /// On-disk size of the given variant in bytes (0 if absent).
+    func downloadedBytes(_ variant: LiteRTGemmaVariant) -> Int64 {
         #if canImport(LiteRTFoundation)
-        guard let dir = try? LiteRTChat.defaultStorageDirectory(),
-              let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey]) else {
-            return 0
-        }
-        return files.reduce(0) { total, url in
-            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            return total + Int64(size)
-        }
+        guard let dir = try? LiteRTChat.defaultStorageDirectory() else { return 0 }
+        let url = dir.appendingPathComponent(variant.fileName)
+        let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        return Int64(size)
         #else
         return 0
         #endif
     }
 
-    /// Unload the model and delete its on-disk cache, reclaiming the ~2.6 GB.
-    /// The next `ensureLoaded()` re-downloads.
-    func deleteModel() throws {
-        unload()
+    /// Delete the given variant's on-disk cache, reclaiming its space (unloading
+    /// it first if it is the currently-loaded one). The next `ensureLoaded()`
+    /// re-downloads it.
+    func deleteModel(_ variant: LiteRTGemmaVariant) throws {
+        if loadedVariant == variant { unload() }
         #if canImport(LiteRTFoundation)
         let dir = try LiteRTChat.defaultStorageDirectory()
-        if FileManager.default.fileExists(atPath: dir.path) {
-            try FileManager.default.removeItem(at: dir)
-            logger.logInfo("LiteRT Gemma model deleted from disk")
+        let url = dir.appendingPathComponent(variant.fileName)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+            logger.logInfo("LiteRT Gemma \(variant.rawValue) deleted from disk")
         }
         #endif
     }

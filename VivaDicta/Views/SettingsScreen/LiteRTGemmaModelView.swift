@@ -4,9 +4,10 @@
 //
 //  Created by Anton Novoselov on 2026.06.20
 //
-//  Settings screen to manage the on-device Gemma (LiteRT) model: download it
-//  explicitly (with progress) instead of incurring a silent ~2.6 GB fetch on
-//  first use, see its on-disk size, and delete it to reclaim space.
+//  Settings screen to manage the on-device Gemma (LiteRT) models. Each variant
+//  (E2B, E4B) can be downloaded explicitly with progress instead of incurring a
+//  silent multi-GB fetch on first use, shows its on-disk size, and can be
+//  deleted to reclaim space.
 //
 
 import SwiftUI
@@ -23,47 +24,53 @@ final class LiteRTGemmaModelViewModel {
         case failed(String)
     }
 
-    private(set) var status: Status = .checking
-    private(set) var onDiskBytes: Int64 = 0
+    private(set) var status: [LiteRTGemmaVariant: Status] = [:]
+    private(set) var sizeBytes: [LiteRTGemmaVariant: Int64] = [:]
 
-    var isBusy: Bool {
-        switch status {
+    func status(for variant: LiteRTGemmaVariant) -> Status { status[variant] ?? .checking }
+
+    func isBusy(_ variant: LiteRTGemmaVariant) -> Bool {
+        switch status(for: variant) {
         case .downloading, .preparing: true
         default: false
         }
     }
 
     func refresh() async {
-        let downloaded = await LiteRTModelManager.shared.isDownloaded
-        onDiskBytes = await LiteRTModelManager.shared.downloadedBytes
-        if case .downloading = status { return } // don't clobber an in-flight download
-        if case .preparing = status { return }
-        status = downloaded ? .ready : .notDownloaded
-    }
-
-    func prepare() async {
-        status = .downloading(0)
-        do {
-            try await LiteRTModelManager.shared.ensureLoaded { [weak self] fraction in
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.status = fraction >= 1.0 ? .preparing : .downloading(fraction)
-                }
+        for variant in LiteRTGemmaVariant.allCases {
+            switch status[variant] {
+            case .downloading, .preparing: continue // don't clobber an in-flight op
+            default: break
             }
-            status = .ready
-            onDiskBytes = await LiteRTModelManager.shared.downloadedBytes
-        } catch {
-            status = .failed(error.localizedDescription)
+            let downloaded = await LiteRTModelManager.shared.isDownloaded(variant)
+            sizeBytes[variant] = await LiteRTModelManager.shared.downloadedBytes(variant)
+            status[variant] = downloaded ? .ready : .notDownloaded
         }
     }
 
-    func delete() async {
+    func prepare(_ variant: LiteRTGemmaVariant) async {
+        status[variant] = .downloading(0)
         do {
-            try await LiteRTModelManager.shared.deleteModel()
-            onDiskBytes = 0
-            status = .notDownloaded
+            try await LiteRTModelManager.shared.ensureLoaded(variant: variant) { [weak self] fraction in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.status[variant] = fraction >= 1.0 ? .preparing : .downloading(fraction)
+                }
+            }
+            status[variant] = .ready
+            sizeBytes[variant] = await LiteRTModelManager.shared.downloadedBytes(variant)
         } catch {
-            status = .failed(error.localizedDescription)
+            status[variant] = .failed(error.localizedDescription)
+        }
+    }
+
+    func delete(_ variant: LiteRTGemmaVariant) async {
+        do {
+            try await LiteRTModelManager.shared.deleteModel(variant)
+            sizeBytes[variant] = 0
+            status[variant] = .notDownloaded
+        } catch {
+            status[variant] = .failed(error.localizedDescription)
         }
     }
 }
@@ -73,59 +80,50 @@ struct LiteRTGemmaModelView: View {
 
     var body: some View {
         Form {
-            Section {
-                LabeledContent("Status") {
-                    statusLabel
-                }
-                if case .downloading(let fraction) = model.status {
-                    ProgressView(value: fraction)
-                }
-                if model.onDiskBytes > 0 {
-                    LabeledContent("On disk", value: model.onDiskBytes.formatted(.byteCount(style: .file)))
-                }
-            } header: {
-                Text("On-device Gemma")
-            } footer: {
-                Text("Gemma 4 (E2B) runs fully on your device via LiteRT - private, offline, no API key. The model is about 2.6 GB and downloads once. Use Wi-Fi, and keep the app open while it downloads.")
-            }
-
-            Section {
-                switch model.status {
-                case .ready:
-                    Button(role: .destructive) {
-                        Task { await model.delete() }
-                    } label: {
-                        Label("Delete model", systemImage: "trash")
-                    }
-                    .disabled(model.isBusy)
-                case .notDownloaded, .failed:
-                    Button {
-                        Task { await model.prepare() }
-                    } label: {
-                        Label("Download model (~2.6 GB)", systemImage: "arrow.down.circle")
-                    }
-                    .disabled(model.isBusy)
-                case .checking, .downloading, .preparing:
-                    EmptyView()
-                }
-            }
-
-            if case .failed(let message) = model.status {
-                Section {
-                    Text(message)
-                        .font(.callout)
-                        .foregroundStyle(.red)
-                }
+            ForEach(LiteRTGemmaVariant.allCases, id: \.self) { variant in
+                GemmaVariantSection(variant: variant, model: model)
             }
         }
         .navigationTitle("On-device Gemma")
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.refresh() }
     }
+}
+
+private struct GemmaVariantSection: View {
+    let variant: LiteRTGemmaVariant
+    let model: LiteRTGemmaModelViewModel
+
+    var body: some View {
+        Section {
+            LabeledContent("Status") { statusLabel }
+
+            if case .downloading(let fraction) = model.status(for: variant) {
+                ProgressView(value: fraction)
+            }
+
+            let bytes = model.sizeBytes[variant] ?? 0
+            if bytes > 0 {
+                LabeledContent("On disk", value: bytes.formatted(.byteCount(style: .file)))
+            }
+
+            actionButton
+
+            if case .failed(let message) = model.status(for: variant) {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text(variant.displayName)
+        } footer: {
+            Text("\(variant.subtitle) Downloads \(variant.approxDownloadDescription) once. Private, offline, no API key.")
+        }
+    }
 
     @ViewBuilder
     private var statusLabel: some View {
-        switch model.status {
+        switch model.status(for: variant) {
         case .checking:
             Text("Checking...").foregroundStyle(.secondary)
         case .notDownloaded:
@@ -142,6 +140,28 @@ struct LiteRTGemmaModelView: View {
         case .failed:
             Label("Failed", systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.red)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButton: some View {
+        switch model.status(for: variant) {
+        case .ready:
+            Button(role: .destructive) {
+                Task { await model.delete(variant) }
+            } label: {
+                Label("Delete model", systemImage: "trash")
+            }
+            .disabled(model.isBusy(variant))
+        case .notDownloaded, .failed:
+            Button {
+                Task { await model.prepare(variant) }
+            } label: {
+                Label("Download model (\(variant.approxDownloadDescription))", systemImage: "arrow.down.circle")
+            }
+            .disabled(model.isBusy(variant))
+        case .checking, .downloading, .preparing:
+            EmptyView()
         }
     }
 }

@@ -602,7 +602,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .customOpenAI:
             return [] // Model is configured by user
         case .localGemma:
-            return ["gemma-4-E2B"]
+            return ["gemma-4-E2B", "gemma-4-E4B"]
         }
     }
 }

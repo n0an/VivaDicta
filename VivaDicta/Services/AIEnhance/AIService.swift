@@ -1112,7 +1112,7 @@ class AIService {
             }
         case .localGemma:
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
-            let provider = LiteRTGemmaTextProvider()
+            let provider = LiteRTGemmaTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
@@ -1279,7 +1279,7 @@ class AIService {
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
-            let result = try await LiteRTGemmaTextProvider().enhance(systemMessage: sysMsg, userMessage: userMsg)
+            let result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 

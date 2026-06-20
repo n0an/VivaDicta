@@ -19,6 +19,14 @@ import Foundation
 import AICore
 
 struct LiteRTGemmaTextProvider: AITextProvider {
+    private let variant: LiteRTGemmaVariant
+
+    /// - Parameter model: the mode's selected model id (e.g. "gemma-4-E2B" /
+    ///   "gemma-4-E4B"); unknown ids fall back to E2B.
+    init(model: String = LiteRTGemmaVariant.e2b.rawValue) {
+        self.variant = LiteRTGemmaVariant(modelID: model)
+    }
+
     func enhance(systemMessage: String, userMessage: String) async throws -> String {
         try await run(systemMessage: systemMessage, userMessage: userMessage, onPartialResponse: nil)
     }
@@ -36,7 +44,7 @@ struct LiteRTGemmaTextProvider: AITextProvider {
         userMessage: String,
         onPartialResponse: (@MainActor (String) -> Void)?
     ) async throws -> String {
-        try await LiteRTModelManager.shared.ensureLoaded()
+        try await LiteRTModelManager.shared.ensureLoaded(variant: variant)
 
         let prompt = systemMessage + "\n\n" + userMessage
         let stream = try await LiteRTModelManager.shared.stream(prompt: prompt)
