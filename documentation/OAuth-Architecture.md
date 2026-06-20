@@ -56,17 +56,30 @@ The local server exists only for a few seconds during sign-in. All subsequent AP
 
 ## File Structure
 
+OAuth was extracted into the `OAuth` SPM module. Core implementation:
+
 ```
-Services/OAuth/
-├── OAuthManager.swift              — @MainActor singleton managing sign-in, token refresh, credential storage
+Modules/OAuth/Sources/OAuth/
+├── OAuthManagerProtocol.swift      — the protocol consumers depend on
+├── DefaultOAuthManager.swift       — @MainActor manager: sign-in, token refresh, credential storage
 ├── OAuthProvider.swift             — Protocol for provider configurations
 ├── OAuthCredential.swift           — Token + account info model (Codable)
 ├── OAuthError.swift                — Error types
 ├── PKCEGenerator.swift             — PKCE code verifier/challenge generation
 ├── OAuthCallbackServer.swift       — NWListener localhost → custom scheme bridge
 ├── ASWebAuthSessionContextProvider.swift — Presentation context for ASWebAuthenticationSession
-├── OpenAIChatGPTOAuthProvider.swift — OpenAI/ChatGPT provider configuration
-└── ChatGPTAPIClient.swift          — ChatGPT backend API client (SSE streaming)
+├── OpenAIOAuthProvider.swift       — OpenAI/ChatGPT provider configuration
+├── GeminiOAuthProvider.swift       — Gemini (Cloud Code Assist) provider configuration
+├── CopilotOAuthManagerProtocol.swift + DefaultCopilotOAuthManager.swift — GitHub Copilot device-flow auth
+└── BackgroundTaskService.swift     — background-task seam for token refresh
+```
+
+App-side adapters that bridge the module into the app remain in `VivaDicta/Services/OAuth/`:
+
+```
+VivaDicta/Services/OAuth/
+├── BackgroundTaskServiceAdapter.swift — adapts the app's background-task API to the module's seam
+└── OAuthSingletons.swift              — composition-root singletons wiring Default* managers
 ```
 
 ## Token Lifecycle

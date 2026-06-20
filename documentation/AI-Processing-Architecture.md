@@ -2,7 +2,7 @@
 
 ## Overview
 
-AIService is the central service for AI-powered text processing in VivaDicta. It manages 17 AI providers, VivaMode configurations, API key lifecycle, dynamic model fetching, and clipboard context integration. All providers receive the same prompt structure via PromptsTemplates.
+AIService is the central service for AI-powered text processing in VivaDicta. It manages 16 text/LLM providers (`AIProvider.generalProviders`), VivaMode configurations, API key lifecycle, dynamic model fetching, and clipboard context integration. All providers receive the same prompt structure via PromptsTemplates. (Speech-only providers - ElevenLabs, Deepgram, Soniox, Gladia, Speechmatics, Cohere, Cartesia - also live in the `AIProvider` enum but are not used for text processing. The `AIProvider` enum lives in the `AICore` module; the provider client impls live in the `AIProviders` module; `AIService` itself remains in the app target.)
 
 ## Architecture Diagram
 
@@ -25,7 +25,7 @@ AIService is the central service for AI-powered text processing in VivaDicta. It
 │  │  Cloud (API key required):                                         │    │
 │  │  • Anthropic    • OpenAI      • Gemini    • Groq                  │    │
 │  │  • Mistral      • Cerebras    • Grok      • Z.AI                  │    │
-│  │  • Kimi         • ElevenLabs  • Deepgram  • Soniox                │    │
+│  │  • Kimi         • GitHub Copilot                                  │    │
 │  │                                                                     │    │
 │  │  Model Aggregators (API key, dynamic model fetch):                 │    │
 │  │  • OpenRouter          • Vercel AI Gateway                         │    │

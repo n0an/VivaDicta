@@ -18,6 +18,10 @@ scripts/coverage/coverage.sh app ChatViewModel.swift SmartSearchChatViewModel.sw
 
 # Fast: one SPM module via swift test on the macOS host (no simulator).
 scripts/coverage/coverage.sh module CloudTranscription
+
+# Most complete: clean DerivedData -> full plan -> auto-fill any dropped module
+# row from the module path -> one merged 16-module table. Slow (~10-15 min).
+scripts/coverage/coverage.sh full
 ```
 
 Env overrides: `DESTINATION` (simulator, default iPhone 17 Pro Max), `RESULT` (`.xcresult` path).
@@ -33,13 +37,15 @@ Env overrides: `DESTINATION` (simulator, default iPhone 17 Pro Max), `RESULT` (`
 
 The app target itself (`VivaDicta.app`) can only be measured the `app` way - `swift test` cannot build an iOS app.
 
+**`full` is `app` + a clean rebuild + auto-fill.** It deletes DerivedData first (a clean relink recovers most dropped per-target rows - see the wobble caveat below), runs the full plan, then for any module whose row still dropped or came back `0/0` it runs the `module` path and splices the number in. Result: a number for *every* module in one command. Filled rows are labeled `module-floor` (own-tests-only - a floor for app-exercised modules like TextProcessing). Use `full` when you want the complete, reliable per-module table; use `app` for a fast warm-build check.
+
 ## Caveats that bite
 
 - **macOS-host runs exclude iOS-only files**, so a module's `module`-path total differs slightly from its Xcode/`xccov` number (e.g. CloudTranscription reads ~2,231 lines via `swift test` vs ~3,073 in Xcode). Use `module` for *relative* per-file progress; trust `app`/`xccov` for the canonical total.
-- **The aggregate per-target rows are non-deterministic.** A module statically linked into both its test bundle and the app can get its coverage merged into another binary, so its standalone row **drops out of some runs** (CloudTranscription appears in one run, AICore/AIKit in another). The code is still tested - get a reliable per-module number with the `module` path. This also makes the **overall %** wobble ~1-2 points run to run.
-- The **headline is dominated by the ~73k-line `VivaDicta.app` target (~7%)** - it is ~80% of the code, so module-level test work barely moves the global %. Judge progress by **per-logic-module coverage** and **per-file** ViewModel rows, not the headline.
+- **The aggregate per-target rows are non-deterministic.** An SPM module is a static lib linked into both the app and its own test bundle; the linker's cross-binary dedup sometimes leaves a module without a clean mapping, so its standalone row **drops out of some runs** (or returns `0/0`) - and which modules drop shifts run to run. The code is still tested. A **clean build recovers most rows** (~18/21 vs ~13/21 incremental) - that's what `full` does, filling any still-dropped row from the `module` path. For a deterministic single-module number, use the `module` path.
+- The **headline is dominated by the ~73k-line `VivaDicta.app` target (~9%)** - it is ~80% of the code, so module-level test work barely moves the global %. Judge progress by **per-logic-module coverage** and **per-file** ViewModel rows, not the headline.
 - After a toolchain bump, `rm -rf Modules/<Module>/.build` once before the `module` path (stale `.swiftmodule` import error).
 
-## The first-party-only requirement
+## First-party filtering happens in the script, not the test plan
 
-`VivaDicta/VivaDictaTestPlan.xctestplan` must pin `defaultOptions.codeCoverage` to an explicit `targets` list of **only first-party targets** (16 SPM modules + `VivaDicta` + the 4 extensions = 21). If that key is absent, Xcode gathers coverage for ALL targets and Firebase/Google/GUL/KeyboardKit/etc. (FirebaseCrashlytics alone is ~10k lines) pollute the number. Exclude every `*Mocks` and `*Tests` target too. Validate edits with `python3 -c "import json; json.load(open('VivaDicta/VivaDictaTestPlan.xctestplan'))"` (`plutil -lint` rejects the `.xctestplan` extension even when the JSON is valid). The full terminal-coverage reference also lives in `AGENTS.md` under "Test Coverage".
+`VivaDicta/VivaDictaTestPlan.xctestplan` has **no `defaultOptions.codeCoverage` pin** (it was removed 2026-06-20), so Xcode gathers coverage for **all** targets - Firebase/Google/GUL/KeyboardKit/etc. (FirebaseCrashlytics alone is ~10k lines) are in the bundle. So the **raw bundle % is meaningless (~25%)**. `coverage.sh` filters to first-party at report time (`first_party_overall`): the **16 production modules + `VivaDicta` app + the 4 extensions**, with `TestUtilities` / `*Mocks` / `*Tests` excluded → first-party overall ~14%. This is why the script, not the test plan, owns the filtering - adding/removing a module no longer requires editing the test plan. **If you ever call `xccov` by hand, filter to first-party yourself** or you'll report the polluted number. The full terminal-coverage reference also lives in `AGENTS.md` under "Test Coverage".

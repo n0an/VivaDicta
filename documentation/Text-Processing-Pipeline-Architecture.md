@@ -252,3 +252,30 @@ Custom vocabulary words (`VocabularyWord` SwiftData model, CloudKit-synced) are 
 ```
 
 This helps the AI correct transcription errors where phonetically similar words were misrecognized. The system prompt instructs the AI to prioritize vocabulary terms over transcript text when phonetic matches are detected.
+
+## Stage 4 detail: AI prompt construction
+
+Before `AIService.enhance()` / `generateVariation()` calls a provider, three pieces assemble the request:
+
+- **`CustomVocabulary.getTerms(maxTerms:)`** - fetches user vocabulary from the `VocabularyWord` SwiftData model (trimmed, case-insensitively deduped), injected into the system message as the `<CUSTOM_VOCABULARY>` section (see *Custom Vocabulary Integration* above) and into cloud transcription APIs (Groq prompt, Deepgram keywords, Soniox context terms). Gated by `isSpellingCorrectionsEnabled` (default `true`).
+- **`PromptsTemplates.systemPrompt(with:)`** - wraps the preset's `promptInstructions` inside the TRANSCRIPTION ENHANCER template (role definition; core rules covering vocabulary usage, phonetic matching, output focus, Russian language, no em-dashes; then a final warning with examples). Used when `preset.useSystemTemplate == true`; when `false` (e.g. the Assistant preset), `promptInstructions` becomes the raw system message.
+- **`AIService.formatTranscriptForLLM()`** - wraps the transcript in `<TRANSCRIPT>` tags when `preset.wrapInTranscriptTags == true`, else passes raw text as the user message.
+
+## Server-side processing
+
+Some cloud transcription providers format text before it reaches the local pipeline - e.g. Deepgram enables `smart_format`, `punctuate`, and `paragraphs` API parameters, so its output arrives already partially formatted.
+
+## Source files
+
+| Component | File |
+|---|---|
+| `TranscriptionOutputFilter` | `Modules/TextProcessing/Sources/TextProcessing/TranscriptionOutputFilter.swift` |
+| `TextFormatter` | `Modules/TextProcessing/Sources/TextProcessing/TextFormatter.swift` |
+| `ReplacementsService` | `VivaDicta/Services/ReplacementsService.swift` |
+| `CustomVocabulary` | `VivaDicta/Utilities/CustomVocabulary.swift` |
+| `PromptsTemplates` | `VivaDicta/Services/AIEnhance/PromptsTemplates.swift` |
+| `AIService` (`formatTranscriptForLLM`) | `VivaDicta/Services/AIEnhance/AIService.swift` |
+| `AIEnhancementOutputFilter` | `Modules/AICore/Sources/AICore/AIEnhancementOutputFilter.swift` |
+| `TextInsertionFormatter` | `VivaDictaKeyboard/TextInsertionFormatter.swift` |
+
+**Called from (key paths):** the `TranscriptionOutputFilter.filter()` + `hasMeaningfulContent()` gate runs in `RecordViewModel` / `WatchAudioProcessor` before save; `TextFormatter.format()` in `TranscriptionManager.transcribe()` and after AI output (Assistant preset only); `ReplacementsService.applyReplacements()` in `TranscriptionManager.transcribe()`; `AIEnhancementOutputFilter.filter()` on every AI response; `TextInsertionFormatter` in `KeyboardViewController.handleTranscription()`.
