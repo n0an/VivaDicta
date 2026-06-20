@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import Testing
 import AICore
+import AppGroup
 @testable import VivaDicta
 
 /// `RecordViewModel` is now constructible in a test: its AI, transcription,
@@ -81,5 +82,150 @@ struct RecordViewModelTests {
         // control callbacks onto the injected mock, not AppGroupCoordinator.shared.
         #expect(appGroup.onStartRecordingRequested != nil)
         #expect(appGroup.onStopRecordingRequested != nil)
+    }
+
+    // MARK: - transcribeSpeechTask flow
+
+    /// Note: the tail of the success path touches a few process-global singletons
+    /// that are NOT seamed (ClipboardManager, RecentNotesCache, FolderExportService,
+    /// RateAppManager, HapticManager). They are non-fatal and gated under test, so
+    /// this is tolerated for now - the next seam candidates if any turns flaky in CI.
+    @MainActor
+    private func makeSUT(
+        transcriber: MockTranscriber,
+        aiService: MockAIProcessingService = MockAIProcessingService(),
+        appGroup: MockAppGroupBridge = MockAppGroupBridge()
+    ) throws -> (sut: RecordViewModel, container: ModelContainer) {
+        // `saveNewTranscription` kicks off fire-and-forget RAGIndexingService vector
+        // indexing when SmartSearch is on (default), which would do real LumoKit I/O
+        // and leak work past the test. Disable it so the flow stays hermetic.
+        SmartSearchFeature.isEnabled = false
+        let container = try ModelContainer(
+            for: Transcription.self,
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+        let sut = RecordViewModel(
+            appState: AppState(),
+            modelContainer: container,
+            transcriptionManager: transcriber,
+            aiService: aiService,
+            prewarmManager: MockAudioPrewarmer(),
+            appGroupBridge: appGroup
+        )
+        return (sut, container)
+    }
+
+    /// Parakeet provider so `transcribeSpeechTask` skips the real-audio
+    /// downsampling path and goes straight to the mocked `transcribe`.
+    private func parakeetMode() -> VivaMode {
+        VivaMode(
+            id: UUID(),
+            name: "Parakeet",
+            transcriptionProvider: .parakeet,
+            transcriptionModel: "parakeet",
+            aiProvider: .openAI,
+            aiModel: "gpt-4",
+            aiEnhanceEnabled: true
+        )
+    }
+
+    private func makeDummyAudioFile() throws -> URL {
+        let url = URL.temporaryDirectory.appending(path: "\(UUID().uuidString).wav")
+        try Data([0x52, 0x49, 0x46, 0x46]).write(to: url) // "RIFF"
+        return url
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_transcribesAndEnhances_persistsAndPushesStatus() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "hello world")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = true
+        ai.stubEnhanceResult = .success(("HELLO WORLD enhanced", 0.1, "TestPrompt"))
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(transcriber.transcribeCallCount == 1)
+        #expect(ai.enhanceCallCount == 1)
+        #expect(appGroup.transcriptionStatuses.contains(.transcribing))
+        #expect(appGroup.transcriptionStatuses.contains(.enhancing))
+
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        #expect(saved.first?.text == "hello world")
+        #expect(saved.first?.enhancedText == "HELLO WORLD enhanced")
+        #expect(sut.recordingState == .idle) // flow ends idle
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenNotConfigured_persistsTranscriptWithoutEnhancing() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "just a note")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = false // -> shouldEnhance is false
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(transcriber.transcribeCallCount == 1)
+        #expect(ai.enhanceCallCount == 0)
+        #expect(appGroup.transcriptionStatuses.contains(.transcribing))
+        #expect(!appGroup.transcriptionStatuses.contains(.enhancing))
+
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        #expect(saved.first?.text == "just a note")
+        #expect(saved.first?.enhancedText == nil)
+    }
+
+    private enum FlowTestError: Error { case boom }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenEnhancementFails_persistsTranscriptAndAlerts() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "kept transcript")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = true
+        ai.stubEnhanceResult = .failure(FlowTestError.boom)
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(ai.enhanceCallCount == 1)
+        // Enhancement failed, but the transcript is still saved (text only) and the
+        // user is alerted.
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        #expect(saved.first?.text == "kept transcript")
+        #expect(saved.first?.enhancedText == nil)
+        #expect(sut.isShowingAlert == true)
+        // The right alert is shown, and enhancement failure is non-fatal: the flow
+        // still ends idle rather than erroring out.
+        if case .aiEnhancement = sut.recordError {} else {
+            Issue.record("expected recordError == .aiEnhancement, got \(String(describing: sut.recordError))")
+        }
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptHasNoMeaningfulContent_doesNotPersist() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "   ")
+        let ai = MockAIProcessingService()
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(transcriber.transcribeCallCount == 1)
+        #expect(ai.enhanceCallCount == 0) // skipped - no meaningful content
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.isEmpty)
+        #expect(sut.recordingState == .idle)
+        #expect(appGroup.transcriptionStatuses.contains(.idle))
     }
 }
