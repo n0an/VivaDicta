@@ -108,20 +108,17 @@ struct GemmaVariantCard: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 10) {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 10) {
                 Image("gemma-color")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 32, height: 32)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(variant.displayName)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-
-                }
-
+                
+                Text(variant.displayName)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
                 Spacer()
 
                 HStack(spacing: 8) {
@@ -137,6 +134,7 @@ struct GemmaVariantCard: View {
                     actionButton
                 }
             }
+            .padding(.bottom, 4)
             
             statusLabel
 
@@ -147,6 +145,7 @@ struct GemmaVariantCard: View {
             Text(variant.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .padding(.top, 10)
         }
         .padding(20)
         .modelCardBackground()
