@@ -319,7 +319,7 @@ private struct AppleProviderCard: View {
     private var statusLabel: some View {
         switch status {
         case .available:
-            Label("Ready to use. Private & Free.", systemImage: "checkmark.shield.fill")
+            Label("Ready", systemImage: "checkmark.circle.fill")
                 .font(.subheadline)
                 .foregroundStyle(.green)
         default:
@@ -332,7 +332,7 @@ private struct AppleProviderCard: View {
     private var descriptionText: String {
         switch status {
         case .available:
-            "Apple's Foundation Model runs entirely on your device. Your data never leaves your device, ensuring complete privacy. No API key or account required — it's completely free."
+            "Apple's Foundation Model is ready to use."
         case .modelNotReady:
             "Apple Intelligence is enabled but the Foundation Model is still downloading. It will be available shortly."
         default:
