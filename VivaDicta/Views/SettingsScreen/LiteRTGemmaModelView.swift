@@ -105,6 +105,8 @@ struct GemmaVariantCard: View {
     let variant: LiteRTGemmaVariant
     let model: LiteRTGemmaModelViewModel
 
+    @State private var showDeleteAlert = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
@@ -148,6 +150,24 @@ struct GemmaVariantCard: View {
         }
         .padding(20)
         .modelCardBackground()
+        .contextMenu {
+            if status == .ready {
+                Button(role: .destructive) {
+                    showDeleteAlert = true
+                    HapticManager.warning()
+                } label: {
+                    Label("Delete Model", systemImage: "trash")
+                }
+            }
+        }
+        .alert("Delete Model", isPresented: $showDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                Task { await model.delete(variant) }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Are you sure you want to delete \(variant.displayName)? You can download it again later.")
+        }
     }
 
     private var sizeText: String {
