@@ -118,7 +118,6 @@ struct GemmaVariantCard: View {
                         .font(.title3)
                         .fontWeight(.semibold)
 
-                    statusLabel
                 }
 
                 Spacer()
@@ -136,6 +135,8 @@ struct GemmaVariantCard: View {
                     actionButton
                 }
             }
+            
+            statusLabel
 
             Text(variant.subtitle)
                 .font(.subheadline)
