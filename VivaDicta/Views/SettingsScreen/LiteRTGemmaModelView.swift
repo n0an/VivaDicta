@@ -107,7 +107,12 @@ struct GemmaVariantCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Image("gemma-color")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text(variant.displayName)
                         .font(.title3)
