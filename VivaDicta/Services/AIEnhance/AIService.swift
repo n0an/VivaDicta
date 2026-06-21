@@ -757,9 +757,13 @@ class AIService {
                 return false
             }
         } else if aiProvider == .localGemma {
-            // On-device Gemma (LiteRT) needs no API key; the model downloads on
-            // first use and the runtime enforces device memory limits at load.
-            // A model is always set for this provider, so it is ready to use.
+            // On-device Gemma needs no API key, but the selected model must be
+            // downloaded - we don't silently download during processing. A mode
+            // whose model was deleted is not properly configured.
+            guard LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded else {
+                logger.logWarning("On-device Gemma model '\(mode.aiModel)' is not downloaded")
+                return false
+            }
         } else if aiProvider == .customOpenAI {
             // Custom OpenAI needs URL and model configured
             guard !customOpenAIEndpointURL.isEmpty else {

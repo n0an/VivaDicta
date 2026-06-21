@@ -96,7 +96,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .customOpenAI:
             "Custom"
         case .localGemma:
-            "On-device Gemma"
+            "Google Gemma"
         }
     }
 

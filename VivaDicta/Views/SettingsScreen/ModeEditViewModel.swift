@@ -332,6 +332,22 @@ class ModeEditViewModel {
                 aiModel = configuredModel
                 logger.logInfo("Custom OpenAI model updated to configured: '\(configuredModel)'")
             }
+        } else if provider == .localGemma {
+            // If the selected on-device Gemma model was deleted, fall back to
+            // another downloaded variant; if none remain, disable AI Processing
+            // for this mode (it can't run on-device without a downloaded model).
+            let downloaded = AIProvider.localGemma.availableModels.filter {
+                LiteRTGemmaVariant(modelID: $0).isDownloaded
+            }
+            if let current = aiModel, downloaded.contains(current) {
+                // Still valid - keep it.
+            } else if let firstDownloaded = downloaded.first {
+                aiModel = firstDownloaded
+                logger.logInfo("On-device Gemma model not available, reset to '\(firstDownloaded)'")
+            } else {
+                aiEnhanceEnabled = false
+                logger.logInfo("No on-device Gemma model downloaded; disabled AI Processing for this mode")
+            }
         }
     }
 
