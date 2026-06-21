@@ -108,9 +108,13 @@ struct GemmaVariantCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 8) {
-                Text(variant.displayName)
-                    .font(.title3)
-                    .fontWeight(.semibold)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(variant.displayName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+
+                    statusLabel
+                }
 
                 Spacer()
 
@@ -161,6 +165,32 @@ struct GemmaVariantCard: View {
         case .ready: .red
         case .downloading, .preparing: .primary
         case .notDownloaded, .failed, .checking: .blue
+        }
+    }
+
+    @ViewBuilder
+    private var statusLabel: some View {
+        switch status {
+        case .ready:
+            Label("Ready", systemImage: "checkmark.circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(.green)
+        case .downloading(let fraction):
+            Text("Downloading \(fraction.formatted(.percent.precision(.fractionLength(0))))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        case .preparing:
+            Text("Preparing...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        case .notDownloaded, .checking:
+            Text("Not downloaded")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        case .failed:
+            Label("Failed - tap to retry", systemImage: "exclamationmark.triangle")
+                .font(.subheadline)
+                .foregroundStyle(.red)
         }
     }
 

@@ -69,6 +69,17 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
         case .e4b: "litert-community/gemma-4-E4B-it-litert-lm"
         }
     }
+
+    /// Whether this variant's model file is already on disk. Synchronous so UI
+    /// (e.g. the model picker) can filter to downloaded variants without async.
+    var isDownloaded: Bool {
+        #if canImport(LiteRTFoundation)
+        guard let dir = try? LiteRTChat.defaultStorageDirectory() else { return false }
+        return FileManager.default.fileExists(atPath: dir.appendingPathComponent(fileName).path)
+        #else
+        return false
+        #endif
+    }
 }
 
 actor LiteRTModelManager {

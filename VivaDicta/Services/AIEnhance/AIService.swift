@@ -2010,6 +2010,12 @@ class AIService {
         if provider == .copilot && isCopilotSignedIn {
             return copilotModels.isEmpty ? [CopilotAPIClient.defaultModel] : copilotModels
         }
+        // On-device Gemma: only offer variants that are already downloaded, so
+        // picking one here never silently kicks off a multi-GB download. Manage
+        // downloads from the AI Providers screen instead.
+        if provider == .localGemma {
+            return provider.availableModels.filter { LiteRTGemmaVariant(modelID: $0).isDownloaded }
+        }
         return provider.availableModels
     }
     
