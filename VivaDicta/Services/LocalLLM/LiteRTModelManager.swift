@@ -80,6 +80,20 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
         return false
         #endif
     }
+
+    /// Whether this variant is the best fit for the current device's RAM.
+    /// Exactly one variant is recommended: the larger, higher-quality E4B on a
+    /// 12 GB-class device (it needs the headroom), and the lighter E2B on
+    /// everything else. Used to surface a "Recommended" badge in settings.
+    var isRecommendedForThisDevice: Bool {
+        let ramGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
+        // 12 GB-class devices report a little under 12; gate at 11 to catch them.
+        let prefersLargeModel = ramGB >= 11
+        switch self {
+        case .e2b: return !prefersLargeModel
+        case .e4b: return prefersLargeModel
+        }
+    }
 }
 
 actor LiteRTModelManager {

@@ -301,6 +301,7 @@ private struct AppleProviderCard: View {
                                 .fontWeight(.semibold)
                         }
                         statusLabel
+                        RecommendedBadge()
                     }
                     Spacer()
                 }

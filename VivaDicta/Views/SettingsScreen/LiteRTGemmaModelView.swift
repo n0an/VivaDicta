@@ -138,6 +138,10 @@ struct GemmaVariantCard: View {
             
             statusLabel
 
+            if variant.isRecommendedForThisDevice {
+                RecommendedBadge()
+            }
+
             Text(variant.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -242,6 +246,19 @@ struct GemmaVariantCard: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Small blue "Recommended" pill, matching the Transcription Models cards.
+struct RecommendedBadge: View {
+    var body: some View {
+        Text("Recommended")
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundStyle(.blue)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(.blue.opacity(0.15), in: .rect(cornerRadius: 12))
     }
 }
 
