@@ -64,7 +64,8 @@ struct LiteRTGemmaModelViewModelTests {
 
         await sut.prepare(.e2b).value
 
-        #expect(isFailed(sut.status(for: .e2b)))
+        let status = sut.status(for: .e2b)
+        #expect(isFailed(status), "Expected .failed, got \(status)")
     }
 
     @Test func prepare_cancellationError_setsNotDownloaded() async {
@@ -128,7 +129,8 @@ struct LiteRTGemmaModelViewModelTests {
         let task = sut.prepare(.e2b) // status -> .downloading(0), blocks
         await sut.refresh()          // must skip the in-flight variant
 
-        #expect(isDownloading(sut.status(for: .e2b)))
+        let status = sut.status(for: .e2b)
+        #expect(isDownloading(status), "Expected .downloading (in-flight), got \(status)")
 
         sut.cancel(.e2b)             // clean up the blocked task
         await task.value
@@ -153,6 +155,7 @@ struct LiteRTGemmaModelViewModelTests {
 
         await sut.delete(.e2b)
 
-        #expect(isFailed(sut.status(for: .e2b)))
+        let status = sut.status(for: .e2b)
+        #expect(isFailed(status), "Expected .failed, got \(status)")
     }
 }
