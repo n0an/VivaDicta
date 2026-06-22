@@ -81,18 +81,19 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
         #endif
     }
 
-    /// Whether this variant is the best fit for the current device's RAM.
-    /// Exactly one variant is recommended: the larger, higher-quality E4B on a
-    /// 12 GB-class device (it needs the headroom), and the lighter E2B on
-    /// everything else. Used to surface a "Recommended" badge in settings.
+    /// The recommended variant for a device with the given physical RAM: the
+    /// larger, higher-quality E4B on a 12 GB-class device (it needs the
+    /// headroom), the lighter E2B otherwise. 12 GB-class devices report a little
+    /// under 12 GB, so the gate is 11. Pure (RAM passed in) so it's unit-testable.
+    static func recommendedVariant(forPhysicalMemoryBytes bytes: UInt64) -> LiteRTGemmaVariant {
+        let ramGB = Double(bytes) / 1_073_741_824
+        return ramGB >= 11 ? .e4b : .e2b
+    }
+
+    /// Whether this variant is the best fit for the current device's RAM. Used
+    /// to surface a "Recommended" badge in settings. Exactly one variant matches.
     var isRecommendedForThisDevice: Bool {
-        let ramGB = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
-        // 12 GB-class devices report a little under 12; gate at 11 to catch them.
-        let prefersLargeModel = ramGB >= 11
-        switch self {
-        case .e2b: return !prefersLargeModel
-        case .e4b: return prefersLargeModel
-        }
+        self == LiteRTGemmaVariant.recommendedVariant(forPhysicalMemoryBytes: ProcessInfo.processInfo.physicalMemory)
     }
 }
 
