@@ -96,7 +96,19 @@ nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
     }
 }
 
-actor LiteRTModelManager {
+/// The model-lifecycle surface the Gemma settings view model depends on:
+/// download (with progress), on-disk presence/size, and delete. Seamed as a
+/// protocol so `LiteRTGemmaModelViewModel` can be unit-tested against a mock
+/// engine instead of the real `LiteRTModelManager`, which downloads gigabytes
+/// and drives the GPU. (Text generation has its own seam: `AITextProvider`.)
+protocol LocalModelEngine: Sendable {
+    func ensureLoaded(variant: LiteRTGemmaVariant, onDownloadProgress: (@Sendable (Double) -> Void)?) async throws
+    func isDownloaded(_ variant: LiteRTGemmaVariant) async -> Bool
+    func downloadedBytes(_ variant: LiteRTGemmaVariant) async -> Int64
+    func deleteModel(_ variant: LiteRTGemmaVariant) async throws
+}
+
+actor LiteRTModelManager: LocalModelEngine {
     static let shared = LiteRTModelManager()
 
     enum State: Sendable, Equatable {

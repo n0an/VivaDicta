@@ -31,6 +31,14 @@ final class LiteRTGemmaModelViewModel {
     /// In-flight download/load tasks, kept so the cancel button can stop them.
     private var tasks: [LiteRTGemmaVariant: Task<Void, Never>] = [:]
 
+    /// The model-lifecycle backend. Injected so tests can supply a mock; the
+    /// app uses the shared `LiteRTModelManager`.
+    private let engine: any LocalModelEngine
+
+    init(engine: any LocalModelEngine = LiteRTModelManager.shared) {
+        self.engine = engine
+    }
+
     func status(for variant: LiteRTGemmaVariant) -> Status { status[variant] ?? .checking }
 
     /// 0...1 progress for the action button; 1 when not actively downloading.
@@ -45,18 +53,21 @@ final class LiteRTGemmaModelViewModel {
             case .downloading, .preparing: continue // don't clobber an in-flight op
             default: break
             }
-            let downloaded = await LiteRTModelManager.shared.isDownloaded(variant)
-            sizeBytes[variant] = await LiteRTModelManager.shared.downloadedBytes(variant)
+            let downloaded = await engine.isDownloaded(variant)
+            sizeBytes[variant] = await engine.downloadedBytes(variant)
             status[variant] = downloaded ? .ready : .notDownloaded
         }
     }
 
-    func prepare(_ variant: LiteRTGemmaVariant) {
+    /// Starts a download/load for `variant`. Returns the in-flight task so call
+    /// sites (and tests) can await completion; the UI calls it fire-and-forget.
+    @discardableResult
+    func prepare(_ variant: LiteRTGemmaVariant) -> Task<Void, Never> {
         tasks[variant]?.cancel()
         status[variant] = .downloading(0)
-        tasks[variant] = Task { @MainActor in
+        let task = Task { @MainActor in
             do {
-                try await LiteRTModelManager.shared.ensureLoaded(variant: variant) { fraction in
+                try await engine.ensureLoaded(variant: variant) { fraction in
                     Task { @MainActor in
                         // Ignore late progress callbacks after a cancel/finish.
                         switch self.status[variant] {
@@ -68,7 +79,7 @@ final class LiteRTGemmaModelViewModel {
                     }
                 }
                 self.status[variant] = .ready
-                self.sizeBytes[variant] = await LiteRTModelManager.shared.downloadedBytes(variant)
+                self.sizeBytes[variant] = await engine.downloadedBytes(variant)
             } catch is CancellationError {
                 self.status[variant] = .notDownloaded
             } catch {
@@ -80,6 +91,8 @@ final class LiteRTGemmaModelViewModel {
             }
             self.tasks[variant] = nil
         }
+        tasks[variant] = task
+        return task
     }
 
     func cancel(_ variant: LiteRTGemmaVariant) {
@@ -90,7 +103,7 @@ final class LiteRTGemmaModelViewModel {
 
     func delete(_ variant: LiteRTGemmaVariant) async {
         do {
-            try await LiteRTModelManager.shared.deleteModel(variant)
+            try await engine.deleteModel(variant)
             sizeBytes[variant] = 0
             status[variant] = .notDownloaded
         } catch {
