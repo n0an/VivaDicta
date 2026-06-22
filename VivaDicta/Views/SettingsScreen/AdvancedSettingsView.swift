@@ -151,18 +151,6 @@ struct AdvancedSettingsView: View {
             } header: {
                 Text("Text Processing")
             }
-
-            #if DEBUG
-            Section {
-                NavigationLink("LiteRT Gemma Spike") {
-                    LiteRTSpikeView()
-                }
-            } header: {
-                Text("Developer")
-            } footer: {
-                Text("On-device Gemma 4 E2B via LiteRT-LM. Phase 0 measurement harness. Physical device only.")
-            }
-            #endif
         }
         .navigationTitle("Advanced")
         .navigationBarTitleDisplayMode(.inline)

@@ -281,15 +281,6 @@ actor LiteRTModelManager: LocalModelEngine {
         }
         #endif
     }
-
-    /// Current process memory footprint in MB (phys_footprint), for diagnostics.
-    nonisolated static func memoryFootprintMB() -> Double {
-        #if canImport(LiteRTFoundation)
-        Double(LiteRTChat.memoryFootprintBytes()) / 1_048_576
-        #else
-        0
-        #endif
-    }
 }
 
 enum LiteRTModelError: LocalizedError {

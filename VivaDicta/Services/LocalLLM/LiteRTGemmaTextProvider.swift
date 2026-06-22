@@ -9,10 +9,10 @@
 //  user messages into a single prompt. Output filtering is applied centrally by
 //  the caller (TextEnhancer / AIService), so this returns the raw model text.
 //
-//  Placement note: this currently lives in the app target alongside the spike
-//  because that is where the swift-litert-lm package is linked. The production
-//  home is the AIProviders module (constructed by AIKit's AIProviderRegistry,
-//  like AppleFMTextProvider); extraction is a follow-up once the spike validates.
+//  Placement note: this lives in the app target because that is where the
+//  swift-litert-lm package is linked. The eventual home is a LocalLLM module
+//  (constructed via AIKit's AIProviderRegistry, like AppleFMTextProvider), which
+//  also firewalls the heavy native runtime - see the local-LLM extraction plan.
 //
 
 import Foundation
