@@ -151,6 +151,18 @@ struct AdvancedSettingsView: View {
             } header: {
                 Text("Text Processing")
             }
+
+            #if DEBUG
+            Section {
+                NavigationLink("Qwen CoreML Spike") {
+                    CoreMLQwenSpikeView()
+                }
+            } header: {
+                Text("Developer")
+            } footer: {
+                Text("On-device Qwen3.5 via CoreML-LLM (ANE) - verification spike. Physical device only.")
+            }
+            #endif
         }
         .navigationTitle("Advanced")
         .navigationBarTitleDisplayMode(.inline)

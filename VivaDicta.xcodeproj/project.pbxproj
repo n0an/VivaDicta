@@ -38,6 +38,8 @@
 		18BA29272F7F29FD00C4F68B /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18BA29362F7F29FE00C4F68B /* VivaDictaWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18BA29252F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18C7D0922FEB07530041C086 /* LocalLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0912FEB07530041C086 /* LocalLLM */; };
+		18C7D0942FEB0BCF0041C086 /* LocalLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0932FEB0BCF0041C086 /* LocalLLM */; };
+		18C7D0962FEB0BCF0041C086 /* LocalLLMMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0952FEB0BCF0041C086 /* LocalLLMMocks */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -541,6 +543,8 @@
 				18F76A342FB85C0B00280269 /* AppGroup in Frameworks */,
 				186C05892FB779BA00102432 /* PresetsMocks in Frameworks */,
 				E1938683EE7E439ABF4FE3EA /* TranscriptionKitMocks in Frameworks */,
+				18C7D0962FEB0BCF0041C086 /* LocalLLMMocks in Frameworks */,
+				18C7D0942FEB0BCF0041C086 /* LocalLLM in Frameworks */,
 				188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */,
 				BFBF000000000000000000C2 /* AICore in Frameworks */,
 				BFBF000000000000000000D2 /* AIProviders in Frameworks */,
@@ -782,6 +786,8 @@
 				AEAE000000000000000000C2 /* AICore */,
 				AEAE000000000000000000D2 /* AIProviders */,
 				AEAE000000000000000000E2 /* AIKit */,
+				18C7D0932FEB0BCF0041C086 /* LocalLLM */,
+				18C7D0952FEB0BCF0041C086 /* LocalLLMMocks */,
 			);
 			productName = VivaDictaTests;
 			productReference = 18351E572E634FF000944940 /* VivaDictaTests.xctest */;
@@ -2548,6 +2554,14 @@
 		18C7D0912FEB07530041C086 /* LocalLLM */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalLLM;
+		};
+		18C7D0932FEB0BCF0041C086 /* LocalLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalLLM;
+		};
+		18C7D0952FEB0BCF0041C086 /* LocalLLMMocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalLLMMocks;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
