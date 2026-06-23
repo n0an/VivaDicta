@@ -363,6 +363,20 @@ class ModeEditViewModel {
                 aiEnhanceEnabled = false
                 logger.logInfo("No on-device Qwen model downloaded; disabled AI Processing for this mode")
             }
+        } else if provider == .localLiteRT {
+            // Same handling for on-device open LiteRT models.
+            let downloaded = AIProvider.localLiteRT.availableModels.filter {
+                LiteRTOpenModel(modelID: $0).isDownloaded
+            }
+            if let current = aiModel, downloaded.contains(current) {
+                // Still valid - keep it.
+            } else if let firstDownloaded = downloaded.first {
+                aiModel = firstDownloaded
+                logger.logInfo("On-device LiteRT model not available, reset to '\(firstDownloaded)'")
+            } else {
+                aiEnhanceEnabled = false
+                logger.logInfo("No on-device LiteRT model downloaded; disabled AI Processing for this mode")
+            }
         }
     }
 
@@ -652,6 +666,17 @@ class ModeEditViewModel {
             // Same as Gemma: seed a downloaded Qwen variant.
             let downloaded = provider.availableModels.filter {
                 CoreMLQwenVariant(modelID: $0).isDownloaded
+            }
+            if downloaded.contains(provider.defaultModel) {
+                return provider.defaultModel
+            }
+            return downloaded.first ?? provider.defaultModel
+        }
+
+        if provider == .localLiteRT {
+            // Seed a downloaded open LiteRT model.
+            let downloaded = provider.availableModels.filter {
+                LiteRTOpenModel(modelID: $0).isDownloaded
             }
             if downloaded.contains(provider.defaultModel) {
                 return provider.defaultModel

@@ -62,6 +62,7 @@ class AIService {
         case apple
         case localGemma
         case localQwen
+        case localLiteRT
         case anthropic
         case copilot
         case geminiOAuth
@@ -773,6 +774,12 @@ class AIService {
                 logger.logWarning("On-device Qwen model '\(mode.aiModel)' is not downloaded")
                 return false
             }
+        } else if aiProvider == .localLiteRT {
+            // On-device open LiteRT models - same rule.
+            guard LiteRTOpenModel(modelID: mode.aiModel).isDownloaded else {
+                logger.logWarning("On-device LiteRT model '\(mode.aiModel)' is not downloaded")
+                return false
+            }
         } else if aiProvider == .customOpenAI {
             // Custom OpenAI needs URL and model configured
             guard !customOpenAIEndpointURL.isEmpty else {
@@ -1020,6 +1027,8 @@ class AIService {
             return .localGemma
         case .localQwen:
             return .localQwen
+        case .localLiteRT:
+            return .localLiteRT
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1133,6 +1142,11 @@ class AIService {
         case .localQwen:
             logger.logDebug("AI Processing - Using on-device Qwen (CoreML) streaming")
             let provider = CoreMLQwenTextProvider(model: mode.aiModel)
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+        case .localLiteRT:
+            logger.logDebug("AI Processing - Using on-device open model (LiteRT) streaming")
+            let provider = LiteRTOpenModelTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
@@ -1311,6 +1325,17 @@ class AIService {
             lastUserMessageSent = userMsg
             logger.logDebug("AI Processing - Using on-device Qwen (CoreML)")
             let result = try await CoreMLQwenTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        // Handle on-device open LiteRT models (Llama / Ministral / Falcon / DeepSeek)
+        if aiProvider == .localLiteRT {
+            let sysMsg = systemMessage ?? getSystemMessage()
+            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+            lastSystemMessageSent = sysMsg
+            lastUserMessageSent = userMsg
+            logger.logDebug("AI Processing - Using on-device open model (LiteRT)")
+            let result = try await LiteRTOpenModelTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
@@ -1696,6 +1721,11 @@ class AIService {
             providers.append(.localQwen)
         }
 
+        // Add on-device open LiteRT models only when at least one is downloaded.
+        if LiteRTOpenModel.allCases.contains(where: \.isDownloaded) {
+            providers.append(.localLiteRT)
+        }
+
         // Add Custom OpenAI provider if configured AND verified
         if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {
             providers.append(.customOpenAI)
@@ -2060,6 +2090,10 @@ class AIService {
         // On-device Qwen: same - only offer downloaded variants.
         if provider == .localQwen {
             return provider.availableModels.filter { CoreMLQwenVariant(modelID: $0).isDownloaded }
+        }
+        // On-device open LiteRT models: same - only offer downloaded ones.
+        if provider == .localLiteRT {
+            return provider.availableModels.filter { LiteRTOpenModel(modelID: $0).isDownloaded }
         }
         return provider.availableModels
     }

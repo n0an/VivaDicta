@@ -24,6 +24,7 @@ struct AIProviders: View {
     @State private var providerType: AIProviderType = .local
     @State private var gemmaModel = LiteRTGemmaModelViewModel()
     @State private var qwenModel = CoreMLQwenModelViewModel()
+    @State private var openModel = LiteRTOpenModelViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,6 +53,10 @@ struct AIProviders: View {
                             .padding(.horizontal)
                         QwenVariantCard(variant: .qwen08B, model: qwenModel)
                             .padding(.horizontal)
+                        ForEach(LiteRTOpenModel.allCases, id: \.self) { openLLM in
+                            OpenModelCard(model: openLLM, viewModel: openModel)
+                                .padding(.horizontal)
+                        }
                     }
                     .padding(.vertical)
                 }
@@ -253,6 +258,7 @@ struct AIProviders: View {
         .task {
             await gemmaModel.refresh()
             await qwenModel.refresh()
+            await openModel.refresh()
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
