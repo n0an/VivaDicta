@@ -360,12 +360,14 @@ struct ModeEditView: View {
 
                     if viewModel.aiEnhanceEnabled {
                         Picker(selection: $viewModel.aiProvider) {
-                            // Show Apple at top if available (on-device section)
-                            if viewModel.isAppleFoundationModelAvailable {
-                                Section("On-Device") {
+                            // On-device section: Apple FM (if available) + on-device Gemma (LiteRT)
+                            Section("On-Device") {
+                                if viewModel.isAppleFoundationModelAvailable {
                                     Label("Apple", systemImage: "apple.intelligence")
                                         .tag(AIProvider.apple)
                                 }
+                                Label(AIProvider.localGemma.displayName, systemImage: "cpu")
+                                    .tag(AIProvider.localGemma)
                             }
                             // Cloud providers section
                             Section("Cloud") {

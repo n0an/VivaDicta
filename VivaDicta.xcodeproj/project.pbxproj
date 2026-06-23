@@ -8,8 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		186C057F2FB779AA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C057E2FB779AA00102432 /* Keychain */; };
-		A0C0A617EC509E09382B22A3 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 8412CA347E0626D9F232A9F9 /* TextProcessing */; };
-		A550F1578E1AC857FD9F8997 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 13C43197A5BB2CDB00824303 /* TextProcessing */; };
 		186C05812FB779AA00102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05802FB779AA00102432 /* Presets */; };
 		186C05832FB779BA00102432 /* Keychain in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05822FB779BA00102432 /* Keychain */; };
 		186C05852FB779BA00102432 /* KeychainMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C05842FB779BA00102432 /* KeychainMocks */; };
@@ -20,6 +18,7 @@
 		186C058F2FB779D200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058E2FB779D200102432 /* Presets */; };
 		186C0C9C2FB7829A00102432 /* OAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9B2FB7829A00102432 /* OAuth */; };
 		186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9D2FB782A000102432 /* OAuthMocks */; };
+		1872AEF62FE7027A00702A74 /* LiteRTFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 1872AEF52FE7027A00702A74 /* LiteRTFoundation */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02562FC3BCB4007B8BC1 /* AudioRecording */; };
 		188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */; };
@@ -59,6 +58,8 @@
 		18F76D862FB8617C00280269 /* AppGroup in Frameworks */ = {isa = PBXBuildFile; productRef = 18F76D852FB8617C00280269 /* AppGroup */; };
 		1A8DED2E097CE6867571F84D /* AnalyticsMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 80C6FC953001FC4053588FDB /* AnalyticsMocks */; };
 		616CAFAEA09DF203BD975158 /* Analytics in Frameworks */ = {isa = PBXBuildFile; productRef = FFEA7C00964E1EA320FCD72F /* Analytics */; };
+		A0C0A617EC509E09382B22A3 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 8412CA347E0626D9F232A9F9 /* TextProcessing */; };
+		A550F1578E1AC857FD9F8997 /* TextProcessing in Frameworks */ = {isa = PBXBuildFile; productRef = 13C43197A5BB2CDB00824303 /* TextProcessing */; };
 		BFBF000000000000000000C1 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C1 /* AICore */; };
 		BFBF000000000000000000C2 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C2 /* AICore */; };
 		BFBF000000000000000000C3 /* AICore in Frameworks */ = {isa = PBXBuildFile; productRef = AEAE000000000000000000C3 /* AICore */; };
@@ -516,6 +517,7 @@
 				BFBF000000000000000000C1 /* AICore in Frameworks */,
 				BFBF000000000000000000D1 /* AIProviders in Frameworks */,
 				BFBF000000000000000000E1 /* AIKit in Frameworks */,
+				1872AEF62FE7027A00702A74 /* LiteRTFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -736,6 +738,7 @@
 				AEAE000000000000000000C1 /* AICore */,
 				AEAE000000000000000000D1 /* AIProviders */,
 				AEAE000000000000000000E1 /* AIKit */,
+				1872AEF52FE7027A00702A74 /* LiteRTFoundation */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -1006,6 +1009,7 @@
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
+				1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -1384,7 +1388,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
@@ -1427,7 +1431,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
@@ -1468,7 +1472,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1494,7 +1498,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1520,7 +1524,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1550,7 +1554,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1580,7 +1584,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1610,7 +1614,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1710,7 +1714,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = VivaDicta/VivaDicta.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
@@ -1751,7 +1755,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1777,7 +1781,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -1810,7 +1814,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;
@@ -1844,7 +1848,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -1874,7 +1878,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ActionExtension/ActionExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ActionExtension/Info.plist;
@@ -1905,7 +1909,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WatchAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1942,7 +1946,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WatchAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1978,7 +1982,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = WatchAppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2013,7 +2017,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 3.6.0;
@@ -2037,7 +2041,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 3.6.0;
@@ -2060,7 +2064,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 3.6.0;
@@ -2084,7 +2088,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWatchWidget/Info.plist;
@@ -2118,7 +2122,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWatchWidget/Info.plist;
@@ -2151,7 +2155,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWatchWidget/Info.plist;
@@ -2183,7 +2187,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -2215,7 +2219,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = VivaDictaKeyboard/VivaDictaKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaKeyboard/Info.plist;
@@ -2248,7 +2252,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;
@@ -2283,7 +2287,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3009;
+				CURRENT_PROJECT_VERSION = 3011;
 				DEVELOPMENT_TEAM = 358V8FBM3U;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VivaDictaWidget/Info.plist;
@@ -2418,6 +2422,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/n0an/swift-litert-lm.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rryam/LumoKit.git";
@@ -2449,17 +2461,13 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Analytics;
 		};
-		186C057E2FB779AA00102432 /* Keychain */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Keychain;
-		};
-		8412CA347E0626D9F232A9F9 /* TextProcessing */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = TextProcessing;
-		};
 		13C43197A5BB2CDB00824303 /* TextProcessing */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TextProcessing;
+		};
+		186C057E2FB779AA00102432 /* Keychain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Keychain;
 		};
 		186C05802FB779AA00102432 /* Presets */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2500,6 +2508,11 @@
 		186C0C9D2FB782A000102432 /* OAuthMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OAuthMocks;
+		};
+		1872AEF52FE7027A00702A74 /* LiteRTFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */;
+			productName = LiteRTFoundation;
 		};
 		1879FD9F2F8C088E00952CF9 /* LumoKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2605,6 +2618,10 @@
 		80C6FC953001FC4053588FDB /* AnalyticsMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AnalyticsMocks;
+		};
+		8412CA347E0626D9F232A9F9 /* TextProcessing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TextProcessing;
 		};
 		AEAE000000000000000000C1 /* AICore */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -56,7 +56,6 @@ Retrieval-augmented generation stack and surfaces that consume it. See [RAG/](RA
 
 | Document | Description |
 |----------|-------------|
-| [Text Processing Pipeline (Guide)](text-processing-pipeline.md) | Detailed walkthrough of the text processing stages |
 | [Haptic Feedback](haptics-implementation.md) | Haptic feedback patterns and implementation |
 | [Logging & Log Capture](Logging-and-Log-Capture.md) | Logger setup, log capture from simulator/device, analyzing logs |
 | [What's New Screen](whats-new-screen.md) | Developer guide for updating the What's New screen |

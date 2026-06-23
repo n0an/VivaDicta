@@ -59,6 +59,7 @@ class AIService {
 
     private enum StreamingRoute {
         case apple
+        case localGemma
         case anthropic
         case copilot
         case geminiOAuth
@@ -755,6 +756,14 @@ class AIService {
                 logger.logWarning("No Ollama model selected")
                 return false
             }
+        } else if aiProvider == .localGemma {
+            // On-device Gemma needs no API key, but the selected model must be
+            // downloaded - we don't silently download during processing. A mode
+            // whose model was deleted is not properly configured.
+            guard LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded else {
+                logger.logWarning("On-device Gemma model '\(mode.aiModel)' is not downloaded")
+                return false
+            }
         } else if aiProvider == .customOpenAI {
             // Custom OpenAI needs URL and model configured
             guard !customOpenAIEndpointURL.isEmpty else {
@@ -998,6 +1007,8 @@ class AIService {
         switch aiProvider {
         case .apple:
             return .apple
+        case .localGemma:
+            return .localGemma
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1103,6 +1114,11 @@ class AIService {
             } else {
                 throw EnhancementError.notConfigured
             }
+        case .localGemma:
+            logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
+            let provider = LiteRTGemmaTextProvider(model: mode.aiModel)
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
             logger.logDebug("AI Processing - Using Anthropic streaming")
             logger.logDebug("AI Processing - Model: \(mode.aiModel)")
@@ -1258,6 +1274,17 @@ class AIService {
             } else {
                 throw EnhancementError.notConfigured
             }
+        }
+
+        // Handle on-device Gemma (LiteRT) - same prompt as cloud providers
+        if aiProvider == .localGemma {
+            let sysMsg = systemMessage ?? getSystemMessage()
+            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+            lastSystemMessageSent = sysMsg
+            lastUserMessageSent = userMsg
+            logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
+            let result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
         // Handle Ollama (local server)
@@ -1628,6 +1655,14 @@ class AIService {
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
 
+        // Add on-device Gemma (LiteRT) only when a variant is actually
+        // downloaded. "Connected" must match what the runtime can run: appending
+        // it unconditionally let the mode editor mark a Gemma mode valid with no
+        // model on disk, which isProperlyConfigured(.localGemma) then rejects.
+        if LiteRTGemmaVariant.allCases.contains(where: \.isDownloaded) {
+            providers.append(.localGemma)
+        }
+
         // Add Custom OpenAI provider if configured AND verified
         if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {
             providers.append(.customOpenAI)
@@ -1982,6 +2017,12 @@ class AIService {
         // Copilot: show dynamically fetched models
         if provider == .copilot && isCopilotSignedIn {
             return copilotModels.isEmpty ? [CopilotAPIClient.defaultModel] : copilotModels
+        }
+        // On-device Gemma: only offer variants that are already downloaded, so
+        // picking one here never silently kicks off a multi-GB download. Manage
+        // downloads from the AI Providers screen instead.
+        if provider == .localGemma {
+            return provider.availableModels.filter { LiteRTGemmaVariant(modelID: $0).isDownloaded }
         }
         return provider.availableModels
     }

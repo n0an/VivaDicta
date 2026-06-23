@@ -28,7 +28,7 @@ Canonical custom skills live in `.agents/skills/` as directories containing `SKI
 
 ## Test Coverage
 
-**Coverage is a runtime metric — you MUST run the tests to get it.** It measures which executable lines were actually *executed*, so it cannot be derived by reading the codebase. Do not confuse it with the test/prod **LOC ratio** (`test_loc ÷ prod_loc`), which is a static line count (a proxy for test *effort*, not *effectiveness*) — that one you compute without running anything via `python3 llmtemp/loc_history.py`.
+**Coverage is a runtime metric — you MUST run the tests to get it.** It measures which executable lines were actually *executed*, so it cannot be derived by reading the codebase. Do not confuse it with the test/prod **LOC ratio** (`test_loc ÷ prod_loc`), which is a static line count (a proxy for test *effort*, not *effectiveness*) — that one you compute without running anything via `python3 scripts/loc/loc_history.py` (skill `/loc-report`).
 
 ### Per SPM module (fast — runs on the macOS host, no simulator)
 
@@ -46,26 +46,31 @@ xcrun llvm-cov report "$BIN" -instr-profile="$PROF" -ignore-filename-regex='Test
 
 Caveat: the macOS-host run **excludes iOS-only files**, so a module's total differs slightly from Xcode's simulator number (e.g. CloudTranscription reads ~2,231 lines here vs ~3,073 in Xcode). Use it for *relative* per-file progress; treat Xcode/`xccov` as the canonical total. After a toolchain bump, `rm -rf .build` once (stale `.swiftmodule` import error).
 
-### Whole app / test plan (slow — simulator, canonical number)
+### Whole app / test plan (slow - simulator, canonical number)
+
+Use the **`scripts/coverage/coverage.sh`** wrapper (skill `/coverage-report`); it runs the plan and reports first-party-filtered coverage:
 
 ```bash
-xcodebuild test -scheme VivaDicta \
-  -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.4' \
-  -enableCodeCoverage YES -resultBundlePath /tmp/cov.xcresult
-xcrun xccov view --report --only-targets /tmp/cov.xcresult   # one row per target
-# variants: drop --only-targets for per-file; add --json for machine-readable; `--file <abs path>` for one file
+scripts/coverage/coverage.sh app [File.swift ...]   # full plan (warm build): overall + per-target (+ per-file rows for named files)
+scripts/coverage/coverage.sh module <Module>        # one SPM module, host-fast (swift test + llvm-cov)
+scripts/coverage/coverage.sh full                   # clean DerivedData -> full plan -> auto-fill dropped module rows -> merged 16-module table
 ```
 
-`xccov` reads the `.xcresult` bundle directly (it finds the binaries + profile inside), so you don't pass them by hand. It respects the test plan's coverage-target list.
+Under the hood `app`/`full` run `xcodebuild test -enableCodeCoverage YES -resultBundlePath …` then read the bundle with `xcrun xccov view --report …`. `xccov` finds the binaries + profile inside the bundle, so you don't pass them by hand.
 
-### Test plan coverage config — keep it first-party-only
+### The test plan gathers ALL targets - filter to first-party when reading
 
-`VivaDicta/VivaDictaTestPlan.xctestplan` must pin `defaultOptions.codeCoverage` to an explicit **`targets` list of only first-party targets** (the 16 SPM modules + `VivaDicta` app + the 4 extensions = 21 targets). **If that key is absent, Xcode gathers coverage for ALL targets** — Firebase / Google / GUL\* / KeyboardKit / LumoKit / Transformers get swept in and the headline % is meaningless (e.g. FirebaseCrashlytics alone is ~10,653 lines). Exclude all `*Mocks` and `*Tests` targets too — only production targets belong in the list. The file is JSON; validate edits with `python3 -c "import json; json.load(open('VivaDicta/VivaDictaTestPlan.xctestplan'))"` (`plutil -lint` rejects the `.xctestplan` extension even when the JSON is valid).
+`VivaDicta/VivaDictaTestPlan.xctestplan` has **no `defaultOptions.codeCoverage` pin**, so Xcode gathers coverage for **every** target - Firebase / Google / GUL\* / KeyboardKit / LumoKit / Transformers included (FirebaseCrashlytics alone is ~10k lines). The **raw bundle % is therefore meaningless** (~25%). `coverage.sh` filters to first-party at report time (`first_party_overall`: the 16 production modules + `VivaDicta` app + the 4 extensions; `TestUtilities` / `*Mocks` / `*Tests` excluded), so the headline stays real (~14%). **If you call `xccov` by hand, filter yourself** or you'll read the polluted number.
+
+> History: the test plan used to pin `codeCoverage` to a first-party `targets` list; that pin was removed 2026-06-20 - filtering moved into the script, so adding/removing a module no longer means editing the test plan. (`.xctestplan` is JSON; validate edits with `python3 -c "import json; json.load(open('VivaDicta/VivaDictaTestPlan.xctestplan'))"` - `plutil -lint` rejects the extension.)
+
+### Per-target attribution wobbles (use `full` for a complete table)
+
+`xccov`'s per-target rollup is non-deterministic: an SPM module is a static lib linked into both the app and its own test bundle, and the linker's cross-binary dedup sometimes drops a module's row (or returns `0/0`). A **clean build** recovers most rows (~18/21 vs ~13/21 incremental) - which is what `coverage.sh full` does (clean, then fill any still-dropped row from the `module` path). For a deterministic single-module number use `coverage.sh module <M>` (its own test bundle is a standalone binary, never dropped; caveat: own-tests-only, a floor for app-exercised modules).
 
 ### Whole-number reality
 
-The overall app coverage is dominated by the **~73k-line `VivaDicta.app` target (~7%)**, so module-level test work barely moves the global %. Judge progress by **per-logic-module coverage**, not the headline number. UI/Views are covered by acceptance + snapshot tests, never unit line-coverage.
+Overall app coverage is dominated by the **~73k-line `VivaDicta.app` target (~9%)**, so module-level test work barely moves the global %. Judge progress by **per-logic-module coverage**, not the headline number. UI/Views are covered by acceptance + snapshot tests, never unit line-coverage.
 
 ## App Overview
 
@@ -78,7 +83,7 @@ VivaDicta is an iOS voice transcription app with on-device (WhisperKit, Parakeet
 1. **RecordView/RecordViewModel** — records audio via AVAudioRecorder
 2. **TranscriptionManager** — routes to on-device (WhisperKit/Parakeet) or cloud provider
 3. **AIService** — AI text processing using the mode's active preset. Builds system/user messages via `PromptsTemplates`, sends to cloud providers or Apple Foundation Model
-4. **Text Processing Pipeline** — multi-stage: raw text → word replacements → custom vocabulary → AI processing → output filter → paragraph formatting → text insertion formatting. See `documentation/text-processing-pipeline.md`
+4. **Text Processing Pipeline** — multi-stage: raw text → word replacements → custom vocabulary → AI processing → output filter → paragraph formatting → text insertion formatting. See `documentation/Text-Processing-Pipeline-Architecture.md`
 5. **Transcription** (SwiftData) — persisted with `text`, `enhancedText`, audio file reference, and linked `TranscriptionVariation` records
 
 ### Data Model: Transcription + Variations (Dual-Write Pattern)
@@ -174,7 +179,7 @@ When an EXISTING file needs to be added to ADDITIONAL targets, notify the user t
   - Data persistence & CloudKit sync, Deep linking & URL routing
   - Keyboard extension, App Intents & Shortcuts
   - Widget & Live Activity, Hot Mic / Audio Prewarm
-- **Text processing pipeline**: `/documentation/text-processing-pipeline.md`
+- **Text processing pipeline**: `/documentation/Text-Processing-Pipeline-Architecture.md`
 - **DocC site**: https://n0an.github.io/VivaDicta/ — built via `./build-docc.sh`, hosted on `gh-pages` branch
 - **Additional Xcode docs**: `/Applications/Xcode.app/Contents/PlugIns/IDEIntelligenceChat.framework/Versions/A/Resources/AdditionalDocumentation/`
 - **All WWDC 2025 transcripts index**: https://gist.github.com/auramagi/9c040c2233dfe71c24c76942e186f788
