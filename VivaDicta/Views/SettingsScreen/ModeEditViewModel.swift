@@ -618,6 +618,21 @@ class ModeEditViewModel {
             return modelName.isEmpty ? nil : modelName
         }
 
+        if provider == .localGemma {
+            // Seed a downloaded variant: the picker only offers downloaded
+            // variants, so the default must be downloaded too - otherwise (e.g.
+            // only E4B on disk) the mode saves with the static E2B default that
+            // isProperlyConfigured then rejects. Prefer the provider default if
+            // it's downloaded, else the first downloaded variant.
+            let downloaded = provider.availableModels.filter {
+                LiteRTGemmaVariant(modelID: $0).isDownloaded
+            }
+            if downloaded.contains(provider.defaultModel) {
+                return provider.defaultModel
+            }
+            return downloaded.first ?? provider.defaultModel
+        }
+
         return provider.defaultModel
     }
 
