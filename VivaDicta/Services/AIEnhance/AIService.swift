@@ -1655,9 +1655,13 @@ class AIService {
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
 
-        // Add on-device Gemma (LiteRT) provider (always available; the model
-        // downloads on first use and the runtime enforces device memory limits)
-        providers.append(.localGemma)
+        // Add on-device Gemma (LiteRT) only when a variant is actually
+        // downloaded. "Connected" must match what the runtime can run: appending
+        // it unconditionally let the mode editor mark a Gemma mode valid with no
+        // model on disk, which isProperlyConfigured(.localGemma) then rejects.
+        if LiteRTGemmaVariant.allCases.contains(where: \.isDownloaded) {
+            providers.append(.localGemma)
+        }
 
         // Add Custom OpenAI provider if configured AND verified
         if !customOpenAIEndpointURL.isEmpty && !customOpenAIModelName.isEmpty && customOpenAIIsVerified {

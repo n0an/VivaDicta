@@ -134,13 +134,20 @@ actor LiteRTModelManager: LocalModelEngine {
     /// conversation mid-flight). One generation runs at a time.
     private var isGenerating = false
 
+    /// True while a model is downloading/loading. Guards against starting a
+    /// second load concurrently - two variants loading into memory at once
+    /// doubles the footprint and can OOM smaller devices.
+    private var isLoading = false
+
     private init() {}
 
     var isReady: Bool { state == .ready }
 
-    /// Download (first launch only) and load the requested variant. Idempotent
-    /// for the same variant; loading a different variant unloads the previous one
-    /// (only one fits in memory at a time).
+    /// Download (first launch only) and load the requested variant. This is the
+    /// download-allowed path - call it only from the explicit Settings download
+    /// action; the generation path uses `loadForGeneration`, which never
+    /// downloads. Idempotent for the same variant; loading a different variant
+    /// unloads the previous one (only one fits in memory at a time).
     /// - Parameters:
     ///   - variant: which Gemma model to load (E2B or E4B).
     ///   - onDownloadProgress: 0...1 fraction during the first-launch download.
@@ -150,6 +157,15 @@ actor LiteRTModelManager: LocalModelEngine {
             state = .ready
             return
         }
+        // Serialize the lifecycle: refuse a second load while one is in flight
+        // (two variants loading at once doubles memory -> OOM risk on smaller
+        // devices), and never swap the model out from under a running generation.
+        // Set synchronously (no await before the assignment) so the actor can't
+        // interleave two callers past this guard.
+        guard !isLoading, !isGenerating else { throw LiteRTModelError.busy }
+        isLoading = true
+        defer { isLoading = false }
+
         // Switching variants: drop the previously-loaded model first.
         chat = nil
         loadedVariant = nil
@@ -194,6 +210,15 @@ actor LiteRTModelManager: LocalModelEngine {
         state = .failed("unavailable")
         throw LiteRTModelError.unavailable
         #endif
+    }
+
+    /// Load an already-downloaded variant for generation. Never downloads -
+    /// throws `.notDownloaded` if the model is not on disk, so a text-processing
+    /// request can never silently start a multi-GB download. The download-allowed
+    /// path is `ensureLoaded`, used only by the explicit Settings download action.
+    func loadForGeneration(variant: LiteRTGemmaVariant) async throws {
+        guard variant.isDownloaded else { throw LiteRTModelError.notDownloaded }
+        try await ensureLoaded(variant: variant)
     }
 
     /// Stream a completion for a fully-built prompt. Yields delta chunks (not
@@ -271,6 +296,8 @@ actor LiteRTModelManager: LocalModelEngine {
     /// it first if it is the currently-loaded one). The next `ensureLoaded()`
     /// re-downloads it.
     func deleteModel(_ variant: LiteRTGemmaVariant) throws {
+        // Don't pull the model out from under a running generation.
+        guard !isGenerating else { throw LiteRTModelError.busy }
         if loadedVariant == variant { unload() }
         #if canImport(LiteRTFoundation)
         let dir = try LiteRTChat.defaultStorageDirectory()
@@ -286,6 +313,7 @@ actor LiteRTModelManager: LocalModelEngine {
 enum LiteRTModelError: LocalizedError {
     case unavailable
     case notLoaded
+    case notDownloaded
     case busy
 
     var errorDescription: String? {
@@ -294,6 +322,8 @@ enum LiteRTModelError: LocalizedError {
             "On-device Gemma (LiteRT) is not available in this build."
         case .notLoaded:
             "The on-device Gemma model has not been loaded yet."
+        case .notDownloaded:
+            "Download the on-device Gemma model in AI Providers settings before using it."
         case .busy:
             "The on-device Gemma model is already processing another request. Try again in a moment."
         }

@@ -44,7 +44,9 @@ struct LiteRTGemmaTextProvider: AITextProvider {
         userMessage: String,
         onPartialResponse: (@MainActor (String) -> Void)?
     ) async throws -> String {
-        try await LiteRTModelManager.shared.ensureLoaded(variant: variant)
+        // loadForGeneration never downloads - if the model isn't on disk it
+        // throws .notDownloaded rather than silently starting a multi-GB fetch.
+        try await LiteRTModelManager.shared.loadForGeneration(variant: variant)
 
         let prompt = systemMessage + "\n\n" + userMessage
         let stream = try await LiteRTModelManager.shared.stream(prompt: prompt)
