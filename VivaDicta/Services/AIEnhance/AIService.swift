@@ -19,6 +19,7 @@ import CloudTranscription
 import AICore
 import AIProviders
 import AIKit
+import LocalLLM
 
 /// Service responsible for AI-powered text enhancement of transcriptions.
 ///

@@ -18,7 +18,6 @@
 		186C058F2FB779D200102432 /* Presets in Frameworks */ = {isa = PBXBuildFile; productRef = 186C058E2FB779D200102432 /* Presets */; };
 		186C0C9C2FB7829A00102432 /* OAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9B2FB7829A00102432 /* OAuth */; };
 		186C0C9E2FB782A000102432 /* OAuthMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 186C0C9D2FB782A000102432 /* OAuthMocks */; };
-		1872AEF62FE7027A00702A74 /* LiteRTFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 1872AEF52FE7027A00702A74 /* LiteRTFoundation */; };
 		1879FDA02F8C088E00952CF9 /* LumoKit in Frameworks */ = {isa = PBXBuildFile; productRef = 1879FD9F2F8C088E00952CF9 /* LumoKit */; };
 		188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02562FC3BCB4007B8BC1 /* AudioRecording */; };
 		188E02592FC3BCC1007B8BC1 /* AudioRecordingMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 188E02582FC3BCC1007B8BC1 /* AudioRecordingMocks */; };
@@ -38,6 +37,7 @@
 		18BA29262F7F29FD00C4F68B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FB2E8E793E00BE8A11 /* WidgetKit.framework */; };
 		18BA29272F7F29FD00C4F68B /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18E1C7FD2E8E793E00BE8A11 /* SwiftUI.framework */; };
 		18BA29362F7F29FE00C4F68B /* VivaDictaWatchWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18BA29252F7F29FD00C4F68B /* VivaDictaWatchWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		18C7D0922FEB07530041C086 /* LocalLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0912FEB07530041C086 /* LocalLLM */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -221,6 +221,7 @@
 				CloudTranscription,
 				DesignSystem,
 				Keychain,
+				LocalLLM,
 				LocalTranscription,
 				Networking,
 				OAuth,
@@ -244,6 +245,7 @@
 				CloudTranscription,
 				DesignSystem,
 				Keychain,
+				LocalLLM,
 				LocalTranscription,
 				Networking,
 				OAuth,
@@ -515,9 +517,9 @@
 				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
 				18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */,
 				BFBF000000000000000000C1 /* AICore in Frameworks */,
+				18C7D0922FEB07530041C086 /* LocalLLM in Frameworks */,
 				BFBF000000000000000000D1 /* AIProviders in Frameworks */,
 				BFBF000000000000000000E1 /* AIKit in Frameworks */,
-				1872AEF62FE7027A00702A74 /* LiteRTFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -738,7 +740,7 @@
 				AEAE000000000000000000C1 /* AICore */,
 				AEAE000000000000000000D1 /* AIProviders */,
 				AEAE000000000000000000E1 /* AIKit */,
-				1872AEF52FE7027A00702A74 /* LiteRTFoundation */,
+				18C7D0912FEB07530041C086 /* LocalLLM */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -1009,7 +1011,6 @@
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
-				1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -2422,14 +2423,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/n0an/swift-litert-lm.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 		1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rryam/LumoKit.git";
@@ -2509,11 +2502,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = OAuthMocks;
 		};
-		1872AEF52FE7027A00702A74 /* LiteRTFoundation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1872AEF42FE7027A00702A74 /* XCRemoteSwiftPackageReference "swift-litert-lm" */;
-			productName = LiteRTFoundation;
-		};
 		1879FD9F2F8C088E00952CF9 /* LumoKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */;
@@ -2556,6 +2544,10 @@
 		18B8CF2B2FB8C4690007FA96 /* DesignSystem */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = DesignSystem;
+		};
+		18C7D0912FEB07530041C086 /* LocalLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LocalLLM;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;

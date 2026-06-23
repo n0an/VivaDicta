@@ -9,6 +9,7 @@ import SwiftUI
 import AICore
 import AIProviders
 import DesignSystem
+import LocalLLM
 
 private enum AIProviderType: String, CaseIterable, Identifiable {
     case local

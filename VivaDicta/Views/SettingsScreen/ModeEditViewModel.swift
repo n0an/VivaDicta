@@ -10,6 +10,7 @@ import os
 import Presets
 import AICore
 import AIProviders
+import LocalLLM
 
 @Observable
 class ModeEditViewModel {

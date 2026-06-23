@@ -18,20 +18,20 @@
 import Foundation
 import AICore
 
-struct LiteRTGemmaTextProvider: AITextProvider {
+public struct LiteRTGemmaTextProvider: AITextProvider {
     private let variant: LiteRTGemmaVariant
 
     /// - Parameter model: the mode's selected model id (e.g. "gemma-4-E2B" /
     ///   "gemma-4-E4B"); unknown ids fall back to E2B.
-    init(model: String = LiteRTGemmaVariant.e2b.rawValue) {
+    public init(model: String = LiteRTGemmaVariant.e2b.rawValue) {
         self.variant = LiteRTGemmaVariant(modelID: model)
     }
 
-    func enhance(systemMessage: String, userMessage: String) async throws -> String {
+    public func enhance(systemMessage: String, userMessage: String) async throws -> String {
         try await run(systemMessage: systemMessage, userMessage: userMessage, onPartialResponse: nil)
     }
 
-    func enhanceStreaming(
+    public func enhanceStreaming(
         systemMessage: String,
         userMessage: String,
         onPartialResponse: @escaping @MainActor (String) -> Void

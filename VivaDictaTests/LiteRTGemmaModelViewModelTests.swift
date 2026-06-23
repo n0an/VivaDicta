@@ -13,6 +13,8 @@
 import Foundation
 import Testing
 @testable import VivaDicta
+import LocalLLM
+import LocalLLMMocks
 
 @MainActor
 struct LiteRTGemmaModelViewModelTests {

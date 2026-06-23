@@ -12,6 +12,7 @@
 
 import SwiftUI
 import DesignSystem
+import LocalLLM
 
 @MainActor
 @Observable

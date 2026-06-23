@@ -1,25 +1,25 @@
 //
 //  MockLocalModelEngine.swift
-//  VivaDictaTests
+//  LocalLLMMocks
 //
 //  Created by Anton Novoselov on 2026.06.22
 //
-//  Test double for `LocalModelEngine` - the model-lifecycle seam behind
-//  `LiteRTGemmaModelViewModel`. Lets the view-model tests drive download /
-//  cancel / delete / failure paths deterministically, with no real download
-//  and no GPU. It's an actor (so it's `Sendable` like the real manager), it
-//  captures calls (spy), and its behavior is configured at init (stub).
+//  Test double for `LocalModelEngine` - the model-lifecycle seam behind the
+//  on-device model view models. Lets view-model tests drive download / cancel /
+//  delete / failure paths deterministically, with no real download and no GPU.
+//  It's an actor (so it's `Sendable` like the real manager), it captures calls
+//  (spy), and its behavior is configured at init (stub).
 //
 
 import Foundation
-@testable import VivaDicta
+import LocalLLM
 
-actor MockLocalModelEngine: LocalModelEngine {
+public actor MockLocalModelEngine: LocalModelEngine {
 
     // MARK: Spies (what the view model asked us to do)
 
-    private(set) var ensureLoadedCalls: [LiteRTGemmaVariant] = []
-    private(set) var deleteCalls: [LiteRTGemmaVariant] = []
+    public private(set) var ensureLoadedCalls: [LiteRTGemmaVariant] = []
+    public private(set) var deleteCalls: [LiteRTGemmaVariant] = []
 
     // MARK: Stubbed state
 
@@ -40,7 +40,7 @@ actor MockLocalModelEngine: LocalModelEngine {
     /// When set, `deleteModel` throws this instead of succeeding.
     private let deleteError: (any Error)?
 
-    init(
+    public init(
         downloaded: Set<LiteRTGemmaVariant> = [],
         bytes: [LiteRTGemmaVariant: Int64] = [:],
         progressSequence: [Double] = [],
@@ -60,7 +60,7 @@ actor MockLocalModelEngine: LocalModelEngine {
 
     // MARK: LocalModelEngine
 
-    func ensureLoaded(variant: LiteRTGemmaVariant, onDownloadProgress: (@Sendable (Double) -> Void)?) async throws {
+    public func ensureLoaded(variant: LiteRTGemmaVariant, onDownloadProgress: (@Sendable (Double) -> Void)?) async throws {
         ensureLoadedCalls.append(variant)
         for fraction in progressSequence {
             try Task.checkCancellation()
@@ -77,15 +77,15 @@ actor MockLocalModelEngine: LocalModelEngine {
         bytes[variant] = bytesAfterDownload
     }
 
-    func isDownloaded(_ variant: LiteRTGemmaVariant) -> Bool {
+    public func isDownloaded(_ variant: LiteRTGemmaVariant) -> Bool {
         downloaded.contains(variant)
     }
 
-    func downloadedBytes(_ variant: LiteRTGemmaVariant) -> Int64 {
+    public func downloadedBytes(_ variant: LiteRTGemmaVariant) -> Int64 {
         bytes[variant] ?? 0
     }
 
-    func deleteModel(_ variant: LiteRTGemmaVariant) throws {
+    public func deleteModel(_ variant: LiteRTGemmaVariant) throws {
         deleteCalls.append(variant)
         if let deleteError {
             throw deleteError
