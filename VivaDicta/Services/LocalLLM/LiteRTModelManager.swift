@@ -232,8 +232,16 @@ actor LiteRTModelManager: LocalModelEngine {
         #if canImport(LiteRTFoundation)
         guard let chat else { throw LiteRTModelError.notLoaded }
         guard !isGenerating else { throw LiteRTModelError.busy }
-        try await chat.resetConversation()
+        // Claim the generation slot synchronously (before any await) so two
+        // concurrent callers can't both pass the guard during resetConversation's
+        // suspension and start overlapping streams. Release it if the reset fails.
         isGenerating = true
+        do {
+            try await chat.resetConversation()
+        } catch {
+            isGenerating = false
+            throw error
+        }
         let base = chat.stream(prompt)
         // Wrap so the in-flight flag clears when the stream finishes or the
         // consumer abandons it (cancellation), keeping the engine serial.
