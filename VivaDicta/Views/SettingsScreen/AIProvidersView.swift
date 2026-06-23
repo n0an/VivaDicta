@@ -23,6 +23,7 @@ struct AIProviders: View {
     @State private var refreshID = UUID()
     @State private var providerType: AIProviderType = .local
     @State private var gemmaModel = LiteRTGemmaModelViewModel()
+    @State private var qwenModel = CoreMLQwenModelViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,6 +47,10 @@ struct AIProviders: View {
                         GemmaVariantCard(variant: .e2b, model: gemmaModel)
                             .padding(.horizontal)
                         GemmaVariantCard(variant: .e4b, model: gemmaModel)
+                            .padding(.horizontal)
+                        QwenVariantCard(variant: .qwen2B, model: qwenModel)
+                            .padding(.horizontal)
+                        QwenVariantCard(variant: .qwen08B, model: qwenModel)
                             .padding(.horizontal)
                     }
                     .padding(.vertical)
@@ -247,6 +252,7 @@ struct AIProviders: View {
         }
         .task {
             await gemmaModel.refresh()
+            await qwenModel.refresh()
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)

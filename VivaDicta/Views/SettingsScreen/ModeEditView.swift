@@ -368,6 +368,8 @@ struct ModeEditView: View {
                                 }
                                 Label(AIProvider.localGemma.displayName, systemImage: "cpu")
                                     .tag(AIProvider.localGemma)
+                                Label(AIProvider.localQwen.displayName, systemImage: "cpu")
+                                    .tag(AIProvider.localQwen)
                             }
                             // Cloud providers section
                             Section("Cloud") {
