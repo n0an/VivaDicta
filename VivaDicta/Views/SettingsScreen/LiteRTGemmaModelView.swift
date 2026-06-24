@@ -160,6 +160,8 @@ struct GemmaVariantCard: View {
             Text(variant.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            RuntimeBadge(runtime: "LiteRT")
         }
         .padding(20)
         .modelCardBackground()
@@ -279,6 +281,22 @@ struct GemmaVariantCard: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Small subtle tag naming the on-device runtime that powers a model card
+/// ("LiteRT" / "Core ML").
+struct RuntimeBadge: View {
+    let runtime: String
+
+    var body: some View {
+        Label(runtime, systemImage: "cpu")
+            .font(.caption2)
+            .fontWeight(.medium)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(.secondary.opacity(0.12), in: .capsule)
     }
 }
 

@@ -145,6 +145,8 @@ struct OpenModelCard: View {
             Text(model.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            RuntimeBadge(runtime: "LiteRT")
         }
         .padding(20)
         .modelCardBackground()

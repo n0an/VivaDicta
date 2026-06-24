@@ -153,6 +153,8 @@ struct QwenVariantCard: View {
             Text(variant.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+
+            RuntimeBadge(runtime: "Core ML")
         }
         .padding(20)
         .modelCardBackground()
