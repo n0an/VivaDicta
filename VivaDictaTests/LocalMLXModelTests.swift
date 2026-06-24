@@ -16,7 +16,9 @@ import Testing
 struct LocalMLXModelTests {
 
     @Test("Model id maps to its model; unknown ids fall back to Qwen3.5 2B", arguments: [
-        ("qwen3.5-2b-mlx", LocalMLXModel.qwen35_2B),
+        ("gemma-3n-e2b-mlx", LocalMLXModel.gemma3n_E2B),
+        ("gemma-3n-e4b-mlx", .gemma3n_E4B),
+        ("qwen3.5-2b-mlx", .qwen35_2B),
         ("qwen3.5-0.8b-mlx", .qwen35_08B),
         ("phi-4-mini-mlx", .phi4Mini),
         ("llama-3.2-1b-mlx", .llama32_1B),
@@ -50,7 +52,9 @@ struct LocalMLXModelTests {
     }
 
     @Test("Only the Qwen models expose the thinking toggle", arguments: [
-        (LocalMLXModel.qwen35_2B, true),
+        (LocalMLXModel.gemma3n_E2B, false),
+        (.gemma3n_E4B, false),
+        (.qwen35_2B, true),
         (.qwen35_08B, true),
         (.phi4Mini, false),
         (.llama32_1B, false),
@@ -63,7 +67,7 @@ struct LocalMLXModelTests {
         #expect(model.supportsThinkingToggle == expected)
     }
 
-    @Test func catalogIsTheEightCurrentSmallModels() {
-        #expect(LocalMLXModel.allCases.count == 8)
+    @Test func catalogIsTheTenCurrentSmallModels() {
+        #expect(LocalMLXModel.allCases.count == 10)
     }
 }
