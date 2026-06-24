@@ -17,6 +17,7 @@ import Foundation
 /// An on-device MLX model offered in the AI Providers "Local" tab. Current small
 /// 4-bit `mlx-community` builds suitable for iPhone (1-4B).
 nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
+    case qwen35_4B = "qwen3.5-4b-mlx"
     case qwen35_2B = "qwen3.5-2b-mlx"
     case qwen35_08B = "qwen3.5-0.8b-mlx"
     case phi4Mini = "phi-4-mini-mlx"
@@ -34,6 +35,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
+        case .qwen35_4B: "Qwen3.5 4B"
         case .qwen35_2B: "Qwen3.5 2B"
         case .qwen35_08B: "Qwen3.5 0.8B"
         case .phi4Mini: "Phi-4 Mini"
@@ -48,6 +50,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
 
     var subtitle: String {
         switch self {
+        case .qwen35_4B: "Alibaba's Qwen3.5, larger and higher quality. Broad multilingual."
         case .qwen35_2B: "Alibaba's Qwen3.5. Broad multilingual support."
         case .qwen35_08B: "Tiny, fastest option. Broad languages, but lower quality."
         case .phi4Mini: "Microsoft's Phi-4 Mini. Multilingual (~20+ languages)."
@@ -63,6 +66,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     /// HuggingFace repo id for the 4-bit MLX build.
     var mlxRepo: String {
         switch self {
+        case .qwen35_4B: "mlx-community/Qwen3.5-4B-4bit"
         case .qwen35_2B: "mlx-community/Qwen3.5-2B-4bit"
         case .qwen35_08B: "mlx-community/Qwen3.5-0.8B-4bit"
         case .phi4Mini: "mlx-community/Phi-4-mini-instruct-4bit"
@@ -77,6 +81,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
 
     var approxDownloadDescription: String {
         switch self {
+        case .qwen35_4B: "~2.3 GB"
         case .qwen35_2B: "~1.3 GB"
         case .qwen35_08B: "~0.5 GB"
         case .phi4Mini: "~2.3 GB"
@@ -92,7 +97,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     /// Asset name for the card icon (nil falls back to an SF symbol).
     var iconAsset: String? {
         switch self {
-        case .qwen35_2B, .qwen35_08B: "qwen-color"
+        case .qwen35_4B, .qwen35_2B, .qwen35_08B: "qwen-color"
         case .phi4Mini: "microsoft-color"
         case .llama32_1B, .llama32_3B: "ollama" // reuse the llama mascot
         case .ministral3B: "mistral"
@@ -105,7 +110,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     /// Qwen chat templates honor `enable_thinking: false`; others ignore it.
     var supportsThinkingToggle: Bool {
         switch self {
-        case .qwen35_2B, .qwen35_08B: true
+        case .qwen35_4B, .qwen35_2B, .qwen35_08B: true
         default: false
         }
     }

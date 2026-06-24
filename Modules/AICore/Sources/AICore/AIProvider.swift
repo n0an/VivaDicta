@@ -616,7 +616,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .localGemma:
             return ["gemma-4-E2B", "gemma-4-E4B"]
         case .localMLX:
-            return ["qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx", "llama-3.2-1b-mlx", "llama-3.2-3b-mlx", "ministral-3b-mlx", "falcon3-3b-mlx", "granite-3.3-2b-mlx", "deepseek-r1-qwen-1.5b-mlx"]
+            return ["qwen3.5-4b-mlx", "qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx", "llama-3.2-1b-mlx", "llama-3.2-3b-mlx", "ministral-3b-mlx", "falcon3-3b-mlx", "granite-3.3-2b-mlx", "deepseek-r1-qwen-1.5b-mlx"]
         }
     }
 }
