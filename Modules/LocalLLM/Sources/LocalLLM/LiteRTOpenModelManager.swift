@@ -27,7 +27,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
     case llama32_3B = "llama-3.2-3b"
     case ministral3B = "ministral-3b"
     case falcon3_3B = "falcon3-3b"
-    case deepseekR1_1_5B = "deepseek-r1-qwen-1.5b"
 
     public init(modelID: String) {
         self = LiteRTOpenModel(rawValue: modelID) ?? .llama32_3B
@@ -38,7 +37,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
         case .llama32_3B: "Llama 3.2 3B"
         case .ministral3B: "Ministral 3B"
         case .falcon3_3B: "Falcon3 3B"
-        case .deepseekR1_1_5B: "DeepSeek R1 (Qwen 1.5B)"
         }
     }
 
@@ -47,7 +45,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
         case .llama32_3B: "Meta's Llama 3.2, on-device via LiteRT."
         case .ministral3B: "Mistral AI's edge model, on-device via LiteRT."
         case .falcon3_3B: "TII's Falcon3, on-device via LiteRT."
-        case .deepseekR1_1_5B: "A small reasoning model. May emit its thinking"
         }
     }
 
@@ -56,7 +53,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
         case .llama32_3B: "~2.2 GB"
         case .ministral3B: "~2.3 GB"
         case .falcon3_3B: "~1.9 GB"
-        case .deepseekR1_1_5B: "~1.0 GB"
         }
     }
 
@@ -66,7 +62,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
         case .llama32_3B: "ollama" // reuse the Ollama llama mascot for Llama
         case .ministral3B: "mistral"
         case .falcon3_3B: "tii-color"
-        case .deepseekR1_1_5B: "deepseek-color"
         }
     }
 
@@ -75,7 +70,6 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
         case .llama32_3B: "mlboydaisuke/Llama-3.2-3B-Instruct-LiteRT"
         case .ministral3B: "mlboydaisuke/Ministral-3-3B-Instruct-2512-LiteRT"
         case .falcon3_3B: "mlboydaisuke/Falcon3-3B-Instruct-LiteRT"
-        case .deepseekR1_1_5B: "mlboydaisuke/DeepSeek-R1-Distill-Qwen-1.5B-LiteRT"
         }
     }
 

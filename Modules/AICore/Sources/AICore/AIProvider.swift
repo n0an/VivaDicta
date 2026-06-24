@@ -630,7 +630,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .localQwen:
             return ["qwen3.5-2b", "qwen3.5-0.8b"]
         case .localLiteRT:
-            return ["llama-3.2-3b", "ministral-3b", "falcon3-3b", "deepseek-r1-qwen-1.5b"]
+            return ["llama-3.2-3b", "ministral-3b", "falcon3-3b"]
         }
     }
 }
