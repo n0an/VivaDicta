@@ -132,7 +132,7 @@ class ModeEditViewModel {
             if provider == .customOpenAI {
                 return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
             }
-            if provider == .localGemma || provider == .localLiteRT || provider == .localMLX {
+            if provider == .localGemma || provider == .localMLX {
                 return "Download the model in AI Providers\(Self.disableHint)"
             }
             return "Add API key to continue\(Self.disableHint)"
@@ -351,20 +351,6 @@ class ModeEditViewModel {
             } else {
                 aiEnhanceEnabled = false
                 logger.logInfo("No on-device Gemma model downloaded; disabled AI Processing for this mode")
-            }
-        } else if provider == .localLiteRT {
-            // Same handling for on-device open LiteRT models.
-            let downloaded = AIProvider.localLiteRT.availableModels.filter {
-                LiteRTOpenModel(modelID: $0).isDownloaded
-            }
-            if let current = aiModel, downloaded.contains(current) {
-                // Still valid - keep it.
-            } else if let firstDownloaded = downloaded.first {
-                aiModel = firstDownloaded
-                logger.logInfo("On-device LiteRT model not available, reset to '\(firstDownloaded)'")
-            } else {
-                aiEnhanceEnabled = false
-                logger.logInfo("No on-device LiteRT model downloaded; disabled AI Processing for this mode")
             }
         } else if provider == .localMLX {
             // Same handling for on-device MLX models.
@@ -658,17 +644,6 @@ class ModeEditViewModel {
             // it's downloaded, else the first downloaded variant.
             let downloaded = provider.availableModels.filter {
                 LiteRTGemmaVariant(modelID: $0).isDownloaded
-            }
-            if downloaded.contains(provider.defaultModel) {
-                return provider.defaultModel
-            }
-            return downloaded.first ?? provider.defaultModel
-        }
-
-        if provider == .localLiteRT {
-            // Seed a downloaded open LiteRT model.
-            let downloaded = provider.availableModels.filter {
-                LiteRTOpenModel(modelID: $0).isDownloaded
             }
             if downloaded.contains(provider.defaultModel) {
                 return provider.defaultModel

@@ -61,7 +61,6 @@ class AIService {
     private enum StreamingRoute {
         case apple
         case localGemma
-        case localLiteRT
         case localMLX
         case anthropic
         case copilot
@@ -767,12 +766,6 @@ class AIService {
                 logger.logWarning("On-device Gemma model '\(mode.aiModel)' is not downloaded")
                 return false
             }
-        } else if aiProvider == .localLiteRT {
-            // On-device open LiteRT models - same rule.
-            guard LiteRTOpenModel(modelID: mode.aiModel).isDownloaded else {
-                logger.logWarning("On-device LiteRT model '\(mode.aiModel)' is not downloaded")
-                return false
-            }
         } else if aiProvider == .localMLX {
             // On-device MLX models - same rule.
             guard LocalMLXModel(modelID: mode.aiModel).isDownloaded else {
@@ -1024,8 +1017,6 @@ class AIService {
             return .apple
         case .localGemma:
             return .localGemma
-        case .localLiteRT:
-            return .localLiteRT
         case .localMLX:
             return .localMLX
         case .openAI:
@@ -1136,11 +1127,6 @@ class AIService {
         case .localGemma:
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
             let provider = LiteRTGemmaTextProvider(model: mode.aiModel)
-            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
-            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
-        case .localLiteRT:
-            logger.logDebug("AI Processing - Using on-device open model (LiteRT) streaming")
-            let provider = LiteRTOpenModelTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .localMLX:
@@ -1313,17 +1299,6 @@ class AIService {
             lastUserMessageSent = userMsg
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
             let result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
-            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
-
-        // Handle on-device open LiteRT models (Llama / Ministral / Falcon / DeepSeek)
-        if aiProvider == .localLiteRT {
-            let sysMsg = systemMessage ?? getSystemMessage()
-            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
-            lastSystemMessageSent = sysMsg
-            lastUserMessageSent = userMsg
-            logger.logDebug("AI Processing - Using on-device open model (LiteRT)")
-            let result = try await LiteRTOpenModelTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
@@ -1714,11 +1689,6 @@ class AIService {
             providers.append(.localGemma)
         }
 
-        // Add on-device open LiteRT models only when at least one is downloaded.
-        if LiteRTOpenModel.allCases.contains(where: \.isDownloaded) {
-            providers.append(.localLiteRT)
-        }
-
         // Add on-device MLX models only when at least one is downloaded.
         if LocalMLXModel.allCases.contains(where: \.isDownloaded) {
             providers.append(.localMLX)
@@ -2084,10 +2054,6 @@ class AIService {
         // downloads from the AI Providers screen instead.
         if provider == .localGemma {
             return provider.availableModels.filter { LiteRTGemmaVariant(modelID: $0).isDownloaded }
-        }
-        // On-device open LiteRT models: same - only offer downloaded ones.
-        if provider == .localLiteRT {
-            return provider.availableModels.filter { LiteRTOpenModel(modelID: $0).isDownloaded }
         }
         // On-device MLX models: same - only offer downloaded ones.
         if provider == .localMLX {

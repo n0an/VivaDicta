@@ -22,6 +22,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     case phi4Mini = "phi-4-mini-mlx"
     case llama32_1B = "llama-3.2-1b-mlx"
     case llama32_3B = "llama-3.2-3b-mlx"
+    case ministral3B = "ministral-3b-mlx"
+    case falcon3_3B = "falcon3-3b-mlx"
 
     /// Unknown ids fall back to the recommended model.
     init(modelID: String) {
@@ -35,6 +37,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .phi4Mini: "Phi-4 Mini"
         case .llama32_1B: "Llama 3.2 1B"
         case .llama32_3B: "Llama 3.2 3B"
+        case .ministral3B: "Ministral 3B"
+        case .falcon3_3B: "Falcon3 3B"
         }
     }
 
@@ -45,6 +49,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .phi4Mini: "Microsoft's Phi-4 Mini, on-device via MLX."
         case .llama32_1B: "Meta's tiny Llama 3.2, on-device via MLX."
         case .llama32_3B: "Meta's Llama 3.2, on-device via MLX."
+        case .ministral3B: "Mistral AI's edge model, on-device via MLX."
+        case .falcon3_3B: "TII's Falcon3, on-device via MLX."
         }
     }
 
@@ -56,6 +62,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .phi4Mini: "mlx-community/Phi-4-mini-instruct-4bit"
         case .llama32_1B: "mlx-community/Llama-3.2-1B-Instruct-4bit"
         case .llama32_3B: "mlx-community/Llama-3.2-3B-Instruct-4bit"
+        case .ministral3B: "mlx-community/Ministral-3-3B-Instruct-2512-4bit"
+        case .falcon3_3B: "mlx-community/Falcon3-3B-Instruct-4bit"
         }
     }
 
@@ -66,6 +74,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .phi4Mini: "~2.3 GB"
         case .llama32_1B: "~0.7 GB"
         case .llama32_3B: "~1.8 GB"
+        case .ministral3B: "~1.8 GB"
+        case .falcon3_3B: "~1.9 GB"
         }
     }
 
@@ -75,6 +85,8 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .qwen35_2B, .qwen35_08B: "qwen-color"
         case .phi4Mini: "microsoft-color"
         case .llama32_1B, .llama32_3B: "ollama" // reuse the llama mascot
+        case .ministral3B: "mistral"
+        case .falcon3_3B: "tii-color"
         }
     }
 

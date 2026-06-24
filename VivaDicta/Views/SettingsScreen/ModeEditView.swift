@@ -368,8 +368,6 @@ struct ModeEditView: View {
                                 }
                                 Label(AIProvider.localGemma.displayName, systemImage: "cpu")
                                     .tag(AIProvider.localGemma)
-                                Label(AIProvider.localLiteRT.displayName, systemImage: "cpu")
-                                    .tag(AIProvider.localLiteRT)
                                 Label(AIProvider.localMLX.displayName, systemImage: "cpu")
                                     .tag(AIProvider.localMLX)
                             }
@@ -571,7 +569,7 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                } else if provider == .localGemma || provider == .localLiteRT || provider == .localMLX {
+                                } else if provider == .localGemma || provider == .localMLX {
                                     // On-device model just needs downloading - send to
                                     // AI Providers, not an API-key screen (local = no key).
                                     NavigationLink {
