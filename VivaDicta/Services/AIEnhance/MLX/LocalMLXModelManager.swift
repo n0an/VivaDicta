@@ -84,7 +84,8 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
     func stream(
         model: LocalMLXModel,
         systemMessage: String,
-        userMessage: String
+        userMessage: String,
+        temperature: Double = 0.3
     ) async throws -> AsyncThrowingStream<String, Error> {
         try await loadForGeneration(model: model)
         guard let container else { throw LocalMLXError.notLoaded }
@@ -97,6 +98,7 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
             model.supportsThinkingToggle ? ["enable_thinking": false] : nil
         let system = systemMessage
         let user = userMessage
+        let temp = Float(temperature)
 
         return AsyncThrowingStream { continuation in
             let task = Task {
@@ -108,7 +110,7 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
                         ]
                         let userInput = UserInput(chat: chat, additionalContext: additionalContext)
                         let lmInput = try await ctx.processor.prepare(input: userInput)
-                        let parameters = GenerateParameters(temperature: 0.3, topP: 0.95, repetitionPenalty: 1.05)
+                        let parameters = GenerateParameters(temperature: temp, topP: 0.95, repetitionPenalty: 1.05)
                         let stream = try MLXLMCommon.generate(input: lmInput, parameters: parameters, context: ctx)
                         for try await generation in stream {
                             if case .chunk(let chunk) = generation {

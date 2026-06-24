@@ -174,9 +174,10 @@ public actor LiteRTModelManager: LocalModelEngine {
             // Low temperature: on-device Gemma does extractive text cleanup. The
             // SDK default (0.8) ran hot enough for the small model to occasionally
             // bleed prompt artifacts into output - e.g. injecting a spurious
-            // "Speaker A:" prefix from the prompt's speaker-label rule. 0.3 mirrors
-            // Apple FM's "balanced" profile and is far steadier.
-            let sampler = try SamplerConfig(topK: 40, topP: 0.95, temperature: 0.3)
+            // "Speaker A:" prefix from the prompt's speaker-label rule. Small models
+            // hallucinate easily, so keep this low - LiteRT's sampler is fixed at
+            // load (can't vary per preset like MLX), so use a single low value.
+            let sampler = try SamplerConfig(topK: 40, topP: 0.95, temperature: 0.2)
             let loaded: LiteRTChat
             switch variant {
             case .e2b:

@@ -31,6 +31,18 @@ public enum AppleFoundationModelSamplingProfile: Equatable, Sendable {
         }
     }
 
+    /// Plain temperature for backends that take a raw value (MLX), mirroring
+    /// `generationOptions`. `.extractive` is greedy → 0 (deterministic, the
+    /// strongest anti-hallucination for cleanup/summary presets).
+    public var temperature: Double {
+        switch self {
+        case .extractive: 0.0
+        case .balanced: 0.3
+        case .conversational: 0.5
+        case .creative: 0.7
+        }
+    }
+
     @available(iOS 26, macOS 26, *)
     public var generationOptions: GenerationOptions {
         switch self {

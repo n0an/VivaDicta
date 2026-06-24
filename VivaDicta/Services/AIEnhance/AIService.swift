@@ -1131,7 +1131,10 @@ class AIService {
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .localMLX:
             logger.logDebug("AI Processing - Using on-device MLX streaming")
-            let provider = LocalMLXTextProvider(model: mode.aiModel)
+            // Per-preset temperature (extractive presets -> greedy), reusing the
+            // same profile Apple FM uses.
+            let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
+            let provider = LocalMLXTextProvider(model: mode.aiModel, temperature: temperature)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
@@ -1309,7 +1312,8 @@ class AIService {
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
             logger.logDebug("AI Processing - Using on-device MLX")
-            let result = try await LocalMLXTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
+            let result = try await LocalMLXTextProvider(model: mode.aiModel, temperature: temperature).enhance(systemMessage: sysMsg, userMessage: userMsg)
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 

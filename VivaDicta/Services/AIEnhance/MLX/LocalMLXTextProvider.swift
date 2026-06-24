@@ -15,11 +15,16 @@ import AICore
 
 struct LocalMLXTextProvider: AITextProvider {
     private let model: LocalMLXModel
+    private let temperature: Double
 
-    /// - Parameter model: the mode's selected model id (e.g. "qwen3.5-2b-mlx");
-    ///   unknown ids fall back to the recommended model.
-    init(model: String) {
+    /// - Parameters:
+    ///   - model: the mode's selected model id (e.g. "qwen3.5-2b-mlx"); unknown
+    ///     ids fall back to the recommended model.
+    ///   - temperature: per-preset sampling temperature (extractive presets pass
+    ///     0 for greedy/deterministic output).
+    init(model: String, temperature: Double = 0.3) {
         self.model = LocalMLXModel(modelID: model)
+        self.temperature = temperature
     }
 
     func enhance(systemMessage: String, userMessage: String) async throws -> String {
@@ -42,7 +47,8 @@ struct LocalMLXTextProvider: AITextProvider {
         let stream = try await LocalMLXModelManager.shared.stream(
             model: model,
             systemMessage: systemMessage,
-            userMessage: userMessage
+            userMessage: userMessage,
+            temperature: temperature
         )
 
         var full = ""
