@@ -73,7 +73,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     var iconAsset: String? {
         switch self {
         case .qwen35_2B, .qwen35_08B: "qwen-color"
-        case .phi4Mini: nil // no Phi asset - card falls back to the cpu symbol
+        case .phi4Mini: "microsoft-color"
         case .llama32_1B, .llama32_3B: "ollama" // reuse the llama mascot
         }
     }
