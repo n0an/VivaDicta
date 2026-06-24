@@ -24,6 +24,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     case llama32_3B = "llama-3.2-3b-mlx"
     case ministral3B = "ministral-3b-mlx"
     case falcon3_3B = "falcon3-3b-mlx"
+    case granite33_2B = "granite-3.3-2b-mlx"
 
     /// Unknown ids fall back to the recommended model.
     init(modelID: String) {
@@ -39,6 +40,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .llama32_3B: "Llama 3.2 3B"
         case .ministral3B: "Ministral 3B"
         case .falcon3_3B: "Falcon3 3B"
+        case .granite33_2B: "Granite 3.3 2B"
         }
     }
 
@@ -51,6 +53,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .llama32_3B: "Meta's Llama 3.2. Best in English + 7 major languages."
         case .ministral3B: "Mistral's edge model. Strongest in European languages."
         case .falcon3_3B: "TII's Falcon3. Mainly English + a few European languages."
+        case .granite33_2B: "IBM's Granite (Apache-2.0). ~12 languages, strong at following instructions."
         }
     }
 
@@ -64,6 +67,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .llama32_3B: "mlx-community/Llama-3.2-3B-Instruct-4bit"
         case .ministral3B: "mlx-community/Ministral-3-3B-Instruct-2512-4bit"
         case .falcon3_3B: "mlx-community/Falcon3-3B-Instruct-4bit"
+        case .granite33_2B: "mlx-community/granite-3.3-2b-instruct-4bit"
         }
     }
 
@@ -76,6 +80,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .llama32_3B: "~1.8 GB"
         case .ministral3B: "~1.8 GB"
         case .falcon3_3B: "~1.9 GB"
+        case .granite33_2B: "~1.4 GB"
         }
     }
 
@@ -87,6 +92,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .llama32_1B, .llama32_3B: "ollama" // reuse the llama mascot
         case .ministral3B: "mistral"
         case .falcon3_3B: "tii-color"
+        case .granite33_2B: "ibm"
         }
     }
 

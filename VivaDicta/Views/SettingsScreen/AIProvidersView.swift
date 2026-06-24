@@ -65,7 +65,7 @@ struct AIProviders: View {
             } else {
                 List {
             // Cloud Section
-            Section("Cloud") {
+            Section {
                 ForEach(AIProvider.cloudProviders) { provider in
                     NavigationLink(value: provider) {
                         HStack(spacing: 12) {

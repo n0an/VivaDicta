@@ -23,6 +23,7 @@ struct LocalMLXModelTests {
         ("llama-3.2-3b-mlx", .llama32_3B),
         ("ministral-3b-mlx", .ministral3B),
         ("falcon3-3b-mlx", .falcon3_3B),
+        ("granite-3.3-2b-mlx", .granite33_2B),
         ("totally-unknown", .qwen35_2B),
         ("", .qwen35_2B),
         ("llama-3.2-3b", .qwen35_2B), // the old LiteRT id is not an MLX id -> fallback
@@ -56,12 +57,13 @@ struct LocalMLXModelTests {
         (.llama32_3B, false),
         (.ministral3B, false),
         (.falcon3_3B, false),
+        (.granite33_2B, false),
     ])
     func supportsThinkingToggle(model: LocalMLXModel, expected: Bool) {
         #expect(model.supportsThinkingToggle == expected)
     }
 
-    @Test func catalogIsTheSevenCurrentSmallModels() {
-        #expect(LocalMLXModel.allCases.count == 7)
+    @Test func catalogIsTheEightCurrentSmallModels() {
+        #expect(LocalMLXModel.allCases.count == 8)
     }
 }
