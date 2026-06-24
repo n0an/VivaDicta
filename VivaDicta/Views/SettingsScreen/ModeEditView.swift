@@ -571,6 +571,23 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .localGemma || provider == .localQwen || provider == .localLiteRT {
+                                    // On-device model just needs downloading - send to
+                                    // AI Providers, not an API-key screen (local = no key).
+                                    NavigationLink {
+                                        AIProviders()
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "arrow.down.circle")
+                                                .foregroundStyle(.orange)
+                                            Text("Download Model")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                                 } else {
                                     // Cloud provider needs API key
                                     NavigationLink {

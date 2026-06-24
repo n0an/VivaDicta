@@ -132,6 +132,9 @@ class ModeEditViewModel {
             if provider == .customOpenAI {
                 return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
             }
+            if provider == .localGemma || provider == .localQwen || provider == .localLiteRT {
+                return "Download the model in AI Providers\(Self.disableHint)"
+            }
             return "Add API key to continue\(Self.disableHint)"
         }
         if aiModel == nil || aiModel!.isEmpty {
