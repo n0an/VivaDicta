@@ -37,8 +37,9 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     case ollama
     case ollamaCloud
     case customOpenAI
-    case localGemma
-    case localMLX
+    /// Unified on-device provider: covers both the LiteRT Gemma models and the
+    /// MLX models. The runtime is chosen from the selected model id.
+    case local
 
     public var displayName: String {
         switch self {
@@ -96,10 +97,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "Ollama Cloud"
         case .customOpenAI:
             "Custom"
-        case .localGemma:
-            "Google Gemma"
-        case .localMLX:
-            "MLX"
+        case .local:
+            "Local"
         }
     }
 
@@ -160,16 +159,14 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "ollama"
         case .customOpenAI:
             nil // Use SF Symbol "server.rack" directly in view
-        case .localGemma:
-            nil // Use SF Symbol "cpu" directly in view (on-device)
-        case .localMLX:
-            nil // Per-model assets used directly in the cards (on-device)
+        case .local:
+            nil // Per-model assets / cpu symbol used directly in the cards (on-device)
         }
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
     public var usesSFSymbol: Bool {
-        self == .apple || self == .customOpenAI || self == .localGemma || self == .localMLX
+        self == .apple || self == .customOpenAI || self == .local
     }
 
     /// Returns true when the selected model can stream text responses incrementally.
@@ -194,8 +191,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
              .ollama,
              .ollamaCloud,
              .customOpenAI,
-             .localGemma,
-             .localMLX:
+             .local:
             true
         default:
             false
@@ -235,7 +231,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Returns true if this provider requires an API key
     /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
     public var requiresAPIKey: Bool {
-        self != .apple && self != .ollama && self != .customOpenAI && self != .copilot && self != .localGemma && self != .localMLX
+        self != .apple && self != .ollama && self != .customOpenAI && self != .copilot && self != .local
     }
 
     /// Cloud-based AI providers (require API key, network connection)
@@ -277,15 +273,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Local AI providers that run on-device or local network (no API key needed)
     public static let localProviders: [AIProvider] = [
         .apple,
-        .localGemma,
-        .localMLX,
+        .local,
         .ollama]
 
     /// All general-purpose AI providers including on-device and local
     public static let generalProviders: [AIProvider] = [
         .apple,
-        .localGemma,
-        .localMLX,
+        .local,
         .ollama,
         .ollamaCloud,
         .customOpenAI,
@@ -361,9 +355,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "https://ollama.com/v1/chat/completions"
         case .customOpenAI:
             return "" // URL is configurable, stored in UserDefaults
-        case .localGemma:
-            return "" // On-device, no URL needed
-        case .localMLX:
+        case .local:
             return "" // On-device, no URL needed
         }
     }
@@ -433,9 +425,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "gpt-oss:120b"
         case .customOpenAI:
             return "" // Model is configurable, stored in UserDefaults
-        case .localGemma:
-            return "gemma-4-E2B"
-        case .localMLX:
+        case .local:
             return "qwen3.5-2b-mlx"
         }
     }
@@ -470,7 +460,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
         case .ollamaCloud: "ollamaCloudAPIKey"
-        case .apple, .ollama, .copilot, .localGemma, .localMLX: ""
+        case .apple, .ollama, .copilot, .local: ""
         }
     }
 
@@ -613,10 +603,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .customOpenAI:
             return [] // Model is configured by user
-        case .localGemma:
-            return ["gemma-4-E2B", "gemma-4-E4B"]
-        case .localMLX:
-            return ["qwen3.5-4b-mlx", "qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx", "llama-3.2-1b-mlx", "llama-3.2-3b-mlx", "ministral-3b-mlx", "falcon3-3b-mlx", "granite-3.3-2b-mlx"]
+        case .local:
+            // Gemma (LiteRT) + MLX models; AIService picks the runtime by id.
+            return ["gemma-4-E2B", "gemma-4-E4B",
+                    "qwen3.5-4b-mlx", "qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx",
+                    "llama-3.2-1b-mlx", "llama-3.2-3b-mlx", "ministral-3b-mlx", "falcon3-3b-mlx", "granite-3.3-2b-mlx"]
         }
     }
 }

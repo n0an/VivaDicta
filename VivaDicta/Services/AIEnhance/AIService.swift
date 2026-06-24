@@ -758,18 +758,16 @@ class AIService {
                 logger.logWarning("No Ollama model selected")
                 return false
             }
-        } else if aiProvider == .localGemma {
-            // On-device Gemma needs no API key, but the selected model must be
+        } else if aiProvider == .local {
+            // On-device needs no API key, but the selected model must be
             // downloaded - we don't silently download during processing. A mode
-            // whose model was deleted is not properly configured.
-            guard LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded else {
-                logger.logWarning("On-device Gemma model '\(mode.aiModel)' is not downloaded")
-                return false
-            }
-        } else if aiProvider == .localMLX {
-            // On-device MLX models - same rule.
-            guard LocalMLXModel(modelID: mode.aiModel).isDownloaded else {
-                logger.logWarning("On-device MLX model '\(mode.aiModel)' is not downloaded")
+            // whose model was deleted is not properly configured. The model id
+            // picks the runtime (Gemma = LiteRT, else MLX).
+            let downloaded = isLiteRTGemmaModel(mode.aiModel)
+                ? LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded
+                : LocalMLXModel(modelID: mode.aiModel).isDownloaded
+            guard downloaded else {
+                logger.logWarning("On-device model '\(mode.aiModel)' is not downloaded")
                 return false
             }
         } else if aiProvider == .customOpenAI {
@@ -1011,14 +1009,18 @@ class AIService {
         return (systemMessage, userMessage)
     }
 
+    /// The unified `.local` provider hosts both runtimes; the model id picks one.
+    /// Gemma ids (gemma-4-E2B/E4B) are LiteRT; everything else is MLX.
+    private func isLiteRTGemmaModel(_ modelID: String) -> Bool {
+        LiteRTGemmaVariant(rawValue: modelID) != nil
+    }
+
     private func resolvedStreamingRoute(for aiProvider: AIProvider, mode: VivaMode) -> StreamingRoute? {
         switch aiProvider {
         case .apple:
             return .apple
-        case .localGemma:
-            return .localGemma
-        case .localMLX:
-            return .localMLX
+        case .local:
+            return isLiteRTGemmaModel(mode.aiModel) ? .localGemma : .localMLX
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1294,26 +1296,22 @@ class AIService {
             }
         }
 
-        // Handle on-device Gemma (LiteRT)
-        if aiProvider == .localGemma {
+        // Handle on-device models. The model id picks the runtime:
+        // Gemma (gemma-4-*) runs on LiteRT; everything else on MLX.
+        if aiProvider == .local {
             let sysMsg = systemMessage ?? getSystemMessage()
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
-            logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
-            let result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
-            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
-
-        // Handle on-device MLX models (GPU)
-        if aiProvider == .localMLX {
-            let sysMsg = systemMessage ?? getSystemMessage()
-            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
-            lastSystemMessageSent = sysMsg
-            lastUserMessageSent = userMsg
-            logger.logDebug("AI Processing - Using on-device MLX")
-            let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
-            let result = try await LocalMLXTextProvider(model: mode.aiModel, temperature: temperature).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            let result: String
+            if isLiteRTGemmaModel(mode.aiModel) {
+                logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
+                result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            } else {
+                logger.logDebug("AI Processing - Using on-device MLX")
+                let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
+                result = try await LocalMLXTextProvider(model: mode.aiModel, temperature: temperature).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            }
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
@@ -1685,17 +1683,15 @@ class AIService {
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
 
-        // Add on-device Gemma (LiteRT) only when a variant is actually
-        // downloaded. "Connected" must match what the runtime can run: appending
-        // it unconditionally let the mode editor mark a Gemma mode valid with no
-        // model on disk, which isProperlyConfigured(.localGemma) then rejects.
-        if LiteRTGemmaVariant.allCases.contains(where: \.isDownloaded) {
-            providers.append(.localGemma)
-        }
-
-        // Add on-device MLX models only when at least one is downloaded.
-        if LocalMLXModel.allCases.contains(where: \.isDownloaded) {
-            providers.append(.localMLX)
+        // Add the unified on-device provider only when at least one model (Gemma
+        // via LiteRT, or any MLX model) is downloaded. "Connected" must match what
+        // the runtime can run: appending it unconditionally let the mode editor
+        // mark a local mode valid with no model on disk, which
+        // isProperlyConfigured(.local) then rejects.
+        let anyLocalDownloaded = LiteRTGemmaVariant.allCases.contains(where: \.isDownloaded)
+            || LocalMLXModel.allCases.contains(where: \.isDownloaded)
+        if anyLocalDownloaded {
+            providers.append(.local)
         }
 
         // Add Custom OpenAI provider if configured AND verified
@@ -2053,15 +2049,15 @@ class AIService {
         if provider == .copilot && isCopilotSignedIn {
             return copilotModels.isEmpty ? [CopilotAPIClient.defaultModel] : copilotModels
         }
-        // On-device Gemma: only offer variants that are already downloaded, so
-        // picking one here never silently kicks off a multi-GB download. Manage
-        // downloads from the AI Providers screen instead.
-        if provider == .localGemma {
-            return provider.availableModels.filter { LiteRTGemmaVariant(modelID: $0).isDownloaded }
-        }
-        // On-device MLX models: same - only offer downloaded ones.
-        if provider == .localMLX {
-            return provider.availableModels.filter { LocalMLXModel(modelID: $0).isDownloaded }
+        // On-device: only offer models already downloaded, so picking one here
+        // never silently kicks off a multi-GB download. Manage downloads from the
+        // AI Providers screen instead. The model id picks the runtime to query.
+        if provider == .local {
+            return provider.availableModels.filter { id in
+                isLiteRTGemmaModel(id)
+                    ? LiteRTGemmaVariant(modelID: id).isDownloaded
+                    : LocalMLXModel(modelID: id).isDownloaded
+            }
         }
         return provider.availableModels
     }

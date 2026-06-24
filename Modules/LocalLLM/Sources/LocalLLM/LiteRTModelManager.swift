@@ -21,8 +21,8 @@ import os
 import LiteRTFoundation
 #endif
 
-/// The on-device Gemma variants the app can run. Raw values match the
-/// `AIProvider.localGemma` model identifiers (`AIProvider.availableModels`).
+/// The on-device Gemma variants the app can run. Raw values match the Gemma
+/// entries in `AIProvider.local`'s model identifiers (`AIProvider.availableModels`).
 public nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
     case e2b = "gemma-4-E2B"
     case e4b = "gemma-4-E4B"

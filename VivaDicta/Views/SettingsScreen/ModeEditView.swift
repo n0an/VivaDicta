@@ -366,10 +366,8 @@ struct ModeEditView: View {
                                     Label("Apple", systemImage: "apple.intelligence")
                                         .tag(AIProvider.apple)
                                 }
-                                Label(AIProvider.localGemma.displayName, systemImage: "cpu")
-                                    .tag(AIProvider.localGemma)
-                                Label(AIProvider.localMLX.displayName, systemImage: "cpu")
-                                    .tag(AIProvider.localMLX)
+                                Label(AIProvider.local.displayName, systemImage: "cpu")
+                                    .tag(AIProvider.local)
                             }
                             // Cloud providers section
                             Section("Cloud") {
@@ -569,7 +567,7 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                } else if provider == .localGemma || provider == .localMLX {
+                                } else if provider == .local {
                                     // On-device model just needs downloading - send to
                                     // AI Providers, not an API-key screen (local = no key).
                                     NavigationLink {
