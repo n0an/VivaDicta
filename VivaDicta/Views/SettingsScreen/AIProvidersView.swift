@@ -25,11 +25,12 @@ struct AIProviders: View {
     @State private var gemmaModel = LiteRTGemmaModelViewModel()
     @State private var qwenModel = CoreMLQwenModelViewModel()
     @State private var openModel = LiteRTOpenModelViewModel()
+    @State private var mlxModel = LocalMLXModelViewModel()
 
     /// One model downloads at a time - lock every card's download button while
     /// any is in progress (concurrent downloads aren't supported).
     private var anyDownloadInProgress: Bool {
-        gemmaModel.isDownloading || qwenModel.isDownloading || openModel.isDownloading
+        gemmaModel.isDownloading || qwenModel.isDownloading || openModel.isDownloading || mlxModel.isDownloading
     }
 
     var body: some View {
@@ -61,6 +62,10 @@ struct AIProviders: View {
                             .padding(.horizontal)
                         ForEach(LiteRTOpenModel.allCases, id: \.self) { openLLM in
                             OpenModelCard(model: openLLM, viewModel: openModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        ForEach(LocalMLXModel.allCases, id: \.self) { mlxLLM in
+                            MLXModelCard(model: mlxLLM, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
                     }
@@ -265,6 +270,7 @@ struct AIProviders: View {
             await gemmaModel.refresh()
             await qwenModel.refresh()
             await openModel.refresh()
+            await mlxModel.refresh()
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)

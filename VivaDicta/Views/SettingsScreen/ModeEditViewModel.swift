@@ -132,7 +132,7 @@ class ModeEditViewModel {
             if provider == .customOpenAI {
                 return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
             }
-            if provider == .localGemma || provider == .localQwen || provider == .localLiteRT {
+            if provider == .localGemma || provider == .localQwen || provider == .localLiteRT || provider == .localMLX {
                 return "Download the model in AI Providers\(Self.disableHint)"
             }
             return "Add API key to continue\(Self.disableHint)"
@@ -379,6 +379,20 @@ class ModeEditViewModel {
             } else {
                 aiEnhanceEnabled = false
                 logger.logInfo("No on-device LiteRT model downloaded; disabled AI Processing for this mode")
+            }
+        } else if provider == .localMLX {
+            // Same handling for on-device MLX models.
+            let downloaded = AIProvider.localMLX.availableModels.filter {
+                LocalMLXModel(modelID: $0).isDownloaded
+            }
+            if let current = aiModel, downloaded.contains(current) {
+                // Still valid - keep it.
+            } else if let firstDownloaded = downloaded.first {
+                aiModel = firstDownloaded
+                logger.logInfo("On-device MLX model not available, reset to '\(firstDownloaded)'")
+            } else {
+                aiEnhanceEnabled = false
+                logger.logInfo("No on-device MLX model downloaded; disabled AI Processing for this mode")
             }
         }
     }
@@ -680,6 +694,17 @@ class ModeEditViewModel {
             // Seed a downloaded open LiteRT model.
             let downloaded = provider.availableModels.filter {
                 LiteRTOpenModel(modelID: $0).isDownloaded
+            }
+            if downloaded.contains(provider.defaultModel) {
+                return provider.defaultModel
+            }
+            return downloaded.first ?? provider.defaultModel
+        }
+
+        if provider == .localMLX {
+            // Seed a downloaded MLX model.
+            let downloaded = provider.availableModels.filter {
+                LocalMLXModel(modelID: $0).isDownloaded
             }
             if downloaded.contains(provider.defaultModel) {
                 return provider.defaultModel

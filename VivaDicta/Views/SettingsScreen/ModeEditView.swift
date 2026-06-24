@@ -372,6 +372,8 @@ struct ModeEditView: View {
                                     .tag(AIProvider.localQwen)
                                 Label(AIProvider.localLiteRT.displayName, systemImage: "cpu")
                                     .tag(AIProvider.localLiteRT)
+                                Label(AIProvider.localMLX.displayName, systemImage: "cpu")
+                                    .tag(AIProvider.localMLX)
                             }
                             // Cloud providers section
                             Section("Cloud") {
@@ -571,7 +573,7 @@ struct ModeEditView: View {
                                         }
                                     }
                                     .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
-                                } else if provider == .localGemma || provider == .localQwen || provider == .localLiteRT {
+                                } else if provider == .localGemma || provider == .localQwen || provider == .localLiteRT || provider == .localMLX {
                                     // On-device model just needs downloading - send to
                                     // AI Providers, not an API-key screen (local = no key).
                                     NavigationLink {

@@ -63,6 +63,7 @@ class AIService {
         case localGemma
         case localQwen
         case localLiteRT
+        case localMLX
         case anthropic
         case copilot
         case geminiOAuth
@@ -780,6 +781,12 @@ class AIService {
                 logger.logWarning("On-device LiteRT model '\(mode.aiModel)' is not downloaded")
                 return false
             }
+        } else if aiProvider == .localMLX {
+            // On-device MLX models - same rule.
+            guard LocalMLXModel(modelID: mode.aiModel).isDownloaded else {
+                logger.logWarning("On-device MLX model '\(mode.aiModel)' is not downloaded")
+                return false
+            }
         } else if aiProvider == .customOpenAI {
             // Custom OpenAI needs URL and model configured
             guard !customOpenAIEndpointURL.isEmpty else {
@@ -1032,6 +1039,8 @@ class AIService {
             return .localQwen
         case .localLiteRT:
             return .localLiteRT
+        case .localMLX:
+            return .localMLX
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1150,6 +1159,11 @@ class AIService {
         case .localLiteRT:
             logger.logDebug("AI Processing - Using on-device open model (LiteRT) streaming")
             let provider = LiteRTOpenModelTextProvider(model: mode.aiModel)
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+        case .localMLX:
+            logger.logDebug("AI Processing - Using on-device MLX streaming")
+            let provider = LocalMLXTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
@@ -1342,6 +1356,17 @@ class AIService {
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
+        // Handle on-device MLX models (GPU) - lean prompt for the small model
+        if aiProvider == .localMLX {
+            let sysMsg = systemMessage ?? getSystemMessage(compact: true)
+            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
+            lastSystemMessageSent = sysMsg
+            lastUserMessageSent = userMsg
+            logger.logDebug("AI Processing - Using on-device MLX")
+            let result = try await LocalMLXTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
         // Handle Ollama (local server)
         if aiProvider == .ollama {
             return try await makeOllamaRequest(text: text, mode: mode, systemMessage: systemMessage, preFormattedUserMessage: preFormattedUserMessage)
@@ -1388,7 +1413,7 @@ class AIService {
     /// faster prefill and more usable context. Cloud and Apple FM keep the full one.
     private func usesCompactPrompt(_ provider: AIProvider?) -> Bool {
         switch provider {
-        case .localGemma, .localQwen, .localLiteRT: true
+        case .localGemma, .localQwen, .localLiteRT, .localMLX: true
         default: false
         }
     }
@@ -1739,6 +1764,11 @@ class AIService {
         // Add on-device open LiteRT models only when at least one is downloaded.
         if LiteRTOpenModel.allCases.contains(where: \.isDownloaded) {
             providers.append(.localLiteRT)
+        }
+
+        // Add on-device MLX models only when at least one is downloaded.
+        if LocalMLXModel.allCases.contains(where: \.isDownloaded) {
+            providers.append(.localMLX)
         }
 
         // Add Custom OpenAI provider if configured AND verified
@@ -2109,6 +2139,10 @@ class AIService {
         // On-device open LiteRT models: same - only offer downloaded ones.
         if provider == .localLiteRT {
             return provider.availableModels.filter { LiteRTOpenModel(modelID: $0).isDownloaded }
+        }
+        // On-device MLX models: same - only offer downloaded ones.
+        if provider == .localMLX {
+            return provider.availableModels.filter { LocalMLXModel(modelID: $0).isDownloaded }
         }
         return provider.availableModels
     }

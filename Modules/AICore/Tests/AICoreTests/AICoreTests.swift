@@ -10,7 +10,7 @@ struct AIProviderTests {
     // MARK: - Catalog integrity
 
     @Test func allCasesCountIsStable() {
-        #expect(AIProvider.allCases.count == 30)
+        #expect(AIProvider.allCases.count == 31)
     }
 
     @Test func rawValuesRoundTripForCodableAndDefaultsCompatibility() {
@@ -62,6 +62,7 @@ struct AIProviderTests {
             .localGemma: "",
             .localQwen: "",
             .localLiteRT: "",
+            .localMLX: "",
         ]
         #expect(Set(expected.keys) == Set(AIProvider.allCases), "every provider must have a keychain-key expectation")
         for (provider, key) in expected {
@@ -108,8 +109,8 @@ struct AIProviderTests {
 
     // MARK: - Curated provider groups
 
-    @Test func localProvidersAreAppleGemmaQwenLiteRTAndOllama() {
-        #expect(AIProvider.localProviders == [.apple, .localGemma, .localQwen, .localLiteRT, .ollama])
+    @Test func localProvidersAreAppleGemmaQwenLiteRTMLXAndOllama() {
+        #expect(AIProvider.localProviders == [.apple, .localGemma, .localQwen, .localLiteRT, .localMLX, .ollama])
     }
 
     @Test func cloudProvidersContainAnthropicButNotApple() {

@@ -40,6 +40,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     case localGemma
     case localQwen
     case localLiteRT
+    case localMLX
 
     public var displayName: String {
         switch self {
@@ -103,6 +104,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "Qwen"
         case .localLiteRT:
             "Open Models"
+        case .localMLX:
+            "MLX"
         }
     }
 
@@ -169,12 +172,14 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             nil // Use the "qwen-color" asset directly in view (on-device)
         case .localLiteRT:
             nil // Per-model assets used directly in the cards (on-device)
+        case .localMLX:
+            nil // Per-model assets used directly in the cards (on-device)
         }
     }
 
     /// Returns true if this provider uses an SF Symbol instead of an asset
     public var usesSFSymbol: Bool {
-        self == .apple || self == .customOpenAI || self == .localGemma || self == .localQwen || self == .localLiteRT
+        self == .apple || self == .customOpenAI || self == .localGemma || self == .localQwen || self == .localLiteRT || self == .localMLX
     }
 
     /// Returns true when the selected model can stream text responses incrementally.
@@ -201,7 +206,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
              .customOpenAI,
              .localGemma,
              .localQwen,
-             .localLiteRT:
+             .localLiteRT,
+             .localMLX:
             true
         default:
             false
@@ -241,7 +247,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Returns true if this provider requires an API key
     /// Note: customOpenAI doesn't require API key through the standard flow - it's handled separately
     public var requiresAPIKey: Bool {
-        self != .apple && self != .ollama && self != .customOpenAI && self != .copilot && self != .localGemma && self != .localQwen && self != .localLiteRT
+        self != .apple && self != .ollama && self != .customOpenAI && self != .copilot && self != .localGemma && self != .localQwen && self != .localLiteRT && self != .localMLX
     }
 
     /// Cloud-based AI providers (require API key, network connection)
@@ -286,6 +292,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .localGemma,
         .localQwen,
         .localLiteRT,
+        .localMLX,
         .ollama]
 
     /// All general-purpose AI providers including on-device and local
@@ -294,6 +301,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .localGemma,
         .localQwen,
         .localLiteRT,
+        .localMLX,
         .ollama,
         .ollamaCloud,
         .customOpenAI,
@@ -375,6 +383,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "" // On-device, no URL needed
         case .localLiteRT:
             return "" // On-device, no URL needed
+        case .localMLX:
+            return "" // On-device, no URL needed
         }
     }
 
@@ -449,6 +459,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "qwen3.5-2b"
         case .localLiteRT:
             return "llama-3.2-3b"
+        case .localMLX:
+            return "qwen3.5-2b-mlx"
         }
     }
 
@@ -482,7 +494,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
         case .ollamaCloud: "ollamaCloudAPIKey"
-        case .apple, .ollama, .copilot, .localGemma, .localQwen, .localLiteRT: ""
+        case .apple, .ollama, .copilot, .localGemma, .localQwen, .localLiteRT, .localMLX: ""
         }
     }
 
@@ -631,6 +643,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return ["qwen3.5-2b", "qwen3.5-0.8b"]
         case .localLiteRT:
             return ["llama-3.2-3b", "ministral-3b", "falcon3-3b"]
+        case .localMLX:
+            return ["qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx", "llama-3.2-1b-mlx", "llama-3.2-3b-mlx"]
         }
     }
 }
