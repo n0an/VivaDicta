@@ -28,6 +28,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     case ministral3B = "ministral-3b-mlx"
     case falcon3_3B = "falcon3-3b-mlx"
     case granite33_2B = "granite-3.3-2b-mlx"
+    case deepseekR1Qwen_1_5B = "deepseek-r1-qwen-1.5b-mlx"
 
     /// Unknown ids fall back to the recommended model.
     init(modelID: String) {
@@ -46,6 +47,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .ministral3B: "Ministral 3B"
         case .falcon3_3B: "Falcon3 3B"
         case .granite33_2B: "Granite 3.3 2B"
+        case .deepseekR1Qwen_1_5B: "DeepSeek R1 (Qwen 1.5B)"
         }
     }
 
@@ -61,6 +63,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .ministral3B: "Mistral's edge model. Strongest in European languages."
         case .falcon3_3B: "TII's Falcon3. Mainly English + a few European languages."
         case .granite33_2B: "IBM's Granite (Apache-2.0). ~12 languages, strong at following instructions."
+        case .deepseekR1Qwen_1_5B: "DeepSeek R1 distill - a reasoning model; its thinking is hidden. Experimental, slower."
         }
     }
 
@@ -77,6 +80,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .ministral3B: "mlx-community/Ministral-3-3B-Instruct-2512-4bit"
         case .falcon3_3B: "mlx-community/Falcon3-3B-Instruct-4bit"
         case .granite33_2B: "mlx-community/granite-3.3-2b-instruct-4bit"
+        case .deepseekR1Qwen_1_5B: "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit"
         }
     }
 
@@ -92,6 +96,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .ministral3B: "~1.8 GB"
         case .falcon3_3B: "~1.9 GB"
         case .granite33_2B: "~1.4 GB"
+        case .deepseekR1Qwen_1_5B: "~1.0 GB"
         }
     }
 
@@ -105,6 +110,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         case .ministral3B: "mistral"
         case .falcon3_3B: "tii-color"
         case .granite33_2B: "ibm"
+        case .deepseekR1Qwen_1_5B: "deepseek-color"
         }
     }
 
