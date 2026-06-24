@@ -38,6 +38,13 @@ final class LiteRTOpenModelViewModel {
 
     func status(for model: LiteRTOpenModel) -> Status { status[model] ?? .checking }
 
+    /// True while any model is downloading/preparing - used to lock other downloads.
+    var isDownloading: Bool {
+        status.values.contains {
+            switch $0 { case .downloading, .preparing: true; default: false }
+        }
+    }
+
     func progress(for model: LiteRTOpenModel) -> Double {
         if case .downloading(let fraction) = status(for: model) { return fraction }
         return 1
@@ -110,6 +117,8 @@ final class LiteRTOpenModelViewModel {
 struct OpenModelCard: View {
     let model: LiteRTOpenModel
     let viewModel: LiteRTOpenModelViewModel
+    /// When another model is downloading, this card's download action is locked.
+    var downloadsLocked: Bool = false
 
     @State private var showDeleteAlert = false
 
@@ -199,6 +208,13 @@ struct OpenModelCard: View {
         }
     }
 
+    private var isStartDownloadState: Bool {
+        switch status {
+        case .notDownloaded, .failed, .checking: true
+        default: false
+        }
+    }
+
     private var symbolName: String {
         switch status {
         case .ready: "trash.circle"
@@ -281,5 +297,6 @@ struct OpenModelCard: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(downloadsLocked && isStartDownloadState)
     }
 }

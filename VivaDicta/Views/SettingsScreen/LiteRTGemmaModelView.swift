@@ -42,6 +42,14 @@ final class LiteRTGemmaModelViewModel {
 
     func status(for variant: LiteRTGemmaVariant) -> Status { status[variant] ?? .checking }
 
+    /// True while any variant is downloading/preparing - used to lock other
+    /// downloads (we run one model download at a time).
+    var isDownloading: Bool {
+        status.values.contains {
+            switch $0 { case .downloading, .preparing: true; default: false }
+        }
+    }
+
     /// 0...1 progress for the action button; 1 when not actively downloading.
     func progress(for variant: LiteRTGemmaVariant) -> Double {
         if case .downloading(let fraction) = status(for: variant) { return fraction }
@@ -118,6 +126,8 @@ final class LiteRTGemmaModelViewModel {
 struct GemmaVariantCard: View {
     let variant: LiteRTGemmaVariant
     let model: LiteRTGemmaModelViewModel
+    /// When another model is downloading, this card's download action is locked.
+    var downloadsLocked: Bool = false
 
     @State private var showDeleteAlert = false
 
@@ -195,6 +205,15 @@ struct GemmaVariantCard: View {
     private var isDownloading: Bool {
         switch status {
         case .downloading, .preparing: true
+        default: false
+        }
+    }
+
+    /// True when tapping the button would START a download (so it should be
+    /// disabled while another model is downloading).
+    private var isStartDownloadState: Bool {
+        switch status {
+        case .notDownloaded, .failed, .checking: true
         default: false
         }
     }
@@ -281,6 +300,7 @@ struct GemmaVariantCard: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(downloadsLocked && isStartDownloadState)
     }
 }
 

@@ -39,6 +39,13 @@ final class CoreMLQwenModelViewModel {
 
     func status(for variant: CoreMLQwenVariant) -> Status { status[variant] ?? .checking }
 
+    /// True while any variant is downloading/preparing - used to lock other downloads.
+    var isDownloading: Bool {
+        status.values.contains {
+            switch $0 { case .downloading, .preparing: true; default: false }
+        }
+    }
+
     func progress(for variant: CoreMLQwenVariant) -> Double {
         if case .downloading(let fraction) = status(for: variant) { return fraction }
         return 1
@@ -111,6 +118,8 @@ final class CoreMLQwenModelViewModel {
 struct QwenVariantCard: View {
     let variant: CoreMLQwenVariant
     let model: CoreMLQwenModelViewModel
+    /// When another model is downloading, this card's download action is locked.
+    var downloadsLocked: Bool = false
 
     @State private var showDeleteAlert = false
 
@@ -188,6 +197,13 @@ struct QwenVariantCard: View {
     private var isDownloading: Bool {
         switch status {
         case .downloading, .preparing: true
+        default: false
+        }
+    }
+
+    private var isStartDownloadState: Bool {
+        switch status {
+        case .notDownloaded, .failed, .checking: true
         default: false
         }
     }
@@ -274,5 +290,6 @@ struct QwenVariantCard: View {
             }
         }
         .buttonStyle(.plain)
+        .disabled(downloadsLocked && isStartDownloadState)
     }
 }

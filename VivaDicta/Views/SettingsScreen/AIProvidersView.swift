@@ -26,6 +26,12 @@ struct AIProviders: View {
     @State private var qwenModel = CoreMLQwenModelViewModel()
     @State private var openModel = LiteRTOpenModelViewModel()
 
+    /// One model downloads at a time - lock every card's download button while
+    /// any is in progress (concurrent downloads aren't supported).
+    private var anyDownloadInProgress: Bool {
+        gemmaModel.isDownloading || qwenModel.isDownloading || openModel.isDownloading
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Picker("Provider type", selection: $providerType) {
@@ -45,16 +51,16 @@ struct AIProviders: View {
                     VStack(spacing: 16) {
                         AppleProviderCard()
                             .padding(.horizontal)
-                        GemmaVariantCard(variant: .e2b, model: gemmaModel)
+                        GemmaVariantCard(variant: .e2b, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
-                        GemmaVariantCard(variant: .e4b, model: gemmaModel)
+                        GemmaVariantCard(variant: .e4b, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
-                        QwenVariantCard(variant: .qwen2B, model: qwenModel)
+                        QwenVariantCard(variant: .qwen2B, model: qwenModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
-                        QwenVariantCard(variant: .qwen08B, model: qwenModel)
+                        QwenVariantCard(variant: .qwen08B, model: qwenModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
                         ForEach(LiteRTOpenModel.allCases, id: \.self) { openLLM in
-                            OpenModelCard(model: openLLM, viewModel: openModel)
+                            OpenModelCard(model: openLLM, viewModel: openModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
                     }
