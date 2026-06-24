@@ -45,9 +45,20 @@ struct LocalMLXModelTests {
         }
     }
 
-    @Test func onlyQwen2BIsRecommended() {
-        let recommended = LocalMLXModel.allCases.filter(\.isRecommendedForThisDevice)
-        #expect(recommended == [.qwen35_2B])
+    // Device RAM picks the recommended Qwen. Boundary triangulation around the
+    // 7 GB and 11 GB gates (just-under / on / just-over).
+    @Test("Device RAM selects the recommended Qwen", arguments: [
+        (6.0, LocalMLXModel.qwen35_08B),
+        (6.99, .qwen35_08B),   // just under the 7 GB gate
+        (7.0, .qwen35_2B),     // exactly on the 7 GB gate
+        (8.0, .qwen35_2B),
+        (10.99, .qwen35_2B),   // just under the 11 GB gate
+        (11.0, .qwen35_4B),    // exactly on the 11 GB gate
+        (12.0, .qwen35_4B),
+    ])
+    func recommendedQwenForRAM(ramGB: Double, expected: LocalMLXModel) {
+        let bytes = UInt64(ramGB * 1_073_741_824)
+        #expect(LocalMLXModel.recommendedQwen(forPhysicalMemoryBytes: bytes) == expected)
     }
 
     @Test("Only the Qwen models expose the thinking toggle", arguments: [

@@ -31,6 +31,27 @@ struct AIProviders: View {
         gemmaModel.isDownloading || mlxModel.isDownloading
     }
 
+    private var deviceMemoryBytes: UInt64 { ProcessInfo.processInfo.physicalMemory }
+
+    /// Qwen block with the RAM-recommended Qwen pulled to the top.
+    private var qwenModelsOrdered: [LocalMLXModel] {
+        let base: [LocalMLXModel] = [.qwen35_2B, .qwen35_08B, .qwen35_4B]
+        let recommended = LocalMLXModel.recommendedQwen(forPhysicalMemoryBytes: deviceMemoryBytes)
+        return [recommended] + base.filter { $0 != recommended }
+    }
+
+    /// Gemma block with the RAM-recommended variant pulled to the top.
+    private var gemmaVariantsOrdered: [LiteRTGemmaVariant] {
+        let base: [LiteRTGemmaVariant] = [.e2b, .e4b]
+        let recommended = LiteRTGemmaVariant.recommendedVariant(forPhysicalMemoryBytes: deviceMemoryBytes)
+        return [recommended] + base.filter { $0 != recommended }
+    }
+
+    /// Non-Qwen MLX models, in display order (none ever badged "Recommended").
+    private static let otherMLXModels: [LocalMLXModel] = [
+        .phi4Mini, .llama32_1B, .llama32_3B, .ministral3B, .falcon3_3B, .granite33_2B,
+    ]
+
     var body: some View {
         VStack(spacing: 0) {
             Picker("Provider type", selection: $providerType) {
@@ -48,14 +69,22 @@ struct AIProviders: View {
             if providerType == .local {
                 ScrollView {
                     VStack(spacing: 16) {
+                        // Block 1: Apple (always first, if available).
                         AppleProviderCard()
                             .padding(.horizontal)
-                        GemmaVariantCard(variant: .e2b, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
-                            .padding(.horizontal)
-                        GemmaVariantCard(variant: .e4b, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
-                            .padding(.horizontal)
-                        ForEach(LocalMLXModel.allCases, id: \.self) { mlxLLM in
-                            MLXModelCard(model: mlxLLM, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                        // Block 2: Qwen (recommended model first).
+                        ForEach(qwenModelsOrdered, id: \.self) { model in
+                            MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        // Block 3: Gemma (recommended variant first).
+                        ForEach(gemmaVariantsOrdered, id: \.self) { variant in
+                            GemmaVariantCard(variant: variant, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        // Block 4: everything else.
+                        ForEach(Self.otherMLXModels, id: \.self) { model in
+                            MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
                     }
@@ -314,7 +343,6 @@ private struct AppleProviderCard: View {
                                 .fontWeight(.semibold)
                         }
                         statusLabel
-                        RecommendedBadge()
                     }
                     Spacer()
                 }

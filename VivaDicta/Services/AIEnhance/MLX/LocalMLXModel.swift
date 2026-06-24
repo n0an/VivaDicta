@@ -109,7 +109,20 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         }
     }
 
-    var isRecommendedForThisDevice: Bool { self == .qwen35_2B }
+    /// The Qwen MLX model recommended for a device with the given RAM. Only Qwen
+    /// models are ever "recommended" (the badge is reserved for Qwen + Gemma):
+    /// 12 GB-class -> 4B, 8 GB-class -> 2B, 6 GB-class and below -> 0.8B.
+    static func recommendedQwen(forPhysicalMemoryBytes bytes: UInt64) -> LocalMLXModel {
+        let ramGB = Double(bytes) / 1_073_741_824
+        if ramGB >= 11 { return .qwen35_4B }
+        if ramGB >= 7 { return .qwen35_2B }
+        return .qwen35_08B
+    }
+
+    /// True only for the single Qwen recommended for this device's RAM.
+    var isRecommendedForThisDevice: Bool {
+        self == Self.recommendedQwen(forPhysicalMemoryBytes: ProcessInfo.processInfo.physicalMemory)
+    }
 
     /// Where mlx-swift-lm's `defaultHubApi` materializes this repo:
     /// `<caches>/models/<repo>`.
