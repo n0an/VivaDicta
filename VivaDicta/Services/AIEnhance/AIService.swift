@@ -931,7 +931,7 @@ class AIService {
         let startTime = Date()
         let mode = modeOverride ?? selectedMode
 
-        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset, compact: usesCompactPrompt(mode.aiProvider))
+        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset)
 
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
@@ -999,7 +999,7 @@ class AIService {
         }
     }
 
-    private func buildVariationMessages(text: String, preset: Preset, compact: Bool = false) -> (systemMessage: String, userMessage: String) {
+    private func buildVariationMessages(text: String, preset: Preset) -> (systemMessage: String, userMessage: String) {
         var customVocabularySection = ""
         let customVocabularyWords = CustomVocabulary.getTerms()
         if !customVocabularyWords.isEmpty {
@@ -1011,10 +1011,7 @@ class AIService {
 
         let systemMessage: String
         if preset.useSystemTemplate {
-            let template = compact
-                ? PromptsTemplates.compactSystemPrompt(with: preset.promptInstructions)
-                : PromptsTemplates.systemPrompt(with: preset.promptInstructions)
-            systemMessage = template + customVocabularySection + scriptSuffix
+            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection + scriptSuffix
         } else {
             systemMessage = preset.promptInstructions + customVocabularySection + scriptSuffix
         }
@@ -1123,7 +1120,7 @@ class AIService {
             return ""
         }
 
-        let sysMsg = systemMessage ?? getSystemMessage(compact: usesCompactPrompt(aiProvider))
+        let sysMsg = systemMessage ?? getSystemMessage()
         let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
         lastSystemMessageSent = sysMsg
         lastUserMessageSent = userMsg
@@ -1323,9 +1320,9 @@ class AIService {
             }
         }
 
-        // Handle on-device Gemma (LiteRT) - lean prompt for the small model
+        // Handle on-device Gemma (LiteRT)
         if aiProvider == .localGemma {
-            let sysMsg = systemMessage ?? getSystemMessage(compact: true)
+            let sysMsg = systemMessage ?? getSystemMessage()
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
@@ -1336,7 +1333,7 @@ class AIService {
 
         // Handle on-device Qwen (CoreML) - lean prompt for the small model
         if aiProvider == .localQwen {
-            let sysMsg = systemMessage ?? getSystemMessage(compact: true)
+            let sysMsg = systemMessage ?? getSystemMessage()
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
@@ -1347,7 +1344,7 @@ class AIService {
 
         // Handle on-device open LiteRT models (Llama / Ministral / Falcon / DeepSeek)
         if aiProvider == .localLiteRT {
-            let sysMsg = systemMessage ?? getSystemMessage(compact: true)
+            let sysMsg = systemMessage ?? getSystemMessage()
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
@@ -1356,9 +1353,9 @@ class AIService {
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
-        // Handle on-device MLX models (GPU) - lean prompt for the small model
+        // Handle on-device MLX models (GPU)
         if aiProvider == .localMLX {
-            let sysMsg = systemMessage ?? getSystemMessage(compact: true)
+            let sysMsg = systemMessage ?? getSystemMessage()
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
@@ -1409,16 +1406,7 @@ class AIService {
         return ChineseScriptPreferenceStore.current.systemMessageSuffix ?? ""
     }
 
-    /// Small on-device models (LiteRT / Core ML) get the lean system prompt -
-    /// faster prefill and more usable context. Cloud and Apple FM keep the full one.
-    private func usesCompactPrompt(_ provider: AIProvider?) -> Bool {
-        switch provider {
-        case .localGemma, .localQwen, .localLiteRT, .localMLX: true
-        default: false
-        }
-    }
-
-    private func getSystemMessage(compact: Bool = false) -> String {
+    private func getSystemMessage() -> String {
         var customVocabularySection = ""
         let customVocabularyWords = CustomVocabulary.getTerms()
         if !customVocabularyWords.isEmpty {
@@ -1445,10 +1433,7 @@ class AIService {
         let contextSections = customVocabularySection + clipboardContextSection + scriptSuffix
 
         if useSystemTemplate {
-            let template = compact
-                ? PromptsTemplates.compactSystemPrompt(with: promptInstructions)
-                : PromptsTemplates.systemPrompt(with: promptInstructions)
-            return template + contextSections
+            return PromptsTemplates.systemPrompt(with: promptInstructions) + contextSections
         } else {
             // Standalone preset - use instructions directly + context
             return promptInstructions + contextSections
