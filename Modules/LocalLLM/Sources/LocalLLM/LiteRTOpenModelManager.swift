@@ -44,10 +44,10 @@ public nonisolated enum LiteRTOpenModel: String, CaseIterable, Sendable {
 
     public var subtitle: String {
         switch self {
-        case .llama32_3B: "Meta's Llama 3.2, on-device via LiteRT. Community conversion."
-        case .ministral3B: "Mistral AI's edge model, on-device via LiteRT. Community conversion."
-        case .falcon3_3B: "TII's Falcon3, on-device via LiteRT. Community conversion."
-        case .deepseekR1_1_5B: "A small reasoning model. May emit its thinking - best for experimentation."
+        case .llama32_3B: "Meta's Llama 3.2, on-device via LiteRT."
+        case .ministral3B: "Mistral AI's edge model, on-device via LiteRT."
+        case .falcon3_3B: "TII's Falcon3, on-device via LiteRT."
+        case .deepseekR1_1_5B: "A small reasoning model. May emit its thinking"
         }
     }
 
