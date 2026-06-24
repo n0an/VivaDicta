@@ -10,7 +10,7 @@ struct AIProviderTests {
     // MARK: - Catalog integrity
 
     @Test func allCasesCountIsStable() {
-        #expect(AIProvider.allCases.count == 31)
+        #expect(AIProvider.allCases.count == 30)
     }
 
     @Test func rawValuesRoundTripForCodableAndDefaultsCompatibility() {
@@ -60,7 +60,6 @@ struct AIProviderTests {
             .ollamaCloud: "ollamaCloudAPIKey",
             .customOpenAI: "customOpenAIAPIKey",
             .localGemma: "",
-            .localQwen: "",
             .localLiteRT: "",
             .localMLX: "",
         ]
@@ -109,8 +108,8 @@ struct AIProviderTests {
 
     // MARK: - Curated provider groups
 
-    @Test func localProvidersAreAppleGemmaQwenLiteRTMLXAndOllama() {
-        #expect(AIProvider.localProviders == [.apple, .localGemma, .localQwen, .localLiteRT, .localMLX, .ollama])
+    @Test func localProvidersAreAppleGemmaLiteRTMLXAndOllama() {
+        #expect(AIProvider.localProviders == [.apple, .localGemma, .localLiteRT, .localMLX, .ollama])
     }
 
     @Test func cloudProvidersContainAnthropicButNotApple() {

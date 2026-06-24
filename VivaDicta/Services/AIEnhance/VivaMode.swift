@@ -144,10 +144,13 @@ struct VivaMode: Identifiable, Hashable, Codable {
         transcriptionModel = VivaMode.normalizedTranscriptionModelID(decodedTranscriptionModel, provider: transcriptionProvider)
         transcriptionLanguage = try container.decodeIfPresent(String.self, forKey: .transcriptionLanguage)
         translationTargetLanguage = try container.decodeIfPresent(String.self, forKey: .translationTargetLanguage)
-        aiProvider = try container.decodeIfPresent(AIProvider.self, forKey: .aiProvider)
+        // Decode the provider by raw string so a value that's no longer a known
+        // case (e.g. a removed provider) degrades to nil instead of throwing and
+        // failing the whole mode load.
+        aiProvider = (try container.decodeIfPresent(String.self, forKey: .aiProvider)).flatMap(AIProvider.init(rawValue:))
         let decodedAIModel = try container.decode(String.self, forKey: .aiModel)
         aiModel = VivaMode.normalizedModelID(decodedAIModel, provider: aiProvider)
-        let decodedReminderProvider = try container.decodeIfPresent(AIProvider.self, forKey: .reminderExtractorProvider)
+        let decodedReminderProvider = (try container.decodeIfPresent(String.self, forKey: .reminderExtractorProvider)).flatMap(AIProvider.init(rawValue:))
         reminderExtractorProvider = decodedReminderProvider
         if let decodedReminderModel = try container.decodeIfPresent(String.self, forKey: .reminderExtractorModel) {
             reminderExtractorModel = VivaMode.normalizedModelID(decodedReminderModel, provider: decodedReminderProvider)

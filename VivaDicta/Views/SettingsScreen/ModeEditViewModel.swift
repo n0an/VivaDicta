@@ -132,7 +132,7 @@ class ModeEditViewModel {
             if provider == .customOpenAI {
                 return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
             }
-            if provider == .localGemma || provider == .localQwen || provider == .localLiteRT || provider == .localMLX {
+            if provider == .localGemma || provider == .localLiteRT || provider == .localMLX {
                 return "Download the model in AI Providers\(Self.disableHint)"
             }
             return "Add API key to continue\(Self.disableHint)"
@@ -351,20 +351,6 @@ class ModeEditViewModel {
             } else {
                 aiEnhanceEnabled = false
                 logger.logInfo("No on-device Gemma model downloaded; disabled AI Processing for this mode")
-            }
-        } else if provider == .localQwen {
-            // Same handling as Gemma for on-device Qwen.
-            let downloaded = AIProvider.localQwen.availableModels.filter {
-                CoreMLQwenVariant(modelID: $0).isDownloaded
-            }
-            if let current = aiModel, downloaded.contains(current) {
-                // Still valid - keep it.
-            } else if let firstDownloaded = downloaded.first {
-                aiModel = firstDownloaded
-                logger.logInfo("On-device Qwen model not available, reset to '\(firstDownloaded)'")
-            } else {
-                aiEnhanceEnabled = false
-                logger.logInfo("No on-device Qwen model downloaded; disabled AI Processing for this mode")
             }
         } else if provider == .localLiteRT {
             // Same handling for on-device open LiteRT models.
@@ -672,17 +658,6 @@ class ModeEditViewModel {
             // it's downloaded, else the first downloaded variant.
             let downloaded = provider.availableModels.filter {
                 LiteRTGemmaVariant(modelID: $0).isDownloaded
-            }
-            if downloaded.contains(provider.defaultModel) {
-                return provider.defaultModel
-            }
-            return downloaded.first ?? provider.defaultModel
-        }
-
-        if provider == .localQwen {
-            // Same as Gemma: seed a downloaded Qwen variant.
-            let downloaded = provider.availableModels.filter {
-                CoreMLQwenVariant(modelID: $0).isDownloaded
             }
             if downloaded.contains(provider.defaultModel) {
                 return provider.defaultModel

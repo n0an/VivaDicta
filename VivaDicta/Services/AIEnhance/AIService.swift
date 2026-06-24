@@ -61,7 +61,6 @@ class AIService {
     private enum StreamingRoute {
         case apple
         case localGemma
-        case localQwen
         case localLiteRT
         case localMLX
         case anthropic
@@ -768,13 +767,6 @@ class AIService {
                 logger.logWarning("On-device Gemma model '\(mode.aiModel)' is not downloaded")
                 return false
             }
-        } else if aiProvider == .localQwen {
-            // On-device Qwen (CoreML) - same rule: the selected model must be on
-            // disk; processing never silently downloads.
-            guard CoreMLQwenVariant(modelID: mode.aiModel).isDownloaded else {
-                logger.logWarning("On-device Qwen model '\(mode.aiModel)' is not downloaded")
-                return false
-            }
         } else if aiProvider == .localLiteRT {
             // On-device open LiteRT models - same rule.
             guard LiteRTOpenModel(modelID: mode.aiModel).isDownloaded else {
@@ -1032,8 +1024,6 @@ class AIService {
             return .apple
         case .localGemma:
             return .localGemma
-        case .localQwen:
-            return .localQwen
         case .localLiteRT:
             return .localLiteRT
         case .localMLX:
@@ -1146,11 +1136,6 @@ class AIService {
         case .localGemma:
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
             let provider = LiteRTGemmaTextProvider(model: mode.aiModel)
-            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
-            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
-        case .localQwen:
-            logger.logDebug("AI Processing - Using on-device Qwen (CoreML) streaming")
-            let provider = CoreMLQwenTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .localLiteRT:
@@ -1328,17 +1313,6 @@ class AIService {
             lastUserMessageSent = userMsg
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
             let result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
-            return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
-        }
-
-        // Handle on-device Qwen (CoreML) - lean prompt for the small model
-        if aiProvider == .localQwen {
-            let sysMsg = systemMessage ?? getSystemMessage()
-            let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
-            lastSystemMessageSent = sysMsg
-            lastUserMessageSent = userMsg
-            logger.logDebug("AI Processing - Using on-device Qwen (CoreML)")
-            let result = try await CoreMLQwenTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
             return AIEnhancementOutputFilter.filter(result.trimmingCharacters(in: .whitespacesAndNewlines))
         }
 
@@ -1740,12 +1714,6 @@ class AIService {
             providers.append(.localGemma)
         }
 
-        // Add on-device Qwen (CoreML) only when a variant is downloaded (same
-        // rule as Gemma - keep "connected" consistent with what can actually run).
-        if CoreMLQwenVariant.allCases.contains(where: \.isDownloaded) {
-            providers.append(.localQwen)
-        }
-
         // Add on-device open LiteRT models only when at least one is downloaded.
         if LiteRTOpenModel.allCases.contains(where: \.isDownloaded) {
             providers.append(.localLiteRT)
@@ -2116,10 +2084,6 @@ class AIService {
         // downloads from the AI Providers screen instead.
         if provider == .localGemma {
             return provider.availableModels.filter { LiteRTGemmaVariant(modelID: $0).isDownloaded }
-        }
-        // On-device Qwen: same - only offer downloaded variants.
-        if provider == .localQwen {
-            return provider.availableModels.filter { CoreMLQwenVariant(modelID: $0).isDownloaded }
         }
         // On-device open LiteRT models: same - only offer downloaded ones.
         if provider == .localLiteRT {
