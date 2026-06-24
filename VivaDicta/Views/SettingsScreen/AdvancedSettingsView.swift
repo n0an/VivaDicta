@@ -151,6 +151,18 @@ struct AdvancedSettingsView: View {
             } header: {
                 Text("Text Processing")
             }
+
+            #if DEBUG
+            Section {
+                NavigationLink("MLX Spike") {
+                    MLXSpikeView()
+                }
+            } header: {
+                Text("Developer")
+            } footer: {
+                Text("On-device MLX (GPU) verification spike. Physical device only.")
+            }
+            #endif
         }
         .navigationTitle("Advanced")
         .navigationBarTitleDisplayMode(.inline)
