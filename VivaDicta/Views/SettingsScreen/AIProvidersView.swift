@@ -33,21 +33,24 @@ struct AIProviders: View {
 
     private var deviceMemoryBytes: UInt64 { ProcessInfo.processInfo.physicalMemory }
 
-    /// Qwen block with the RAM-recommended Qwen pulled to the top.
-    private var qwenModelsOrdered: [LocalMLXModel] {
-        let base: [LocalMLXModel] = [.qwen35_2B, .qwen35_08B, .qwen35_4B]
-        let recommended = LocalMLXModel.recommendedQwen(forPhysicalMemoryBytes: deviceMemoryBytes)
-        return [recommended] + base.filter { $0 != recommended }
+    /// The single RAM-recommended Qwen / Gemma (the only two ever badged), shown
+    /// right after Apple.
+    private var recommendedQwen: LocalMLXModel {
+        LocalMLXModel.recommendedQwen(forPhysicalMemoryBytes: deviceMemoryBytes)
+    }
+    private var recommendedGemma: LiteRTGemmaVariant {
+        LiteRTGemmaVariant.recommendedVariant(forPhysicalMemoryBytes: deviceMemoryBytes)
     }
 
-    /// Gemma block with the RAM-recommended variant pulled to the top.
-    private var gemmaVariantsOrdered: [LiteRTGemmaVariant] {
-        let base: [LiteRTGemmaVariant] = [.e2b, .e4b]
-        let recommended = LiteRTGemmaVariant.recommendedVariant(forPhysicalMemoryBytes: deviceMemoryBytes)
-        return [recommended] + base.filter { $0 != recommended }
+    /// The remaining Qwen / Gemma models (everything but the recommended one).
+    private var otherQwenModels: [LocalMLXModel] {
+        [.qwen35_2B, .qwen35_08B, .qwen35_4B].filter { $0 != recommendedQwen }
+    }
+    private var otherGemmaVariants: [LiteRTGemmaVariant] {
+        [.e2b, .e4b].filter { $0 != recommendedGemma }
     }
 
-    /// Non-Qwen MLX models, in display order (none ever badged "Recommended").
+    /// Non-Qwen, non-Gemma MLX models, in display order (none ever badged).
     private static let otherMLXModels: [LocalMLXModel] = [
         .phi4Mini, .llama32_1B, .llama32_3B, .ministral3B, .falcon3_3B, .granite33_2B,
     ]
@@ -69,20 +72,25 @@ struct AIProviders: View {
             if providerType == .local {
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Block 1: Apple (always first, if available).
+                        // Apple first.
                         AppleProviderCard()
                             .padding(.horizontal)
-                        // Block 2: Qwen (recommended model first).
-                        ForEach(qwenModelsOrdered, id: \.self) { model in
+                        // Then the two recommended models (Qwen, then Gemma).
+                        MLXModelCard(model: recommendedQwen, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                            .padding(.horizontal)
+                        GemmaVariantCard(variant: recommendedGemma, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
+                            .padding(.horizontal)
+                        // Then the remaining Qwen models.
+                        ForEach(otherQwenModels, id: \.self) { model in
                             MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
-                        // Block 3: Gemma (recommended variant first).
-                        ForEach(gemmaVariantsOrdered, id: \.self) { variant in
+                        // Then the remaining Gemma variants.
+                        ForEach(otherGemmaVariants, id: \.self) { variant in
                             GemmaVariantCard(variant: variant, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
-                        // Block 4: everything else.
+                        // Then everything else.
                         ForEach(Self.otherMLXModels, id: \.self) { model in
                             MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
