@@ -452,6 +452,7 @@ struct ModeEditView: View {
                                     .sheet(isPresented: $showAIModelPicker) {
                                         ModelPickerSheet(
                                             models: viewModel.aiService.getAvailableModels(for: provider),
+                                            provider: provider,
                                             selectedModel: $viewModel.aiModel
                                         )
                                         .presentationDetents([.medium, .large])
@@ -764,6 +765,7 @@ struct ModeEditView: View {
                                         .sheet(isPresented: $showReminderExtractorModelPicker) {
                                             ModelPickerSheet(
                                                 models: viewModel.aiService.getAvailableModels(for: provider),
+                                                provider: provider,
                                                 selectedModel: $viewModel.reminderExtractorModel
                                             )
                                             .presentationDetents([.medium, .large])
@@ -1296,6 +1298,7 @@ private struct ModePresetPickerSheet: View {
 
 private struct ModelPickerSheet: View {
     let models: [String]
+    let provider: AIProvider
     @Binding var selectedModel: String?
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
@@ -1307,28 +1310,99 @@ private struct ModelPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            List(filteredModels, id: \.self) { model in
-                Button {
-                    selectedModel = model
-                    dismiss()
-                } label: {
-                    HStack {
-                        Text(model)
-
-                        Spacer()
-
-                        if selectedModel == model {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.blue)
-                        }
-                    }
+            Group {
+                if let tierConfig {
+                    tieredList(tierConfig)
+                } else {
+                    List(filteredModels, id: \.self) { modelRow($0) }
                 }
-                .tint(.primary)
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search models")
             .navigationTitle("Select Model")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// Per-provider description of a free/paid catalog split. The model classifier
+    /// lives in AICore; the wording differs because Ollama Cloud's paid tier is a
+    /// flat subscription while OpenCode Zen's is pay-as-you-go.
+    private struct TierConfig {
+        let isFree: (String) -> Bool
+        let paidTitle: String
+        let paidFooter: String
+    }
+
+    /// Providers whose catalog has free + paid tiers split the picker into two
+    /// sections so users don't pick a paid model that errors at request time.
+    /// Returns `nil` for flat-list providers.
+    private var tierConfig: TierConfig? {
+        switch provider {
+        case .ollamaCloud:
+            TierConfig(
+                isFree: AIProvider.isOllamaCloudModelFree,
+                paidTitle: "Requires paid subscription",
+                paidFooter: "Choosing one without an Ollama Cloud subscription returns a \"requires a subscription\" error. See ollama.com/upgrade."
+            )
+        case .opencodeZen:
+            TierConfig(
+                isFree: AIProvider.isOpencodeZenModelFree,
+                paidTitle: "Pay-as-you-go (needs a payment method)",
+                paidFooter: "These bill per token and need a payment method on your OpenCode workspace - otherwise the request returns a \"No payment method\" error. See opencode.ai/zen."
+            )
+        default:
+            nil
+        }
+    }
+
+    private func tieredList(_ config: TierConfig) -> some View {
+        let free = filteredModels.filter(config.isFree)
+        let paid = filteredModels.filter { !config.isFree($0) }
+        return List {
+            if !free.isEmpty {
+                Section {
+                    ForEach(free, id: \.self) { modelRow($0) }
+                } header: {
+                    Label {
+                        Text("Free with your key")
+                    } icon: {
+                        Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+                    }
+                }
+            }
+            if !paid.isEmpty {
+                Section {
+                    ForEach(paid, id: \.self) { modelRow($0) }
+                } header: {
+                    Label {
+                        Text(config.paidTitle)
+                    } icon: {
+                        Image(systemName: "lock.fill").foregroundStyle(.orange)
+                    }
+                } footer: {
+                    Text(config.paidFooter)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelRow(_ model: String) -> some View {
+        Button {
+            selectedModel = model
+            dismiss()
+        } label: {
+            HStack {
+                Text(model)
+
+                Spacer()
+
+                if selectedModel == model {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.blue)
+                }
+            }
+        }
+        .tint(.primary)
     }
 }
 

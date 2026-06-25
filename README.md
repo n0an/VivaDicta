@@ -185,6 +185,7 @@ graph BT
   CloudTranscription[CloudTranscription]:::adapter
   LocalTranscription[LocalTranscription]:::adapter
   AIProviders[AIProviders]:::adapter
+  LocalLLM[LocalLLM]:::adapter
 
   %% Orchestrators
   TranscriptionKit[TranscriptionKit]:::orchestrator
@@ -195,6 +196,7 @@ graph BT
 
   %% External
   WhisperKit[WhisperKit / FluidAudio]:::external
+  LiteRT[LiteRT-LM / LiteRTFoundation]:::external
 
   OAuth --> Keychain
   OAuth --> Networking
@@ -204,6 +206,8 @@ graph BT
   LocalTranscription --> WhisperKit
   AIProviders --> AICore
   AIProviders --> Networking
+  LocalLLM --> AICore
+  LocalLLM --> LiteRT
 
   TranscriptionKit --> TranscriptionCore
   TranscriptionKit --> CloudTranscription
@@ -221,6 +225,7 @@ graph BT
   VivaDicta --> LocalTranscription
   VivaDicta --> OAuth
   VivaDicta --> AIProviders
+  VivaDicta --> LocalLLM
   VivaDicta --> TranscriptionCore
   VivaDicta --> AICore
   VivaDicta --> Keychain
@@ -236,7 +241,7 @@ graph BT
 | Layer | Modules |
 |-------|---------|
 | **Core** (no module deps; protocols + value types) | `Networking` · `Keychain` · `Presets` · `TranscriptionCore` · `AICore` · `Analytics` · `TextProcessing` · `AudioRecording` · `AppGroup` · `DesignSystem` |
-| **Adapters** (protocol + `Default` impl + `Mock`) | `OAuth` · `CloudTranscription` · `LocalTranscription` · `AIProviders` |
+| **Adapters** (protocol + `Default` impl + `Mock`) | `OAuth` · `CloudTranscription` · `LocalTranscription` · `AIProviders` · `LocalLLM` |
 | **Orchestrators** (compose adapters) | `TranscriptionKit` · `AIKit` |
 | **App** (composition root) | `VivaDicta` + keyboard / widget / share / action / watch targets |
 

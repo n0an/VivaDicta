@@ -34,6 +34,7 @@ flowchart TB
     CloudTranscription:::adapter
     LocalTranscription:::adapter
     AIProviders["AIProviders — per-LLM clients + AITextProvider wraps"]:::adapter
+    LocalLLM["LocalLLM — on-device LLM (LiteRT) via LocalModelEngine"]:::adapter
   end
   subgraph CORE["Core (no module deps; protocols + value types)"]
     Networking:::core
@@ -82,6 +83,7 @@ graph BT
   CloudTranscription[CloudTranscription]:::adapter
   LocalTranscription[LocalTranscription]:::adapter
   AIProviders[AIProviders]:::adapter
+  LocalLLM[LocalLLM]:::adapter
 
   %% Orchestrators
   TranscriptionKit[TranscriptionKit]:::orchestrator
@@ -92,6 +94,7 @@ graph BT
 
   %% External
   WhisperKit[WhisperKit / FluidAudio]:::external
+  LiteRT[LiteRT-LM / LiteRTFoundation]:::external
 
   %% Adapter -> Core
   OAuth --> Keychain
@@ -102,6 +105,8 @@ graph BT
   LocalTranscription --> WhisperKit
   AIProviders --> AICore
   AIProviders --> Networking
+  LocalLLM --> AICore
+  LocalLLM --> LiteRT
 
   %% Orchestrator -> Adapter + Core
   TranscriptionKit --> TranscriptionCore
@@ -121,6 +126,7 @@ graph BT
   VivaDicta --> LocalTranscription
   VivaDicta --> OAuth
   VivaDicta --> AIProviders
+  VivaDicta --> LocalLLM
   VivaDicta --> TranscriptionCore
   VivaDicta --> AICore
   VivaDicta --> Keychain
@@ -154,6 +160,7 @@ graph BT
 | `CloudTranscription` | adapter | Per-provider speech-to-text services conforming to `TranscriptionService`. Depends on `TranscriptionCore` + `Networking`. | `MockTranscriptionService` |
 | `LocalTranscription` | adapter | On-device transcription (WhisperKit + Parakeet/FluidAudio). | `LocalTranscriptionMocks` |
 | `AIProviders` | adapter | Per-LLM text clients (Anthropic, OpenAI-compatible cluster, Ollama, Custom, Apple FM, OAuth clients) + thin `AITextProvider` wrappers. Depends on `AICore` + `Networking`. | (own tests) |
+| `LocalLLM` | adapter | On-device LLM text generation. `LocalModelEngine` protocol + `LiteRTModelManager` (LiteRT Gemma via swift-litert-lm) + `LiteRTGemmaTextProvider` (conforms to `AITextProvider`) + `LiteRTGemmaVariant`. The MLX runtime stays app-side (Metal-library bundling); this module owns the LiteRT engine. Depends on `AICore` + external `LiteRTFoundation`. | `LocalLLMMocks` (`MockLocalModelEngine`) |
 | `TranscriptionKit` | orchestrator | Routes a transcription request to cloud vs. local behind `TranscriptionCore`'s protocol. | `TranscriptionKitMocks` |
 | `AIKit` | orchestrator | `AIProviderRegistry` (route + model → configured `any AITextProvider`), `TextEnhancer` (cloud/CLI/OAuth routing + fallback), `CLIServerEnhancer` seam. Depends on `AICore` + `AIProviders` + `Keychain` + `OAuth` + `Networking`. | `MockCLIServerEnhancer` |
 | `VivaDicta` (app) | app | Views, SwiftData, view models, `AIService` (resolves routes + builds messages, delegates execution to `AIKit`), App Intents, extensions. | n/a |
