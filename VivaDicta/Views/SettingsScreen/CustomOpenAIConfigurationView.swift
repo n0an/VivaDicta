@@ -36,24 +36,25 @@ struct CustomOpenAIConfigurationView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            // Icon
-            Image(systemName: "server.rack")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-                .padding(.top, 8)
+        ScrollView {
+            VStack(spacing: 16) {
+                // Icon
+                Image(systemName: "server.rack")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 8)
 
-            Text("Custom AI provider")
-                .font(.title2)
+                Text("Custom AI provider")
+                    .font(.title2)
 
-            Text("OpenAI-Compatible API")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Text("OpenAI-Compatible API")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
 
-            // Connection status
-            connectionStatusView
+                // Connection status
+                connectionStatusView
 
-            ScrollView {
+                // Input fields
                 VStack(spacing: 20) {
                     // Endpoint URL input
                     VStack(alignment: .leading, spacing: 8) {
@@ -133,85 +134,86 @@ struct CustomOpenAIConfigurationView: View {
                     }
                 }
                 .padding(.horizontal)
-            }
 
-            // Action buttons
-            VStack(spacing: 12) {
-                // Test & Save button
-                if #available(iOS 26.0, *) {
-                    Button {
-                        testAndSave()
-                    } label: {
-                        HStack {
-                            if case .checking = connectionStatus {
-                                ProgressView()
-                                    .controlSize(.small)
+                // Action buttons
+                VStack(spacing: 12) {
+                    // Test & Save button
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            testAndSave()
+                        } label: {
+                            HStack {
+                                if case .checking = connectionStatus {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                                Text(connectionStatus == .checking ? "Connecting..." : "Test & Save")
+                                    .font(.headline.weight(.medium))
                             }
-                            Text(connectionStatus == .checking ? "Connecting..." : "Test & Save")
-                                .font(.headline.weight(.medium))
                         }
-                    }
-                    .disabled(isChecking || !canTestConnection)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
-                    .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
-                    .buttonStyle(.plain)
-                } else {
-                    Button {
-                        testAndSave()
-                    } label: {
-                        HStack {
-                            if case .checking = connectionStatus {
-                                ProgressView()
-                                    .controlSize(.small)
-                            }
-                            Text(connectionStatus == .checking ? "Connecting..." : "Test & Save")
-                                .font(.headline.weight(.medium))
-                                .foregroundStyle(.primary)
-                        }
+                        .disabled(isChecking || !canTestConnection)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
-                        .background {
-                            Capsule()
-                                .stroke(.blue, lineWidth: 2)
+                        .glassEffect(.regular.tint(.blue.opacity(0.3)).interactive())
+                        .buttonStyle(.plain)
+                    } else {
+                        Button {
+                            testAndSave()
+                        } label: {
+                            HStack {
+                                if case .checking = connectionStatus {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+                                Text(connectionStatus == .checking ? "Connecting..." : "Test & Save")
+                                    .font(.headline.weight(.medium))
+                                    .foregroundStyle(.primary)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 16)
+                            .background {
+                                Capsule()
+                                    .stroke(.blue, lineWidth: 2)
+                            }
+                        }
+                        .disabled(isChecking || !canTestConnection)
+                        .buttonStyle(.plain)
+                    }
+
+                    // Clear Configuration button (only shown when configured)
+                    if isConfigured {
+                        Button(role: .destructive) {
+                            showingClearConfirmation = true
+                        } label: {
+                            Label("Clear Configuration", systemImage: "trash")
+                                .font(.subheadline)
                         }
                     }
-                    .disabled(isChecking || !canTestConnection)
-                    .buttonStyle(.plain)
                 }
 
-                // Clear Configuration button (only shown when configured)
-                if isConfigured {
-                    Button(role: .destructive) {
-                        showingClearConfirmation = true
-                    } label: {
-                        Label("Clear Configuration", systemImage: "trash")
-                            .font(.subheadline)
-                    }
+                // Help text
+                VStack(spacing: 8) {
+                    Text("Connect to any OpenAI-compatible API server.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+
+                    Text("Supports LiteLLM, vLLM, Ollama, and other compatible servers.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
                 }
+                .padding(.top, 8)
+                .padding(.bottom)
             }
-
-            Spacer()
-
-            // Help text
-            VStack(spacing: 8) {
-                Text("Connect to any OpenAI-compatible API server.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-
-                Text("Supports LiteLLM, vLLM, Ollama, and other compatible servers.")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             }
-            .padding(.bottom)
         }
-        .padding()
-        .contentShape(Rectangle())
-        .onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        }
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Custom AI Provider")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
