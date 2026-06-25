@@ -10,7 +10,7 @@ struct AIProviderTests {
     // MARK: - Catalog integrity
 
     @Test func allCasesCountIsStable() {
-        #expect(AIProvider.allCases.count == 28)
+        #expect(AIProvider.allCases.count == 29)
     }
 
     @Test func rawValuesRoundTripForCodableAndDefaultsCompatibility() {
@@ -54,6 +54,7 @@ struct AIProviderTests {
             .minimax: "minimaxAPIKey",
             .vercelAIGateway: "vercelAIGatewayAPIKey",
             .opencodeZen: "opencodeZenAPIKey",
+            .opencodeGo: "opencodeZenAPIKey", // intentionally shared with Zen
             .huggingFace: "huggingFaceAPIKey",
             .copilot: "",
             .ollama: "",
