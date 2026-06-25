@@ -1,22 +1,20 @@
 //
-//  LiteRTGemmaModelView.swift
+//  LocalMLXModelView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2026.06.20
+//  Created by Anton Novoselov on 2026.06.24
 //
-//  Cards (one per on-device Gemma variant) shown inline in the AI Providers
-//  "Local" tab, styled to match the Transcription Models cards - including the
-//  same circular download/cancel/delete action button (progress is drawn inside
-//  the button, no separate progress bar).
+//  Cards for the on-device MLX models (GPU), shown inline in the AI Providers
+//  "Local" tab. One generic card type over LocalMLXModel, parallel to the
+//  LiteRT/Core ML cards (same download/cancel/delete button + badges).
 //
 
 import SwiftUI
 import DesignSystem
-import LocalLLM
 
 @MainActor
 @Observable
-final class LiteRTGemmaModelViewModel {
+final class LocalMLXModelViewModel {
     enum Status: Equatable {
         case checking
         case notDownloaded
@@ -26,106 +24,100 @@ final class LiteRTGemmaModelViewModel {
         case failed(String)
     }
 
-    private(set) var status: [LiteRTGemmaVariant: Status] = [:]
-    private(set) var sizeBytes: [LiteRTGemmaVariant: Int64] = [:]
+    private(set) var status: [LocalMLXModel: Status] = [:]
+    private(set) var sizeBytes: [LocalMLXModel: Int64] = [:]
 
-    /// In-flight download/load tasks, kept so the cancel button can stop them.
-    private var tasks: [LiteRTGemmaVariant: Task<Void, Never>] = [:]
+    private var tasks: [LocalMLXModel: Task<Void, Never>] = [:]
 
-    /// The model-lifecycle backend. Injected so tests can supply a mock; the
-    /// app uses the shared `LiteRTModelManager`.
-    private let engine: any LocalModelEngine
+    private let engine: any LocalMLXModelEngine
 
-    init(engine: any LocalModelEngine = LiteRTModelManager.shared) {
+    init(engine: any LocalMLXModelEngine = LocalMLXModelManager.shared) {
         self.engine = engine
     }
 
-    func status(for variant: LiteRTGemmaVariant) -> Status { status[variant] ?? .checking }
+    func status(for model: LocalMLXModel) -> Status { status[model] ?? .checking }
 
-    /// True while any variant is downloading/preparing - used to lock other
-    /// downloads (we run one model download at a time).
+    /// True while any model is downloading/preparing - used to lock other downloads.
     var isDownloading: Bool {
         status.values.contains {
             switch $0 { case .downloading, .preparing: true; default: false }
         }
     }
 
-    /// 0...1 progress for the action button; 1 when not actively downloading.
-    func progress(for variant: LiteRTGemmaVariant) -> Double {
-        if case .downloading(let fraction) = status(for: variant) { return fraction }
+    func progress(for model: LocalMLXModel) -> Double {
+        if case .downloading(let fraction) = status(for: model) { return fraction }
         return 1
     }
 
     func refresh() async {
-        for variant in LiteRTGemmaVariant.allCases {
-            switch status[variant] {
-            case .downloading, .preparing: continue // don't clobber an in-flight op
+        for model in LocalMLXModel.allCases {
+            switch status[model] {
+            case .downloading, .preparing: continue
             default: break
             }
-            let downloaded = await engine.isDownloaded(variant)
-            sizeBytes[variant] = await engine.downloadedBytes(variant)
-            status[variant] = downloaded ? .ready : .notDownloaded
+            let downloaded = await engine.isDownloaded(model)
+            sizeBytes[model] = await engine.downloadedBytes(model)
+            status[model] = downloaded ? .ready : .notDownloaded
         }
     }
 
-    /// Starts a download/load for `variant`. Returns the in-flight task so call
-    /// sites (and tests) can await completion; the UI calls it fire-and-forget.
     @discardableResult
-    func prepare(_ variant: LiteRTGemmaVariant) -> Task<Void, Never> {
-        tasks[variant]?.cancel()
-        status[variant] = .downloading(0)
+    func prepare(_ model: LocalMLXModel) -> Task<Void, Never> {
+        tasks[model]?.cancel()
+        status[model] = .downloading(0)
         let task = Task { @MainActor in
             do {
-                try await engine.ensureLoaded(variant: variant) { fraction in
+                try await engine.ensureLoaded(model: model) { fraction in
                     Task { @MainActor in
-                        // Ignore late progress callbacks after a cancel/finish.
-                        switch self.status[variant] {
+                        switch self.status[model] {
                         case .downloading, .preparing:
-                            self.status[variant] = fraction >= 1.0 ? .preparing : .downloading(fraction)
+                            self.status[model] = fraction >= 1.0 ? .preparing : .downloading(fraction)
                         default:
                             break
                         }
                     }
                 }
-                self.status[variant] = .ready
-                self.sizeBytes[variant] = await engine.downloadedBytes(variant)
+                self.status[model] = .ready
+                self.sizeBytes[model] = await engine.downloadedBytes(model)
             } catch is CancellationError {
-                self.status[variant] = .notDownloaded
+                // Discard the partial download so it can't later read as Ready.
+                try? await engine.deleteModel(model)
+                self.status[model] = .notDownloaded
             } catch {
+                try? await engine.deleteModel(model)
                 if (error as? URLError)?.code == .cancelled {
-                    self.status[variant] = .notDownloaded
+                    self.status[model] = .notDownloaded
                 } else {
-                    self.status[variant] = .failed(error.localizedDescription)
+                    self.status[model] = .failed(error.localizedDescription)
                 }
             }
-            self.tasks[variant] = nil
+            self.tasks[model] = nil
         }
-        tasks[variant] = task
+        tasks[model] = task
         return task
     }
 
-    func cancel(_ variant: LiteRTGemmaVariant) {
-        tasks[variant]?.cancel()
-        tasks[variant] = nil
-        status[variant] = .notDownloaded
+    func cancel(_ model: LocalMLXModel) {
+        tasks[model]?.cancel()
+        tasks[model] = nil
+        status[model] = .notDownloaded
     }
 
-    func delete(_ variant: LiteRTGemmaVariant) async {
+    func delete(_ model: LocalMLXModel) async {
         do {
-            try await engine.deleteModel(variant)
-            sizeBytes[variant] = 0
-            status[variant] = .notDownloaded
+            try await engine.deleteModel(model)
+            sizeBytes[model] = 0
+            status[model] = .notDownloaded
         } catch {
-            status[variant] = .failed(error.localizedDescription)
+            status[model] = .failed(error.localizedDescription)
         }
     }
 }
 
-/// One card per on-device Gemma variant (E2B/E4B), shown inline in the AI
-/// Providers "Local" tab. Styled like the Transcription Models cards.
-struct GemmaVariantCard: View {
-    let variant: LiteRTGemmaVariant
-    let model: LiteRTGemmaModelViewModel
+/// One card per on-device MLX model, shown in the AI Providers "Local" tab.
+struct MLXModelCard: View {
+    let model: LocalMLXModel
+    let viewModel: LocalMLXModelViewModel
     /// When another model is downloading, this card's download action is locked.
     var downloadsLocked: Bool = false
 
@@ -136,21 +128,17 @@ struct GemmaVariantCard: View {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        Image("gemma-color")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 28, height: 28)
-                        
-                        Text(variant.displayName)
+                        icon
+                        Text(model.displayName)
                             .font(.title3)
                             .fontWeight(.semibold)
                     }
                     statusLabel
-                    if variant.isRecommendedForThisDevice {
+                    if model.isRecommendedForThisDevice {
                         RecommendedBadge()
                     }
                 }
-                
+
                 Spacer()
 
                 HStack(spacing: 8) {
@@ -166,12 +154,12 @@ struct GemmaVariantCard: View {
                     actionButton
                 }
             }
-            
-            Text(variant.subtitle)
+
+            Text(model.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            RuntimeBadge(runtime: "LiteRT")
+            RuntimeBadge(runtime: "MLX")
         }
         .padding(20)
         .modelCardBackground()
@@ -187,20 +175,35 @@ struct GemmaVariantCard: View {
         }
         .alert("Delete Model", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
-                Task { await model.delete(variant) }
+                Task { await viewModel.delete(model) }
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Are you sure you want to delete \(variant.displayName)? You can download it again later.")
+            Text("Are you sure you want to delete \(model.displayName)? You can download it again later.")
+        }
+    }
+
+    @ViewBuilder
+    private var icon: some View {
+        if let asset = model.iconAsset {
+            Image(asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
+        } else {
+            Image(systemName: "cpu")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
         }
     }
 
     private var sizeText: String {
-        let bytes = model.sizeBytes[variant] ?? 0
-        return bytes > 0 ? bytes.formatted(.byteCount(style: .file)) : variant.approxDownloadDescription
+        let bytes = viewModel.sizeBytes[model] ?? 0
+        return bytes > 0 ? bytes.formatted(.byteCount(style: .file)) : model.approxDownloadDescription
     }
 
-    private var status: LiteRTGemmaModelViewModel.Status { model.status(for: variant) }
+    private var status: LocalMLXModelViewModel.Status { viewModel.status(for: model) }
 
     private var isDownloading: Bool {
         switch status {
@@ -209,8 +212,6 @@ struct GemmaVariantCard: View {
         }
     }
 
-    /// True when tapping the button would START a download (so it should be
-    /// disabled while another model is downloading).
     private var isStartDownloadState: Bool {
         switch status {
         case .notDownloaded, .failed, .checking: true
@@ -265,17 +266,17 @@ struct GemmaVariantCard: View {
             switch status {
             case .ready:
                 HapticManager.warning()
-                Task { await model.delete(variant) }
+                Task { await viewModel.delete(model) }
             case .downloading, .preparing:
                 HapticManager.lightImpact()
-                model.cancel(variant)
+                viewModel.cancel(model)
             case .notDownloaded, .failed, .checking:
                 HapticManager.lightImpact()
-                model.prepare(variant)
+                viewModel.prepare(model)
             }
         } label: {
             if #available(iOS 26.0, *) {
-                Image(systemName: symbolName, variableValue: isDownloading ? model.progress(for: variant) : 1)
+                Image(systemName: symbolName, variableValue: isDownloading ? viewModel.progress(for: model) : 1)
                     .symbolVariableValueMode(.draw)
                     .contentTransition(.symbolEffect(.replace))
                     .foregroundStyle(symbolColor)
@@ -288,7 +289,7 @@ struct GemmaVariantCard: View {
                     .padding(8)
                     .background {
                         Circle()
-                            .trim(from: 0, to: model.progress(for: variant))
+                            .trim(from: 0, to: viewModel.progress(for: model))
                             .stroke(.primary, lineWidth: 3)
                             .rotationEffect(.degrees(-90))
                     }
@@ -303,42 +304,3 @@ struct GemmaVariantCard: View {
         .disabled(downloadsLocked && isStartDownloadState)
     }
 }
-
-/// Small subtle tag naming the on-device runtime that powers a model card
-/// ("LiteRT" / "Core ML").
-struct RuntimeBadge: View {
-    let runtime: String
-
-    var body: some View {
-        Label(runtime, systemImage: "cpu")
-            .font(.caption2)
-            .fontWeight(.medium)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(.secondary.opacity(0.12), in: .capsule)
-    }
-}
-
-/// Small blue "Recommended" pill, matching the Transcription Models cards.
-struct RecommendedBadge: View {
-    var body: some View {
-        Text("Recommended")
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundStyle(.blue)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(.blue.opacity(0.15), in: .rect(cornerRadius: 12))
-    }
-}
-
-#if DEBUG
-#Preview {
-    VStack(spacing: 16) {
-        GemmaVariantCard(variant: .e2b, model: LiteRTGemmaModelViewModel())
-        GemmaVariantCard(variant: .e4b, model: LiteRTGemmaModelViewModel())
-    }
-    .padding()
-}
-#endif

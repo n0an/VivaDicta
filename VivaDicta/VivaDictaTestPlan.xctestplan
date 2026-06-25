@@ -84,6 +84,13 @@
     },
     {
       "target" : {
+        "containerPath" : "container:Modules\/LocalLLM",
+        "identifier" : "LocalLLMTests",
+        "name" : "LocalLLMTests"
+      }
+    },
+    {
+      "target" : {
         "containerPath" : "container:Modules\/AppGroup",
         "identifier" : "AppGroupTests",
         "name" : "AppGroupTests"

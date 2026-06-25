@@ -10,7 +10,7 @@
 
 import Foundation
 import Testing
-@testable import VivaDicta
+@testable import LocalLLM
 
 struct LiteRTGemmaVariantTests {
 

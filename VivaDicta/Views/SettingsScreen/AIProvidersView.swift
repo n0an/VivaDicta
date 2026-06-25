@@ -9,6 +9,7 @@ import SwiftUI
 import AICore
 import AIProviders
 import DesignSystem
+import LocalLLM
 
 private enum AIProviderType: String, CaseIterable, Identifiable {
     case local
@@ -22,6 +23,37 @@ struct AIProviders: View {
     @State private var refreshID = UUID()
     @State private var providerType: AIProviderType = .local
     @State private var gemmaModel = LiteRTGemmaModelViewModel()
+    @State private var mlxModel = LocalMLXModelViewModel()
+
+    /// One model downloads at a time - lock every card's download button while
+    /// any is in progress (concurrent downloads aren't supported).
+    private var anyDownloadInProgress: Bool {
+        gemmaModel.isDownloading || mlxModel.isDownloading
+    }
+
+    private var deviceMemoryBytes: UInt64 { ProcessInfo.processInfo.physicalMemory }
+
+    /// The single RAM-recommended Qwen / Gemma (the only two ever badged), shown
+    /// right after Apple.
+    private var recommendedQwen: LocalMLXModel {
+        LocalMLXModel.recommendedQwen(forPhysicalMemoryBytes: deviceMemoryBytes)
+    }
+    private var recommendedGemma: LiteRTGemmaVariant {
+        LiteRTGemmaVariant.recommendedVariant(forPhysicalMemoryBytes: deviceMemoryBytes)
+    }
+
+    /// The remaining Qwen / Gemma models (everything but the recommended one).
+    private var otherQwenModels: [LocalMLXModel] {
+        [.qwen35_2B, .qwen35_08B, .qwen35_4B].filter { $0 != recommendedQwen }
+    }
+    private var otherGemmaVariants: [LiteRTGemmaVariant] {
+        [.e2b, .e4b].filter { $0 != recommendedGemma }
+    }
+
+    /// Non-Qwen, non-Gemma MLX models, in display order (none ever badged).
+    private static let otherMLXModels: [LocalMLXModel] = [
+        .phi4Mini, .llama32_1B, .llama32_3B, .ministral3B, .falcon3_3B, .granite33_2B,
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,12 +72,29 @@ struct AIProviders: View {
             if providerType == .local {
                 ScrollView {
                     VStack(spacing: 16) {
+                        // Apple first.
                         AppleProviderCard()
                             .padding(.horizontal)
-                        GemmaVariantCard(variant: .e2b, model: gemmaModel)
+                        // Then the two recommended models (Qwen, then Gemma).
+                        MLXModelCard(model: recommendedQwen, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
-                        GemmaVariantCard(variant: .e4b, model: gemmaModel)
+                        GemmaVariantCard(variant: recommendedGemma, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
                             .padding(.horizontal)
+                        // Then the remaining Qwen models.
+                        ForEach(otherQwenModels, id: \.self) { model in
+                            MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        // Then the remaining Gemma variants.
+                        ForEach(otherGemmaVariants, id: \.self) { variant in
+                            GemmaVariantCard(variant: variant, model: gemmaModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        // Then everything else.
+                        ForEach(Self.otherMLXModels, id: \.self) { model in
+                            MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
                     }
                     .padding(.vertical)
                 }
@@ -53,7 +102,7 @@ struct AIProviders: View {
             } else {
                 List {
             // Cloud Section
-            Section("Cloud") {
+            Section {
                 ForEach(AIProvider.cloudProviders) { provider in
                     NavigationLink(value: provider) {
                         HStack(spacing: 12) {
@@ -246,6 +295,7 @@ struct AIProviders: View {
         }
         .task {
             await gemmaModel.refresh()
+            await mlxModel.refresh()
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)
@@ -301,7 +351,6 @@ private struct AppleProviderCard: View {
                                 .fontWeight(.semibold)
                         }
                         statusLabel
-                        RecommendedBadge()
                     }
                     Spacer()
                 }

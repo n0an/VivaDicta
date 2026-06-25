@@ -10,6 +10,7 @@ import os
 import Presets
 import AICore
 import AIProviders
+import LocalLLM
 
 @Observable
 class ModeEditViewModel {
@@ -130,6 +131,9 @@ class ModeEditViewModel {
             }
             if provider == .customOpenAI {
                 return "Configure Custom AI Provider in AI Providers settings\(Self.disableHint)"
+            }
+            if provider == .local {
+                return "Download the model in AI Providers\(Self.disableHint)"
             }
             return "Add API key to continue\(Self.disableHint)"
         }
@@ -332,23 +336,31 @@ class ModeEditViewModel {
                 aiModel = configuredModel
                 logger.logInfo("Custom OpenAI model updated to configured: '\(configuredModel)'")
             }
-        } else if provider == .localGemma {
-            // If the selected on-device Gemma model was deleted, fall back to
-            // another downloaded variant; if none remain, disable AI Processing
-            // for this mode (it can't run on-device without a downloaded model).
-            let downloaded = AIProvider.localGemma.availableModels.filter {
-                LiteRTGemmaVariant(modelID: $0).isDownloaded
-            }
+        } else if provider == .local {
+            // On-device: if the selected model was deleted, fall back to another
+            // downloaded one; if none remain, disable AI Processing for this mode
+            // (it can't run on-device without a downloaded model). The model id
+            // picks the runtime (Gemma = LiteRT, else MLX).
+            let downloaded = AIProvider.local.availableModels.filter { Self.isLocalModelDownloaded($0) }
             if let current = aiModel, downloaded.contains(current) {
                 // Still valid - keep it.
             } else if let firstDownloaded = downloaded.first {
                 aiModel = firstDownloaded
-                logger.logInfo("On-device Gemma model not available, reset to '\(firstDownloaded)'")
+                logger.logInfo("On-device model not available, reset to '\(firstDownloaded)'")
             } else {
                 aiEnhanceEnabled = false
-                logger.logInfo("No on-device Gemma model downloaded; disabled AI Processing for this mode")
+                logger.logInfo("No on-device model downloaded; disabled AI Processing for this mode")
             }
         }
+    }
+
+    /// True if an on-device model id is downloaded, querying the right runtime
+    /// (Gemma ids = LiteRT, everything else = MLX).
+    static func isLocalModelDownloaded(_ id: String) -> Bool {
+        if LiteRTGemmaVariant(rawValue: id) != nil {
+            return LiteRTGemmaVariant(modelID: id).isDownloaded
+        }
+        return LocalMLXModel(modelID: id).isDownloaded
     }
 
     private func validateReminderExtractorModelSelection() {
@@ -618,15 +630,13 @@ class ModeEditViewModel {
             return modelName.isEmpty ? nil : modelName
         }
 
-        if provider == .localGemma {
-            // Seed a downloaded variant: the picker only offers downloaded
-            // variants, so the default must be downloaded too - otherwise (e.g.
-            // only E4B on disk) the mode saves with the static E2B default that
-            // isProperlyConfigured then rejects. Prefer the provider default if
-            // it's downloaded, else the first downloaded variant.
-            let downloaded = provider.availableModels.filter {
-                LiteRTGemmaVariant(modelID: $0).isDownloaded
-            }
+        if provider == .local {
+            // Seed a downloaded model: the picker only offers downloaded models,
+            // so the default must be downloaded too - otherwise the mode saves
+            // with the static default that isProperlyConfigured then rejects.
+            // Prefer the provider default if it's downloaded, else the first
+            // downloaded model.
+            let downloaded = provider.availableModels.filter { Self.isLocalModelDownloaded($0) }
             if downloaded.contains(provider.defaultModel) {
                 return provider.defaultModel
             }

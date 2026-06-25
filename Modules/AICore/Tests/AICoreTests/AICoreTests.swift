@@ -59,7 +59,7 @@ struct AIProviderTests {
             .ollama: "",
             .ollamaCloud: "ollamaCloudAPIKey",
             .customOpenAI: "customOpenAIAPIKey",
-            .localGemma: "",
+            .local: "",
         ]
         #expect(Set(expected.keys) == Set(AIProvider.allCases), "every provider must have a keychain-key expectation")
         for (provider, key) in expected {
@@ -106,8 +106,8 @@ struct AIProviderTests {
 
     // MARK: - Curated provider groups
 
-    @Test func localProvidersAreAppleOllamaAndLocalGemma() {
-        #expect(AIProvider.localProviders == [.apple, .localGemma, .ollama])
+    @Test func localProvidersAreAppleLocalAndOllama() {
+        #expect(AIProvider.localProviders == [.apple, .local, .ollama])
     }
 
     @Test func cloudProvidersContainAnthropicButNotApple() {
