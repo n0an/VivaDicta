@@ -132,15 +132,21 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         return caches.appending(path: "models").appending(path: mlxRepo)
     }
 
-    /// True once the model is materialized on disk (dir + a config.json, so a
-    /// partial download doesn't read as ready).
+    /// True once the model is fully materialized on disk. Requires both the
+    /// config AND a weights file: `config.json` is tiny and lands early, so a
+    /// download cancelled/interrupted before the multi-GB `.safetensors` must not
+    /// read as ready (which would let generation resume a fetch or fail late).
     var isDownloaded: Bool {
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: cacheDirectory.path(), isDirectory: &isDir), isDir.boolValue else {
             return false
         }
-        return fm.fileExists(atPath: cacheDirectory.appending(path: "config.json").path())
+        guard fm.fileExists(atPath: cacheDirectory.appending(path: "config.json").path()) else {
+            return false
+        }
+        let contents = (try? fm.contentsOfDirectory(atPath: cacheDirectory.path())) ?? []
+        return contents.contains { $0.hasSuffix(".safetensors") }
     }
 
     /// On-disk size in bytes (0 when not downloaded).

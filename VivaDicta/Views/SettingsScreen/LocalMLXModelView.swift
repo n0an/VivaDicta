@@ -80,8 +80,11 @@ final class LocalMLXModelViewModel {
                 self.status[model] = .ready
                 self.sizeBytes[model] = await engine.downloadedBytes(model)
             } catch is CancellationError {
+                // Discard the partial download so it can't later read as Ready.
+                try? await engine.deleteModel(model)
                 self.status[model] = .notDownloaded
             } catch {
+                try? await engine.deleteModel(model)
                 if (error as? URLError)?.code == .cancelled {
                     self.status[model] = .notDownloaded
                 } else {
