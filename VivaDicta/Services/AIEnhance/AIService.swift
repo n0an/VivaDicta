@@ -95,6 +95,8 @@ class AIService {
     public var huggingFaceModels: [String] = []
     public var ollamaModels: [String] = []
     public var ollamaCloudModels: [String] = []
+    public var opencodeZenModels: [String] = []
+    public var opencodeGoModels: [String] = []
     public var modes: [VivaMode] = []
 
     /// Ollama server URL (configurable, defaults to localhost:11434)
@@ -266,6 +268,8 @@ class AIService {
         loadSavedHuggingFaceModels()
         loadSavedOllamaModels()
         loadSavedOllamaCloudModels()
+        loadSavedOpencodeZenModels()
+        loadSavedOpencodeGoModels()
 
         // Refresh connected providers on main actor (needed for Apple availability check)
         Task {
@@ -286,6 +290,12 @@ class AIService {
             }
             if connectedProviders.contains(.ollamaCloud) {
                 await fetchOllamaCloudModels()
+            }
+            if connectedProviders.contains(.opencodeZen) {
+                await fetchOpencodeZenModels()
+            }
+            if connectedProviders.contains(.opencodeGo) {
+                await fetchOpencodeGoModels()
             }
             // Ollama models are fetched on-demand when user configures Ollama
         }
@@ -710,6 +720,26 @@ class AIService {
 
     private func saveOllamaCloudModels() {
         userDefaults.set(ollamaCloudModels, forKey: UserDefaultsStorage.Keys.ollamaCloudModels)
+    }
+
+    private func loadSavedOpencodeZenModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.opencodeZenModels) as? [String] {
+            opencodeZenModels = savedModels
+        }
+    }
+
+    private func saveOpencodeZenModels() {
+        userDefaults.set(opencodeZenModels, forKey: UserDefaultsStorage.Keys.opencodeZenModels)
+    }
+
+    private func loadSavedOpencodeGoModels() {
+        if let savedModels = userDefaults.array(forKey: UserDefaultsStorage.Keys.opencodeGoModels) as? [String] {
+            opencodeGoModels = savedModels
+        }
+    }
+
+    private func saveOpencodeGoModels() {
+        userDefaults.set(opencodeGoModels, forKey: UserDefaultsStorage.Keys.opencodeGoModels)
     }
 
     // MARK: - Configuration validation
@@ -1763,6 +1793,12 @@ class AIService {
         if isValid && provider == .ollamaCloud {
             await fetchOllamaCloudModels()
         }
+        if isValid && provider == .opencodeZen {
+            await fetchOpencodeZenModels()
+        }
+        if isValid && provider == .opencodeGo {
+            await fetchOpencodeGoModels()
+        }
 
         return isValid
     }
@@ -2033,6 +2069,17 @@ class AIService {
             // static list so the picker is never empty before the first fetch.
             return ollamaCloudModels.isEmpty ? provider.availableModels : ollamaCloudModels
         }
+        if provider == .opencodeZen {
+            // Live catalog once fetched, falling back to the curated static list.
+            // The free/paid sections are still classified by the static
+            // `opencodeZenFreeModels` / `opencodeZenPaidModels` sets in AICore,
+            // so they keep working whether the list is fetched or static.
+            return opencodeZenModels.isEmpty ? provider.availableModels : opencodeZenModels
+        }
+        if provider == .opencodeGo {
+            // Live catalog once fetched, falling back to the curated static list.
+            return opencodeGoModels.isEmpty ? provider.availableModels : opencodeGoModels
+        }
         if provider == .customOpenAI {
             // Return the configured model name as a single-item array
             return customOpenAIModelName.isEmpty ? [] : [customOpenAIModelName]
@@ -2249,6 +2296,106 @@ class AIService {
 
         } catch {
             logger.logError("Error fetching Ollama Cloud models: \(error.localizedDescription)")
+            // Preserve existing cached models on failure
+        }
+    }
+
+    /// Fetches the available OpenCode Zen models from the OpenAI-compatible
+    /// `/v1/models` endpoint, then publishes them to the `@Observable`
+    /// `opencodeZenModels` property. The fetched catalog drives the model
+    /// picker; the free/paid split is still classified by the static
+    /// `opencodeZenFreeModels` / `opencodeZenPaidModels` sets in AICore. The
+    /// listing requires the API key, so the Bearer header is attached.
+    public func fetchOpencodeZenModels() async {
+        guard let apiKey = AIProvider.opencodeZen.apiKey, !apiKey.isEmpty else {
+            // No key yet (pre-config or just deleted) is an expected state, not an error.
+            logger.logDebug("Skipping OpenCode Zen model fetch: no API key configured")
+            return
+        }
+
+        let url = URL(string: "https://opencode.ai/zen/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            guard httpResponse.statusCode == 200 else {
+                logger.logError("Failed to fetch OpenCode Zen models: Invalid HTTP response")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse OpenCode Zen models JSON")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            let models = dataArray.compactMap { $0["id"] as? String }
+            guard !models.isEmpty else {
+                logger.logWarning("OpenCode Zen returned no models; keeping existing list.")
+                return
+            }
+
+            self.opencodeZenModels = models.sorted()
+            self.saveOpencodeZenModels()
+            logger.logInfo("Successfully fetched \(models.count) OpenCode Zen models.")
+
+        } catch {
+            logger.logError("Error fetching OpenCode Zen models: \(error.localizedDescription)")
+            // Preserve existing cached models on failure
+        }
+    }
+
+    /// Fetches the OpenCode Go catalog from its `/zen/go/v1/models` endpoint and
+    /// publishes the result to `opencodeGoModels`. Go shares the OpenCode Zen API
+    /// key; every Go model is covered by the subscription, so there is no
+    /// free/paid split and the full fetched catalog is shown.
+    public func fetchOpencodeGoModels() async {
+        guard let apiKey = AIProvider.opencodeGo.apiKey, !apiKey.isEmpty else {
+            // No key yet (pre-config or just deleted) is an expected state, not an error.
+            logger.logDebug("Skipping OpenCode Go model fetch: no API key configured")
+            return
+        }
+
+        let url = URL(string: "https://opencode.ai/zen/go/v1/models")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+            guard httpResponse.statusCode == 200 else {
+                logger.logError("Failed to fetch OpenCode Go models: Invalid HTTP response")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let dataArray = jsonResponse["data"] as? [[String: Any]] else {
+                logger.logError("Failed to parse OpenCode Go models JSON")
+                // Preserve existing cached models on failure
+                return
+            }
+
+            let models = dataArray.compactMap { $0["id"] as? String }
+            guard !models.isEmpty else {
+                logger.logWarning("OpenCode Go returned no models; keeping existing list.")
+                return
+            }
+
+            self.opencodeGoModels = models.sorted()
+            self.saveOpencodeGoModels()
+            logger.logInfo("Successfully fetched \(models.count) OpenCode Go models (OpenAI-compatible).")
+
+        } catch {
+            logger.logError("Error fetching OpenCode Go models: \(error.localizedDescription)")
             // Preserve existing cached models on failure
         }
     }

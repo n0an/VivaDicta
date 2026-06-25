@@ -10,7 +10,7 @@ struct AIProviderTests {
     // MARK: - Catalog integrity
 
     @Test func allCasesCountIsStable() {
-        #expect(AIProvider.allCases.count == 28)
+        #expect(AIProvider.allCases.count == 29)
     }
 
     @Test func rawValuesRoundTripForCodableAndDefaultsCompatibility() {
@@ -54,6 +54,7 @@ struct AIProviderTests {
             .minimax: "minimaxAPIKey",
             .vercelAIGateway: "vercelAIGatewayAPIKey",
             .opencodeZen: "opencodeZenAPIKey",
+            .opencodeGo: "opencodeZenAPIKey", // intentionally shared with Zen
             .huggingFace: "huggingFaceAPIKey",
             .copilot: "",
             .ollama: "",
@@ -146,5 +147,32 @@ struct AIProviderTests {
         #expect(!AIProvider.isOpencodeZenModelFree("some-future-model"))
         // The default model must be free so a brand-new key verifies and works.
         #expect(AIProvider.isOpencodeZenModelFree(AIProvider.opencodeZen.defaultModel))
+    }
+
+    // MARK: - OpenCode Go
+
+    @Test func opencodeGoCatalogIsNonEmptyAndContainsItsDefault() {
+        let models = AIProvider.opencodeGoModels
+        #expect(!models.isEmpty)
+        #expect(AIProvider.opencodeGo.availableModels == models)
+        // The default must be in the catalog so a fresh pick is always valid.
+        #expect(AIProvider.opencodeGo.defaultModel == "deepseek-v4-flash")
+        #expect(models.contains(AIProvider.opencodeGo.defaultModel))
+    }
+
+    @Test func opencodeGoSharesZenKeyButUsesItsOwnEndpoint() {
+        // Go is a separate subscription that authenticates with the same OpenCode
+        // key, so it must share Zen's keychain identifier (iCloud Keychain sync).
+        #expect(AIProvider.opencodeGo.keychainKey == AIProvider.opencodeZen.keychainKey)
+        #expect(AIProvider.opencodeGo.keychainKey == "opencodeZenAPIKey")
+        // ...but routes to its own Go endpoint, distinct from Zen's.
+        #expect(AIProvider.opencodeGo.baseURL == "https://opencode.ai/zen/go/v1/chat/completions")
+        #expect(AIProvider.opencodeGo.baseURL != AIProvider.opencodeZen.baseURL)
+    }
+
+    @Test func reminderExtractorExcludesOpencodeGo() {
+        // Go serves the same open-weight model family as Zen, which rejects
+        // json_schema response formats.
+        #expect(!AIProvider.reminderExtractorCloudProviders.contains(.opencodeGo))
     }
 }

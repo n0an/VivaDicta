@@ -64,6 +64,8 @@ public enum UserDefaultsStorage {
         public static let ollamaModels = "ollamaModels"
         public static let ollamaServerURL = "ollamaServerURL"
         public static let ollamaCloudModels = "ollamaCloudModels"
+        public static let opencodeZenModels = "opencodeZenModels"
+        public static let opencodeGoModels = "opencodeGoModels"
 
         // iCloud
         public static let isICloudSyncEnabled = "isICloudSyncEnabled"
