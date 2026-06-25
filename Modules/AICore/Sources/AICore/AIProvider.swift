@@ -32,6 +32,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     case minimax
     case vercelAIGateway
     case opencodeZen
+    case opencodeGo
     case huggingFace
     case copilot
     case ollama
@@ -87,6 +88,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "Vercel AI Gateway"
         case .opencodeZen:
             "OpenCode Zen"
+        case .opencodeGo:
+            "OpenCode Go"
         case .huggingFace:
             "HuggingFace"
         case .copilot:
@@ -147,7 +150,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "assemblyai-color"
         case .vercelAIGateway:
             "vercel"
-        case .opencodeZen:
+        case .opencodeZen, .opencodeGo:
             "opencode"
         case .huggingFace:
             "huggingface-color"
@@ -187,6 +190,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
              .minimax,
              .vercelAIGateway,
              .opencodeZen,
+             .opencodeGo,
              .huggingFace,
              .ollama,
              .ollamaCloud,
@@ -215,7 +219,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cerebras: URL(string: "https://cloud.cerebras.ai/")
         case .grok: URL(string: "https://console.x.ai/")
         case .vercelAIGateway: URL(string: "https://vercel.com/account/tokens")
-        case .opencodeZen: URL(string: "https://opencode.ai/auth")
+        case .opencodeZen, .opencodeGo: URL(string: "https://opencode.ai/auth")
         case .huggingFace: URL(string: "https://huggingface.co/settings/tokens")
         case .zai: URL(string: "https://open.z.ai/")
         case .kimi: URL(string: "https://platform.moonshot.cn/console/api-keys")
@@ -251,6 +255,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .openRouter,
         .vercelAIGateway,
         .opencodeZen,
+        .opencodeGo,
         .huggingFace,
         .ollama,
         .ollamaCloud,
@@ -263,12 +268,14 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// (https://docs.ollama.com/capabilities/structured-outputs). Local Ollama
     /// does support them, so it stays eligible.
     ///
-    /// Also excludes OpenCode Zen: its free-tier models reject `json_schema`
-    /// response formats ("This response_format type is unavailable now",
-    /// verified 2026-06-19), so the structured reminder extraction would fail on
-    /// the models most Zen users run.
+    /// Also excludes OpenCode Zen and OpenCode Go: their open-weight models reject
+    /// `json_schema` response formats ("This response_format type is unavailable
+    /// now", verified 2026-06-19 on Zen), so the structured reminder extraction
+    /// would fail on the models most OpenCode users run. Go routes through the same
+    /// OpenCode gateway with the same open-weight model family, so it is excluded
+    /// for the same reason.
     public static let reminderExtractorCloudProviders: [AIProvider] =
-        cloudProviders.filter { $0 != .ollamaCloud && $0 != .opencodeZen }
+        cloudProviders.filter { $0 != .ollamaCloud && $0 != .opencodeZen && $0 != .opencodeGo }
 
     /// Local AI providers that run on-device or local network (no API key needed)
     public static let localProviders: [AIProvider] = [
@@ -297,6 +304,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         .openRouter,
         .vercelAIGateway,
         .opencodeZen,
+        .opencodeGo,
         .huggingFace]
 
     public var baseURL: String {
@@ -345,6 +353,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return "https://ai-gateway.vercel.sh/v1/chat/completions"
         case .opencodeZen:
             return "https://opencode.ai/zen/v1/chat/completions"
+        case .opencodeGo:
+            return "https://opencode.ai/zen/go/v1/chat/completions"
         case .huggingFace:
             return "https://router.huggingface.co/v1/chat/completions"
         case .copilot:
@@ -415,6 +425,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // A free model so a brand-new key (no payment method) verifies and
             // works out of the box. See `opencodeZenFreeModels`.
             return "big-pickle"
+        case .opencodeGo:
+            // An OpenAI-compatible Go model included with the $10/month
+            // subscription. See `opencodeGoModels`.
+            return "deepseek-v4-flash"
         case .huggingFace:
             return "openai/gpt-oss-120b"
         case .copilot:
@@ -456,7 +470,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cartesia: "cartesiaAPIKey"
         case .assemblyAI: "assemblyaiAPIKey"
         case .vercelAIGateway: "vercelAIGatewayAPIKey"
-        case .opencodeZen: "opencodeZenAPIKey"
+        // OpenCode Go shares the single OpenCode auth key with Zen: users enter
+        // the Zen key once and Go works. Must match the macOS app for iCloud
+        // Keychain sync, so do NOT introduce a separate key.
+        case .opencodeZen, .opencodeGo: "opencodeZenAPIKey"
         case .huggingFace: "huggingFaceAPIKey"
         case .customOpenAI: "customOpenAIAPIKey"
         case .ollamaCloud: "ollamaCloudAPIKey"
@@ -582,6 +599,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // the pay-as-you-go models. Tier classification lives in
             // `opencodeZenFreeModels` / `opencodeZenPaidModels` below.
             return Self.opencodeZenFreeModels + Self.opencodeZenPaidModels
+        case .opencodeGo:
+            // OpenAI-compatible models included with the OpenCode Go subscription.
+            // See `opencodeGoModels`.
+            return Self.opencodeGoModels
         case .huggingFace:
             return []
         case .copilot:
@@ -702,6 +723,12 @@ public extension AIProvider {
     /// payment method. Selecting one without billing set up returns
     /// "No payment method. Add a payment method here ..." (verified 2026-06-19).
     /// Token pricing passes through the provider's list price with zero markup.
+    ///
+    /// Catalog last refreshed 2026-06-25 from the published Zen model list
+    /// (added `glm-5.2`). The published catalog also lists more GPT/Claude/Qwen
+    /// variants (e.g. `gpt-5.5-pro`, `claude-opus-4.6`, `qwen3.7-max`); those are
+    /// intentionally not exposed here - keep this list curated, and live-verify
+    /// (200 vs 403) any new addition before shipping it.
     static let opencodeZenPaidModels: [String] = [
         "claude-fable-5",
         "claude-opus-4-8",
@@ -719,6 +746,7 @@ public extension AIProvider {
         "gemini-3-flash",
         "deepseek-v4-pro",
         "deepseek-v4-flash",
+        "glm-5.2",
         "glm-5.1",
         "glm-5",
         "kimi-k2.6",
@@ -738,4 +766,26 @@ public extension AIProvider {
     static func isOpencodeZenModelFree(_ model: String) -> Bool {
         opencodeZenFreeModels.contains(model)
     }
+}
+
+// MARK: - OpenCode Go (subscription) models
+
+public extension AIProvider {
+    /// Models included with the $10/month OpenCode Go subscription. Go shares the
+    /// single OpenCode auth key with Zen but routes to its own `/zen/go/v1/`
+    /// endpoint; every model is covered by the subscription, so there is no
+    /// free/paid split. This is the full published catalog
+    /// (https://opencode.ai/docs/go), used only as a fallback - the live list is
+    /// fetched from `/zen/go/v1/models` at runtime.
+    ///
+    /// PROVISIONAL IDs (display names mapped to slugs); the runtime fetch returns
+    /// the canonical ids, so this fallback may lag the live catalog slightly.
+    static let opencodeGoModels: [String] = [
+        "glm-5.2", "glm-5.1",
+        "kimi-k2.7-code", "kimi-k2.6",
+        "mimo-v2.5", "mimo-v2.5-pro",
+        "minimax-m3", "minimax-m2.7",
+        "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
+        "deepseek-v4-pro", "deepseek-v4-flash"
+    ]
 }
