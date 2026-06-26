@@ -104,10 +104,17 @@ Write App Store release notes and save to Obsidian vault at:
 - `keywords` → **unique per locale** (this is the ASO hack - different keyword sets target different search markets)
 - `marketingUrl` + `supportUrl` → same across locales
 
+**Primary source - the running draft**: `Projects/VivaDicta/what's new/whats-new-running.md` is a *running* accumulator of user-facing What's New items for the **upcoming** release. Add to it as features land between releases, then use it as the main source for both the in-app What's New (Step 4) and these App Store release notes.
+
 Source features from:
+- **Running draft (primary)**: `Projects/VivaDicta/what's new/whats-new-running.md`
 - Obsidian vault: `Projects/VivaDicta/feature-changelog.md`
 - Website changelog: `https://vivadicta.com/ios/changelog`
 - Git log since last release tag
+
+**After the release ships, empty `whats-new-running.md`** - clear all items, leaving only the `Running What's New (next release)` header line. It tracks only the *next* upcoming release, so its items must be cleared once they have shipped in `whats-new-X.Y.Z.md`. (Also in the Step 10 checklist.)
+
+**Framing note (Apple Foundation Model)**: when a release adds on-device / local AI, only *recommend* Apple Foundation Model on **Apple-owned surfaces** - the App Store description and these release notes - so App Review sees we are not positioning against Apple's own model. On **our own channels** (in-app What's New, website changelog, LinkedIn), present the on-device feature directly, without recommending Apple FM. The "works even on devices without Apple Intelligence, including iOS 18" value angle is fine everywhere - it is a capability statement, not a recommendation.
 
 ### Step 6 — App Store description
 
@@ -257,3 +264,4 @@ Before handing off to `asc-release-flow`:
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
 - [ ] After build upload: `asc metadata push` + `asc validate` returns 0 errors / 0 blocking (one info-level App Privacy advisory is expected)
+- [ ] After the release ships: empty `whats-new-running.md` (clear items, keep the `Running What's New (next release)` header) so it only tracks the next upcoming release

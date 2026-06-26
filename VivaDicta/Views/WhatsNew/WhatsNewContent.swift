@@ -58,7 +58,7 @@ enum WhatsNewCatalog {
                 icon: "cloud.fill",
                 iconColors: [.teal, .cyan],
                 title: "OpenCode Zen & Go",
-                description: "Two new cloud AI providers. OpenCode Zen includes free models you can try with just a free API key - no payment method needed."
+                description: "Two new cloud AI providers. OpenCode Zen includes free models you can use with just a free API key - no payment method needed."
             ),
             WhatsNewFeature(
                 icon: "sparkles",
