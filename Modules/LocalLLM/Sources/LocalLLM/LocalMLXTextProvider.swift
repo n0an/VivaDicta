@@ -1,6 +1,6 @@
 //
 //  LocalMLXTextProvider.swift
-//  VivaDicta
+//  LocalLLM
 //
 //  Created by Anton Novoselov on 2026.06.24
 //
@@ -13,7 +13,7 @@
 import Foundation
 import AICore
 
-struct LocalMLXTextProvider: AITextProvider {
+public struct LocalMLXTextProvider: AITextProvider {
     private let model: LocalMLXModel
     private let temperature: Double
 
@@ -22,16 +22,16 @@ struct LocalMLXTextProvider: AITextProvider {
     ///     ids fall back to the recommended model.
     ///   - temperature: per-preset sampling temperature (extractive presets pass
     ///     0 for greedy/deterministic output).
-    init(model: String, temperature: Double = 0.3) {
+    public init(model: String, temperature: Double = 0.3) {
         self.model = LocalMLXModel(modelID: model)
         self.temperature = temperature
     }
 
-    func enhance(systemMessage: String, userMessage: String) async throws -> String {
+    public func enhance(systemMessage: String, userMessage: String) async throws -> String {
         try await run(systemMessage: systemMessage, userMessage: userMessage, onPartialResponse: nil)
     }
 
-    func enhanceStreaming(
+    public func enhanceStreaming(
         systemMessage: String,
         userMessage: String,
         onPartialResponse: @escaping @MainActor (String) -> Void

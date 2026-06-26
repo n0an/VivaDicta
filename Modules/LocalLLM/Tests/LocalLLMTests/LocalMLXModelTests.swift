@@ -1,6 +1,6 @@
 //
 //  LocalMLXModelTests.swift
-//  VivaDictaTests
+//  LocalLLMTests
 //
 //  Created by Anton Novoselov on 2026.06.24
 //
@@ -11,7 +11,7 @@
 
 import Foundation
 import Testing
-@testable import VivaDicta
+@testable import LocalLLM
 
 struct LocalMLXModelTests {
 

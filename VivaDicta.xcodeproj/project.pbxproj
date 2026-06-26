@@ -40,8 +40,6 @@
 		18C7D0922FEB07530041C086 /* LocalLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0912FEB07530041C086 /* LocalLLM */; };
 		18C7D0942FEB0BCF0041C086 /* LocalLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0932FEB0BCF0041C086 /* LocalLLM */; };
 		18C7D0962FEB0BCF0041C086 /* LocalLLMMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0952FEB0BCF0041C086 /* LocalLLMMocks */; };
-		18C7D0AC2FEBD86F0041C086 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0AB2FEBD86F0041C086 /* MLXLLM */; };
-		18C7D0AE2FEBD86F0041C086 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 18C7D0AD2FEBD86F0041C086 /* MLXLMCommon */; };
 		18E1B4A52E8C6FF400BE8A11 /* VivaDictaKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 18E1B49E2E8C6FF400BE8A11 /* VivaDictaKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AC2E8C875000BE8A11 /* KeyboardKit */; };
 		18E1B4AF2E8C875A00BE8A11 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18E1B4AE2E8C875A00BE8A11 /* KeyboardKit */; };
@@ -518,13 +516,11 @@
 				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
 				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
 				188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */,
-				18C7D0AC2FEBD86F0041C086 /* MLXLLM in Frameworks */,
 				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
 				18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */,
 				BFBF000000000000000000C1 /* AICore in Frameworks */,
 				18C7D0922FEB07530041C086 /* LocalLLM in Frameworks */,
 				BFBF000000000000000000D1 /* AIProviders in Frameworks */,
-				18C7D0AE2FEBD86F0041C086 /* MLXLMCommon in Frameworks */,
 				BFBF000000000000000000E1 /* AIKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -749,8 +745,6 @@
 				AEAE000000000000000000D1 /* AIProviders */,
 				AEAE000000000000000000E1 /* AIKit */,
 				18C7D0912FEB07530041C086 /* LocalLLM */,
-				18C7D0AB2FEBD86F0041C086 /* MLXLLM */,
-				18C7D0AD2FEBD86F0041C086 /* MLXLMCommon */,
 			);
 			productName = VivaDicta;
 			productReference = 181D04D72E3E55E400D357A6 /* VivaDicta.app */;
@@ -1023,7 +1017,6 @@
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
-				18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 181D04D82E3E55E400D357A6 /* Products */;
@@ -2452,14 +2445,6 @@
 				minimumVersion = 12.8.0;
 			};
 		};
-		18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
-			requirement = {
-				kind = revision;
-				revision = edd42fcd947eea0b19665248acf2975a28ddf58b;
-			};
-		};
 		18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
@@ -2577,16 +2562,6 @@
 		18C7D0952FEB0BCF0041C086 /* LocalLLMMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LocalLLMMocks;
-		};
-		18C7D0AB2FEBD86F0041C086 /* MLXLLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLLM;
-		};
-		18C7D0AD2FEBD86F0041C086 /* MLXLMCommon */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
-			productName = MLXLMCommon;
 		};
 		18E1B4AC2E8C875000BE8A11 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
