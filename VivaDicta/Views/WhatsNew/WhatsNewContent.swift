@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.7": release_3_7,
         "3.6": release_3_6,
         "3.5": release_3_5,
         "3.4": release_3_4,
@@ -42,6 +43,38 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+
+    private static let release_3_7 = WhatsNewRelease(
+        id: "3.7",
+        headline: "What's New in VivaDicta 3.7.0",
+        features: [
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.purple, .indigo],
+                title: "On-Device AI Processing",
+                description: "Process your text with AI that runs entirely on your iPhone. Download a model once, then rewrite and format offline - no API key, fully private."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.down.circle.fill",
+                iconColors: [.blue, .cyan],
+                title: "Local & Cloud Tabs",
+                description: "The AI Providers screen now splits into Local and Cloud. Pick from on-device models like Gemma, Qwen, and Phi, and download what you need."
+            ),
+            WhatsNewFeature(
+                icon: "cloud.fill",
+                iconColors: [.teal, .cyan],
+                title: "OpenCode Zen & Go",
+                description: "Two new cloud AI providers. OpenCode Zen includes free models you can try with just an API key, no payment method needed."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.yellow, .orange],
+                title: "Quality of Life",
+                description: "Ollama Cloud now marks free vs subscription models, the custom AI provider screen scrolls fully, plus stability fixes."
+            )
+        ],
+        tagline: "AI processing, now fully on your device."
+    )
 
     private static let release_3_6 = WhatsNewRelease(
         id: "3.6",

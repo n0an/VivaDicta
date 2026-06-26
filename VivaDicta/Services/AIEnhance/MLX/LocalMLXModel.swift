@@ -48,9 +48,9 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
 
     var subtitle: String {
         switch self {
-        case .qwen35_4B: "Alibaba's Qwen3.5, larger and higher quality. Broad multilingual."
-        case .qwen35_2B: "Alibaba's Qwen3.5. Broad multilingual support."
-        case .qwen35_08B: "Tiny, fastest option. Broad languages, but lower quality."
+        case .qwen35_4B: "Qwen3.5, larger and higher quality. Broad multilingual."
+        case .qwen35_2B: "Qwen3.5. Broad multilingual support."
+        case .qwen35_08B: "Tiny Qwen3.5, fastest option. Broad languages, but lower quality."
         case .phi4Mini: "Microsoft's Phi-4 Mini. Multilingual (~20+ languages)."
         case .llama32_1B: "Meta's tiny Llama 3.2. Best in English + 7 major languages."
         case .llama32_3B: "Meta's Llama 3.2. Best in English + 7 major languages."
