@@ -52,7 +52,7 @@ enum WhatsNewCatalog {
                 icon: "cpu.fill",
                 iconColors: [.purple, .indigo],
                 title: "On-Device LLM Processing",
-                description: "Download an on-device LLM and process your text fully offline - no API key, fully private. Now works on more devices, including many on iOS 18 without Apple Intelligence."
+                description: "Download an on-device LLM like Gemma 4 or Qwen3.5 and process your text fully offline - no API key, fully private. Now works on more devices, including many on iOS 18 without Apple Intelligence."
             ),
             WhatsNewFeature(
                 icon: "cloud.fill",
