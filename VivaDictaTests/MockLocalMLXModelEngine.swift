@@ -12,6 +12,7 @@
 //
 
 import Foundation
+import LocalLLM
 @testable import VivaDicta
 
 actor MockLocalMLXModelEngine: LocalMLXModelEngine {

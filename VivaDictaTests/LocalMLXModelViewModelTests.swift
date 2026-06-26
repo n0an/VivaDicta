@@ -12,6 +12,7 @@
 
 import Foundation
 import Testing
+import LocalLLM
 @testable import VivaDicta
 
 @MainActor

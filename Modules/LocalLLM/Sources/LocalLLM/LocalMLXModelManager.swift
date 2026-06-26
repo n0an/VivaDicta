@@ -1,13 +1,13 @@
 //
 //  LocalMLXModelManager.swift
-//  VivaDicta
+//  LocalLLM
 //
 //  Created by Anton Novoselov on 2026.06.24
 //
 //  Lifecycle + generation for on-device MLX models, mirroring VivaDictaMac's
 //  MLXLocalModelService: LLMModelFactory.loadContainer (downloads via the
 //  default caches-backed Hub) -> ModelContainer.perform { MLXLMCommon.generate }.
-//  Lives in the app target because MLXLLM/MLXLMCommon are linked there.
+//  Lives in the LocalLLM module so MLXLLM/MLXLMCommon are firewalled here.
 //
 
 import Foundation
@@ -30,15 +30,15 @@ enum LocalMLXError: LocalizedError {
 }
 
 /// Seam for the view model (and tests) so the UI doesn't depend on the actor directly.
-protocol LocalMLXModelEngine: Sendable {
+public protocol LocalMLXModelEngine: Sendable {
     func ensureLoaded(model: LocalMLXModel, progress: @escaping @Sendable (Double) -> Void) async throws
     func isDownloaded(_ model: LocalMLXModel) async -> Bool
     func downloadedBytes(_ model: LocalMLXModel) async -> Int64
     func deleteModel(_ model: LocalMLXModel) async throws
 }
 
-actor LocalMLXModelManager: LocalMLXModelEngine {
-    static let shared = LocalMLXModelManager()
+public actor LocalMLXModelManager: LocalMLXModelEngine {
+    public static let shared = LocalMLXModelManager()
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "LocalMLX")
     private var container: ModelContainer?
@@ -50,11 +50,11 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
 
     // MARK: - Engine
 
-    func isDownloaded(_ model: LocalMLXModel) -> Bool { model.isDownloaded }
-    func downloadedBytes(_ model: LocalMLXModel) -> Int64 { model.downloadedBytes }
+    public func isDownloaded(_ model: LocalMLXModel) -> Bool { model.isDownloaded }
+    public func downloadedBytes(_ model: LocalMLXModel) -> Int64 { model.downloadedBytes }
 
     /// Download (if needed) + load into memory. Used by the UI download button.
-    func ensureLoaded(model: LocalMLXModel, progress: @escaping @Sendable (Double) -> Void) async throws {
+    public func ensureLoaded(model: LocalMLXModel, progress: @escaping @Sendable (Double) -> Void) async throws {
         try await load(model: model, allowDownload: true, progress: progress)
     }
 
@@ -66,7 +66,7 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
         try await load(model: model, allowDownload: false, progress: { _ in })
     }
 
-    func deleteModel(_ model: LocalMLXModel) throws {
+    public func deleteModel(_ model: LocalMLXModel) throws {
         guard !isGenerating else { throw LocalMLXError.busy }
         if loadedModel == model {
             container = nil

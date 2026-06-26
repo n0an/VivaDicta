@@ -1,12 +1,12 @@
 //
 //  LocalMLXModel.swift
-//  VivaDicta
+//  LocalLLM
 //
 //  Created by Anton Novoselov on 2026.06.24
 //
-//  Catalog of on-device MLX models (GPU, via mlx-swift-lm). Unlike the LiteRT /
-//  Core ML runtimes (which live in the LocalLLM module), MLX is linked to the
-//  app target for Metal-library bundling, so its types live here.
+//  Catalog of on-device MLX models (GPU, via mlx-swift-lm). Lives in the
+//  LocalLLM module alongside the LiteRT runtime, so the heavy mlx-swift-lm /
+//  Metal framework is firewalled here instead of linked directly by the app.
 //
 //  This type is plain Swift (no MLX import) so AIService / views can reference
 //  it without pulling in MLXLLM. The manager maps `mlxRepo` -> ModelConfiguration.
@@ -16,7 +16,7 @@ import Foundation
 
 /// An on-device MLX model offered in the AI Providers "Local" tab. Current small
 /// 4-bit `mlx-community` builds suitable for iPhone (1-4B).
-nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
+public nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     case qwen35_4B = "qwen3.5-4b-mlx"
     case qwen35_2B = "qwen3.5-2b-mlx"
     case qwen35_08B = "qwen3.5-0.8b-mlx"
@@ -28,11 +28,11 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     case granite33_2B = "granite-3.3-2b-mlx"
 
     /// Unknown ids fall back to the recommended model.
-    init(modelID: String) {
+    public init(modelID: String) {
         self = LocalMLXModel(rawValue: modelID) ?? .qwen35_2B
     }
 
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .qwen35_4B: "Qwen3.5 4B"
         case .qwen35_2B: "Qwen3.5 2B"
@@ -46,7 +46,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         }
     }
 
-    var subtitle: String {
+    public var subtitle: String {
         switch self {
         case .qwen35_4B: "Qwen3.5, larger and higher quality. Broad multilingual."
         case .qwen35_2B: "Qwen3.5. Broad multilingual support."
@@ -75,7 +75,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
         }
     }
 
-    var approxDownloadDescription: String {
+    public var approxDownloadDescription: String {
         switch self {
         case .qwen35_4B: "~2.3 GB"
         case .qwen35_2B: "~1.3 GB"
@@ -90,7 +90,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     }
 
     /// Asset name for the card icon (nil falls back to an SF symbol).
-    var iconAsset: String? {
+    public var iconAsset: String? {
         switch self {
         case .qwen35_4B, .qwen35_2B, .qwen35_08B: "qwen-color"
         case .phi4Mini: "microsoft-color"
@@ -112,7 +112,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     /// The Qwen MLX model recommended for a device with the given RAM. Only Qwen
     /// models are ever "recommended" (the badge is reserved for Qwen + Gemma):
     /// 12 GB-class -> 4B, 8 GB-class -> 2B, 6 GB-class and below -> 0.8B.
-    static func recommendedQwen(forPhysicalMemoryBytes bytes: UInt64) -> LocalMLXModel {
+    public static func recommendedQwen(forPhysicalMemoryBytes bytes: UInt64) -> LocalMLXModel {
         let ramGB = Double(bytes) / 1_073_741_824
         if ramGB >= 11 { return .qwen35_4B }
         if ramGB >= 7 { return .qwen35_2B }
@@ -120,7 +120,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     }
 
     /// True only for the single Qwen recommended for this device's RAM.
-    var isRecommendedForThisDevice: Bool {
+    public var isRecommendedForThisDevice: Bool {
         self == Self.recommendedQwen(forPhysicalMemoryBytes: ProcessInfo.processInfo.physicalMemory)
     }
 
@@ -136,7 +136,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     /// config AND a weights file: `config.json` is tiny and lands early, so a
     /// download cancelled/interrupted before the multi-GB `.safetensors` must not
     /// read as ready (which would let generation resume a fetch or fail late).
-    var isDownloaded: Bool {
+    public var isDownloaded: Bool {
         let fm = FileManager.default
         var isDir: ObjCBool = false
         guard fm.fileExists(atPath: cacheDirectory.path(), isDirectory: &isDir), isDir.boolValue else {
@@ -150,7 +150,7 @@ nonisolated enum LocalMLXModel: String, CaseIterable, Sendable {
     }
 
     /// On-disk size in bytes (0 when not downloaded).
-    var downloadedBytes: Int64 {
+    public var downloadedBytes: Int64 {
         let fm = FileManager.default
         guard let e = fm.enumerator(at: cacheDirectory, includingPropertiesForKeys: [.fileSizeKey]) else {
             return 0
