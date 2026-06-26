@@ -41,8 +41,8 @@ public nonisolated enum LiteRTGemmaVariant: String, CaseIterable, Sendable {
     /// Short description of what the variant is good for, for settings UI.
     public var subtitle: String {
         switch self {
-        case .e2b: "Smaller and faster. Runs on 8 GB-class devices. Broad multilingual support."
-        case .e4b: "Larger and higher quality. Best on a 12 GB-class device. Broad multilingual support."
+        case .e2b: "Google Gemma 4. Smaller and faster. Runs on 8 GB-class devices. Broad multilingual support."
+        case .e4b: "Google Gemma 4. Larger and higher quality. Best on a 12 GB-class device. Broad multilingual support."
         }
     }
 
