@@ -51,20 +51,14 @@ enum WhatsNewCatalog {
             WhatsNewFeature(
                 icon: "cpu.fill",
                 iconColors: [.purple, .indigo],
-                title: "On-Device AI Processing",
-                description: "Process your text with AI that runs entirely on your iPhone. Download a model once, then rewrite and format offline - no API key, fully private."
-            ),
-            WhatsNewFeature(
-                icon: "arrow.down.circle.fill",
-                iconColors: [.blue, .cyan],
-                title: "Local & Cloud Tabs",
-                description: "The AI Providers screen now splits into Local and Cloud. Pick from on-device models like Gemma, Qwen, and Phi, and download what you need."
+                title: "On-Device LLM Processing",
+                description: "Download an on-device LLM and process your text fully offline - no API key, fully private. Now works on more devices, including many on iOS 18 without Apple Intelligence."
             ),
             WhatsNewFeature(
                 icon: "cloud.fill",
                 iconColors: [.teal, .cyan],
                 title: "OpenCode Zen & Go",
-                description: "Two new cloud AI providers. OpenCode Zen includes free models you can try with just an API key, no payment method needed."
+                description: "Two new cloud AI providers. OpenCode Zen includes free models you can try with just a free API key - no payment method needed."
             ),
             WhatsNewFeature(
                 icon: "sparkles",
@@ -73,7 +67,7 @@ enum WhatsNewCatalog {
                 description: "Ollama Cloud now marks free vs subscription models, the custom AI provider screen scrolls fully, plus stability fixes."
             )
         ],
-        tagline: "AI processing, now fully on your device."
+        tagline: "On-device LLM processing, now on more devices."
     )
 
     private static let release_3_6 = WhatsNewRelease(
