@@ -46,6 +46,34 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
     private var isLoading = false
     private var isGenerating = false
 
+    // MARK: Stuck-flag recovery
+    // A GPU load/generation that hangs (app backgrounded mid-op -> aborted Metal
+    // command buffer) would otherwise leave `isLoading`/`isGenerating` stuck and
+    // poison every later request with `.busy`. These timestamps let the next
+    // attempt clear an implausibly long-held flag. An in-flight DOWNLOAD is slow
+    // by nature, so it is marked and never auto-cleared.
+    private let clock = ContinuousClock()
+    private var loadStartedAt: ContinuousClock.Instant?
+    private var generationStartedAt: ContinuousClock.Instant?
+    private var isDownloadingModel = false
+    private let stuckThreshold: Duration = .seconds(120)
+
+    private func recoverFromStuckStateIfNeeded() {
+        let now = clock.now
+        if isLoading, !isDownloadingModel, let started = loadStartedAt, started.duration(to: now) > stuckThreshold {
+            logger.logError("🛡️ MLXManager recoverFromStuckState: clearing stale isLoading - dropping half-loaded model")
+            isLoading = false
+            loadStartedAt = nil
+            container = nil
+            loadedModel = nil
+        }
+        if isGenerating, let started = generationStartedAt, started.duration(to: now) > stuckThreshold {
+            logger.logError("🛡️ MLXManager recoverFromStuckState: clearing stale isGenerating")
+            isGenerating = false
+            generationStartedAt = nil
+        }
+    }
+
     private init() {}
 
     // MARK: - Engine
@@ -87,10 +115,12 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
         userMessage: String,
         temperature: Double = 0.3
     ) async throws -> AsyncThrowingStream<String, Error> {
+        recoverFromStuckStateIfNeeded()
         try await loadForGeneration(model: model)
         guard let container else { throw LocalMLXError.notLoaded }
         guard !isGenerating else { throw LocalMLXError.busy }
         isGenerating = true // claimed synchronously before returning the stream
+        generationStartedAt = clock.now
 
         // Capture only Sendable values across the @Sendable boundary; build the
         // (non-Sendable) UserInput inside perform.
@@ -129,7 +159,22 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
         }
     }
 
-    private func finishGenerating() { isGenerating = false }
+    private func finishGenerating() {
+        isGenerating = false
+        generationStartedAt = nil
+    }
+
+    /// Free the loaded model from RAM. The next generation reloads from the
+    /// on-disk cache. Used by `OnDeviceModelMemory` for single-resident
+    /// enforcement and memory-pressure/background unloading. An in-flight
+    /// generation keeps its own reference, so this won't crash it - the model
+    /// just deallocates once that generation finishes.
+    func unload() {
+        container = nil
+        loadedModel = nil
+        isLoading = false
+        logger.logInfo("Unloaded MLX model")
+    }
 
     // MARK: - Load
 
@@ -142,11 +187,14 @@ actor LocalMLXModelManager: LocalMLXModelEngine {
             progress(1)
             return
         }
+        recoverFromStuckStateIfNeeded()
         guard !isLoading, !isGenerating else { throw LocalMLXError.busy }
         if !allowDownload, !model.isDownloaded { throw LocalMLXError.notDownloaded }
 
+        isDownloadingModel = !model.isDownloaded
         isLoading = true
-        defer { isLoading = false }
+        loadStartedAt = clock.now
+        defer { isLoading = false; loadStartedAt = nil; isDownloadingModel = false }
 
         // Unload any previous model first - only one fits in memory.
         container = nil

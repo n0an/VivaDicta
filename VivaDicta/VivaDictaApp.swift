@@ -266,6 +266,13 @@ struct VivaDictaApp: App {
                             logger.logInfo("🎬 App became inactive")
                         case .background:
                             logger.logInfo("🎬 App went to background")
+                            // Free on-device LLMs when backgrounding normally - but
+                            // NOT during a keyboard session, where the keyboard
+                            // relies on the model staying loaded to serve requests
+                            // from the background (CoreML/ANE).
+                            if !AppGroupCoordinator.shared.isKeyboardSessionActive {
+                                Task { await OnDeviceModelMemory.shared.unloadAll(reason: "app backgrounded") }
+                            }
                             updateShortcutItems()
                             RecentNotesCache.syncFromDatabase(modelContext: modelContainer.mainContext)
                         @unknown default:

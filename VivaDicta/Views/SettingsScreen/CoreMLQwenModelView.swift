@@ -1,13 +1,14 @@
 //
-//  LiteRTGemmaModelView.swift
+//  CoreMLQwenModelView.swift
 //  VivaDicta
 //
-//  Created by Anton Novoselov on 2026.06.20
+//  Created by Anton Novoselov on 2026.06.27
 //
-//  Cards (one per on-device Gemma variant) shown inline in the AI Providers
-//  "Local" tab, styled to match the Transcription Models cards - including the
-//  same circular download/cancel/delete action button (progress is drawn inside
-//  the button, no separate progress bar).
+//  Cards for the on-device Qwen3.5 models that run via CoreML on the Apple Neural
+//  Engine (ANE), shown inline in the AI Providers "Local" tab. Parallel to the
+//  MLX / LiteRT cards (same download/cancel/delete button + badges). Unlike those
+//  GPU runtimes, CoreML works while the app is backgrounded, so these are the
+//  on-device models that also run from the keyboard.
 //
 
 import SwiftUI
@@ -18,7 +19,7 @@ import AICore
 
 @MainActor
 @Observable
-final class LiteRTGemmaModelViewModel {
+final class CoreMLQwenModelViewModel {
     enum Status: Equatable {
         case checking
         case notDownloaded
@@ -28,40 +29,35 @@ final class LiteRTGemmaModelViewModel {
         case failed(String)
     }
 
-    private(set) var status: [LiteRTGemmaVariant: Status] = [:]
-    private(set) var sizeBytes: [LiteRTGemmaVariant: Int64] = [:]
+    private(set) var status: [CoreMLQwenVariant: Status] = [:]
+    private(set) var sizeBytes: [CoreMLQwenVariant: Int64] = [:]
 
-    /// In-flight download/load tasks, kept so the cancel button can stop them.
-    private var tasks: [LiteRTGemmaVariant: Task<Void, Never>] = [:]
+    private var tasks: [CoreMLQwenVariant: Task<Void, Never>] = [:]
 
-    /// The model-lifecycle backend. Injected so tests can supply a mock; the
-    /// app uses the shared `LiteRTModelManager`.
-    private let engine: any LocalModelEngine
+    private let engine: any CoreMLQwenEngine
 
-    init(engine: any LocalModelEngine = LiteRTModelManager.shared) {
+    init(engine: any CoreMLQwenEngine = CoreMLQwenModelManager.shared) {
         self.engine = engine
     }
 
-    func status(for variant: LiteRTGemmaVariant) -> Status { status[variant] ?? .checking }
+    func status(for variant: CoreMLQwenVariant) -> Status { status[variant] ?? .checking }
 
-    /// True while any variant is downloading/preparing - used to lock other
-    /// downloads (we run one model download at a time).
+    /// True while any model is downloading/preparing - used to lock other downloads.
     var isDownloading: Bool {
         status.values.contains {
             switch $0 { case .downloading, .preparing: true; default: false }
         }
     }
 
-    /// 0...1 progress for the action button; 1 when not actively downloading.
-    func progress(for variant: LiteRTGemmaVariant) -> Double {
+    func progress(for variant: CoreMLQwenVariant) -> Double {
         if case .downloading(let fraction) = status(for: variant) { return fraction }
         return 1
     }
 
     func refresh() async {
-        for variant in LiteRTGemmaVariant.allCases {
+        for variant in CoreMLQwenVariant.allCases {
             switch status[variant] {
-            case .downloading, .preparing: continue // don't clobber an in-flight op
+            case .downloading, .preparing: continue
             default: break
             }
             let downloaded = await engine.isDownloaded(variant)
@@ -70,20 +66,17 @@ final class LiteRTGemmaModelViewModel {
         }
     }
 
-    /// Starts a download/load for `variant`. Returns the in-flight task so call
-    /// sites (and tests) can await completion; the UI calls it fire-and-forget.
     @discardableResult
-    func prepare(_ variant: LiteRTGemmaVariant) -> Task<Void, Never> {
+    func prepare(_ variant: CoreMLQwenVariant) -> Task<Void, Never> {
         tasks[variant]?.cancel()
         status[variant] = .downloading(0)
         let task = Task { @MainActor in
             let wasDownloaded = await engine.isDownloaded(variant)
             do {
                 // A Settings download loads into RAM, so keep memory single-resident.
-                await OnDeviceModelMemory.shared.ensureOnlyResident(.liteRT)
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.coreML)
                 try await engine.ensureLoaded(variant: variant) { fraction in
                     Task { @MainActor in
-                        // Ignore late progress callbacks after a cancel/finish.
                         switch self.status[variant] {
                         case .downloading, .preparing:
                             self.status[variant] = fraction >= 1.0 ? .preparing : .downloading(fraction)
@@ -95,13 +88,15 @@ final class LiteRTGemmaModelViewModel {
                 self.status[variant] = .ready
                 self.sizeBytes[variant] = await engine.downloadedBytes(variant)
                 // Track only a genuine new download, not a reload of an
-                // already-downloaded variant.
+                // already-downloaded model.
                 if !wasDownloaded {
-                    DefaultAnalyticsService.live.track(.modelDownloaded(name: variant.rawValue, type: "litert"))
+                    DefaultAnalyticsService.live.track(.modelDownloaded(name: variant.rawValue, type: "coreml"))
                 }
             } catch is CancellationError {
+                try? await engine.deleteModel(variant)
                 self.status[variant] = .notDownloaded
             } catch {
+                try? await engine.deleteModel(variant)
                 if (error as? URLError)?.code == .cancelled {
                     self.status[variant] = .notDownloaded
                 } else {
@@ -114,13 +109,13 @@ final class LiteRTGemmaModelViewModel {
         return task
     }
 
-    func cancel(_ variant: LiteRTGemmaVariant) {
+    func cancel(_ variant: CoreMLQwenVariant) {
         tasks[variant]?.cancel()
         tasks[variant] = nil
         status[variant] = .notDownloaded
     }
 
-    func delete(_ variant: LiteRTGemmaVariant) async {
+    func delete(_ variant: CoreMLQwenVariant) async {
         do {
             try await engine.deleteModel(variant)
             sizeBytes[variant] = 0
@@ -131,11 +126,10 @@ final class LiteRTGemmaModelViewModel {
     }
 }
 
-/// One card per on-device Gemma variant (E2B/E4B), shown inline in the AI
-/// Providers "Local" tab. Styled like the Transcription Models cards.
-struct GemmaVariantCard: View {
-    let variant: LiteRTGemmaVariant
-    let model: LiteRTGemmaModelViewModel
+/// One card per on-device CoreML Qwen model, shown in the AI Providers "Local" tab.
+struct CoreMLQwenModelCard: View {
+    let variant: CoreMLQwenVariant
+    let viewModel: CoreMLQwenModelViewModel
     /// When another model is downloading, this card's download action is locked.
     var downloadsLocked: Bool = false
 
@@ -146,21 +140,17 @@ struct GemmaVariantCard: View {
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
-                        Image("gemma-color")
+                        Image("qwen-color")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 28, height: 28)
-                        
                         Text(variant.displayName)
                             .font(.title3)
                             .fontWeight(.semibold)
                     }
                     statusLabel
-                    if variant.isRecommendedForThisDevice {
-                        RecommendedBadge()
-                    }
                 }
-                
+
                 Spacer()
 
                 HStack(spacing: 8) {
@@ -176,12 +166,12 @@ struct GemmaVariantCard: View {
                     actionButton
                 }
             }
-            
+
             Text(variant.subtitle)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            RuntimeBadge(runtime: "LiteRT")
+            RuntimeBadge(runtime: "CoreML · Neural Engine")
         }
         .padding(20)
         .modelCardBackground()
@@ -197,7 +187,7 @@ struct GemmaVariantCard: View {
         }
         .alert("Delete Model", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
-                Task { await model.delete(variant) }
+                Task { await viewModel.delete(variant) }
             }
             Button("Cancel", role: .cancel) { }
         } message: {
@@ -206,11 +196,11 @@ struct GemmaVariantCard: View {
     }
 
     private var sizeText: String {
-        let bytes = model.sizeBytes[variant] ?? 0
+        let bytes = viewModel.sizeBytes[variant] ?? 0
         return bytes > 0 ? bytes.formatted(.byteCount(style: .file)) : variant.approxDownloadDescription
     }
 
-    private var status: LiteRTGemmaModelViewModel.Status { model.status(for: variant) }
+    private var status: CoreMLQwenModelViewModel.Status { viewModel.status(for: variant) }
 
     private var isDownloading: Bool {
         switch status {
@@ -219,8 +209,6 @@ struct GemmaVariantCard: View {
         }
     }
 
-    /// True when tapping the button would START a download (so it should be
-    /// disabled while another model is downloading).
     private var isStartDownloadState: Bool {
         switch status {
         case .notDownloaded, .failed, .checking: true
@@ -281,13 +269,13 @@ struct GemmaVariantCard: View {
             switch status {
             case .ready:
                 HapticManager.warning()
-                Task { await model.delete(variant) }
+                Task { await viewModel.delete(variant) }
             case .downloading, .preparing:
                 HapticManager.lightImpact()
-                model.cancel(variant)
+                viewModel.cancel(variant)
             case .notDownloaded, .failed, .checking:
                 HapticManager.lightImpact()
-                model.prepare(variant)
+                viewModel.prepare(variant)
             }
         } label: {
             // Indeterminate while downloading: the symbol is the cancel "x" (see
@@ -302,42 +290,3 @@ struct GemmaVariantCard: View {
         .disabled(downloadsLocked && isStartDownloadState)
     }
 }
-
-/// Small subtle tag naming the on-device runtime that powers a model card
-/// ("LiteRT" / "Core ML").
-struct RuntimeBadge: View {
-    let runtime: String
-
-    var body: some View {
-        Label(runtime, systemImage: "cpu")
-            .font(.caption2)
-            .fontWeight(.medium)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(.secondary.opacity(0.12), in: .capsule)
-    }
-}
-
-/// Small blue "Recommended" pill, matching the Transcription Models cards.
-struct RecommendedBadge: View {
-    var body: some View {
-        Text("Recommended")
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundStyle(.blue)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(.blue.opacity(0.15), in: .rect(cornerRadius: 12))
-    }
-}
-
-#if DEBUG
-#Preview {
-    VStack(spacing: 16) {
-        GemmaVariantCard(variant: .e2b, model: LiteRTGemmaModelViewModel())
-        GemmaVariantCard(variant: .e4b, model: LiteRTGemmaModelViewModel())
-    }
-    .padding()
-}
-#endif

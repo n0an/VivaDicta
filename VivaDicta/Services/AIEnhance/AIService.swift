@@ -11,6 +11,7 @@ import Analytics
 import Networking
 import Presets
 import SwiftUI
+import UIKit
 import AppGroup
 import TipKit
 import os
@@ -62,6 +63,7 @@ class AIService {
         case apple
         case localGemma
         case localMLX
+        case localCoreML
         case anthropic
         case copilot
         case geminiOAuth
@@ -792,10 +794,13 @@ class AIService {
             // On-device needs no API key, but the selected model must be
             // downloaded - we don't silently download during processing. A mode
             // whose model was deleted is not properly configured. The model id
-            // picks the runtime (Gemma = LiteRT, else MLX).
-            let downloaded = isLiteRTGemmaModel(mode.aiModel)
-                ? LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded
-                : LocalMLXModel(modelID: mode.aiModel).isDownloaded
+            // picks the runtime (Gemma = LiteRT, -coreml = CoreML, else MLX).
+            let downloaded: Bool
+            switch AIProvider.localRuntime(forModelID: mode.aiModel) {
+            case .coreML: downloaded = CoreMLQwenVariant(modelID: mode.aiModel).isDownloaded
+            case .liteRT: downloaded = LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded
+            case .mlx: downloaded = LocalMLXModel(modelID: mode.aiModel).isDownloaded
+            }
             guard downloaded else {
                 logger.logWarning("On-device model '\(mode.aiModel)' is not downloaded")
                 return false
@@ -944,7 +949,7 @@ class AIService {
         let startTime = Date()
         let mode = modeOverride ?? selectedMode
 
-        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset)
+        let (systemMessage, formattedText) = buildVariationMessages(text: text, preset: preset, compact: usesCompactPrompt(forModel: mode.aiModel))
 
         lastSystemMessageSent = systemMessage
         lastUserMessageSent = formattedText
@@ -1012,7 +1017,7 @@ class AIService {
         }
     }
 
-    private func buildVariationMessages(text: String, preset: Preset) -> (systemMessage: String, userMessage: String) {
+    private func buildVariationMessages(text: String, preset: Preset, compact: Bool = false) -> (systemMessage: String, userMessage: String) {
         var customVocabularySection = ""
         let customVocabularyWords = CustomVocabulary.getTerms()
         if !customVocabularyWords.isEmpty {
@@ -1024,7 +1029,10 @@ class AIService {
 
         let systemMessage: String
         if preset.useSystemTemplate {
-            systemMessage = PromptsTemplates.systemPrompt(with: preset.promptInstructions) + customVocabularySection + scriptSuffix
+            let template = compact
+                ? PromptsTemplates.compactSystemPrompt(with: preset.promptInstructions)
+                : PromptsTemplates.systemPrompt(with: preset.promptInstructions)
+            systemMessage = template + customVocabularySection + scriptSuffix
         } else {
             systemMessage = preset.promptInstructions + customVocabularySection + scriptSuffix
         }
@@ -1045,12 +1053,40 @@ class AIService {
         LiteRTGemmaVariant(rawValue: modelID) != nil
     }
 
+    /// Whether a model should get the lean system prompt. CoreML runs recurrent
+    /// (per-token) prefill, so time-to-first-token scales with prompt length - a
+    /// ~500-token system prompt adds tens of seconds. The lean (~120-token) prompt
+    /// cuts that. GPU runtimes (LiteRT/MLX) batch-prefill and cloud/Apple FM are
+    /// unaffected, so they keep the full prompt.
+    private func usesCompactPrompt(forModel modelID: String) -> Bool {
+        AIProvider.localRuntime(forModelID: modelID) == .coreML
+    }
+
+    /// On-device LLMs (Gemma/LiteRT, MLX) run inference on the Metal GPU
+    /// in-process. iOS forbids submitting GPU command buffers while the app is
+    /// backgrounded (`kIOGPUCommandBufferCallbackErrorBackgroundExecutionNotPermitted`):
+    /// MLX reacts by throwing an uncaught C++ exception that crashes the process,
+    /// and LiteRT hangs - neither is recoverable after the fact. This happens when
+    /// AI processing is triggered from the keyboard, because the main app runs the
+    /// work in the background on the keyboard's behalf. So we refuse before any GPU
+    /// work is submitted. Apple FM (out-of-process) and cloud providers are
+    /// unaffected and remain available from the keyboard.
+    private func ensureForegroundForOnDeviceLLM() throws {
+        guard UIApplication.shared.applicationState == .background else { return }
+        logger.logError("AI Processing - on-device LLM requested while backgrounded; refusing (GPU unavailable in background)")
+        throw EnhancementError.onDeviceLLMRequiresForeground
+    }
+
     private func resolvedStreamingRoute(for aiProvider: AIProvider, mode: VivaMode) -> StreamingRoute? {
         switch aiProvider {
         case .apple:
             return .apple
         case .local:
-            return isLiteRTGemmaModel(mode.aiModel) ? .localGemma : .localMLX
+            switch AIProvider.localRuntime(forModelID: mode.aiModel) {
+            case .coreML: return .localCoreML
+            case .liteRT: return .localGemma
+            case .mlx: return .localMLX
+            }
         case .openAI:
             if isOpenAISignedIn {
                 return .openAIOAuth
@@ -1133,7 +1169,7 @@ class AIService {
             return ""
         }
 
-        let sysMsg = systemMessage ?? getSystemMessage()
+        let sysMsg = systemMessage ?? getSystemMessage(compact: usesCompactPrompt(forModel: mode.aiModel))
         let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
         lastSystemMessageSent = sysMsg
         lastUserMessageSent = userMsg
@@ -1157,16 +1193,29 @@ class AIService {
                 throw EnhancementError.notConfigured
             }
         case .localGemma:
+            try ensureForegroundForOnDeviceLLM()
             logger.logDebug("AI Processing - Using on-device Gemma (LiteRT) streaming")
+            await OnDeviceModelMemory.shared.ensureOnlyResident(.liteRT)
             let provider = LiteRTGemmaTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .localMLX:
+            try ensureForegroundForOnDeviceLLM()
             logger.logDebug("AI Processing - Using on-device MLX streaming")
+            await OnDeviceModelMemory.shared.ensureOnlyResident(.mlx)
             // Per-preset temperature (extractive presets -> greedy), reusing the
             // same profile Apple FM uses.
             let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
             let provider = LocalMLXTextProvider(model: mode.aiModel, temperature: temperature)
+            let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+            return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+        case .localCoreML:
+            // CoreML runs on the ANE, which IS permitted in the background, so this
+            // route is intentionally NOT gated by `ensureForegroundForOnDeviceLLM()`
+            // - it is the on-device option that works from the keyboard.
+            logger.logDebug("AI Processing - Using on-device Qwen (CoreML/ANE) streaming")
+            await OnDeviceModelMemory.shared.ensureOnlyResident(.coreML)
+            let provider = CoreMLQwenTextProvider(model: mode.aiModel)
             let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
             return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
         case .anthropic:
@@ -1327,18 +1376,28 @@ class AIService {
         }
 
         // Handle on-device models. The model id picks the runtime:
-        // Gemma (gemma-4-*) runs on LiteRT; everything else on MLX.
+        // Gemma (gemma-4-*) -> LiteRT (GPU), *-coreml -> CoreML (ANE), else MLX (GPU).
         if aiProvider == .local {
-            let sysMsg = systemMessage ?? getSystemMessage()
+            let sysMsg = systemMessage ?? getSystemMessage(compact: usesCompactPrompt(forModel: mode.aiModel))
             let userMsg = preFormattedUserMessage ?? formatTranscriptForLLM(text)
             lastSystemMessageSent = sysMsg
             lastUserMessageSent = userMsg
             let result: String
-            if isLiteRTGemmaModel(mode.aiModel) {
+            switch AIProvider.localRuntime(forModelID: mode.aiModel) {
+            case .coreML:
+                // ANE - works backgrounded; intentionally NOT foreground-gated.
+                logger.logDebug("AI Processing - Using on-device Qwen (CoreML/ANE)")
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.coreML)
+                result = try await CoreMLQwenTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
+            case .liteRT:
+                try ensureForegroundForOnDeviceLLM()
                 logger.logDebug("AI Processing - Using on-device Gemma (LiteRT)")
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.liteRT)
                 result = try await LiteRTGemmaTextProvider(model: mode.aiModel).enhance(systemMessage: sysMsg, userMessage: userMsg)
-            } else {
+            case .mlx:
+                try ensureForegroundForOnDeviceLLM()
                 logger.logDebug("AI Processing - Using on-device MLX")
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.mlx)
                 let temperature = AppleFoundationModelSamplingProfile.profile(for: appleFMPresetID ?? mode.presetId).temperature
                 result = try await LocalMLXTextProvider(model: mode.aiModel, temperature: temperature).enhance(systemMessage: sysMsg, userMessage: userMsg)
             }
@@ -1387,7 +1446,7 @@ class AIService {
         return ChineseScriptPreferenceStore.current.systemMessageSuffix ?? ""
     }
 
-    private func getSystemMessage() -> String {
+    private func getSystemMessage(compact: Bool = false) -> String {
         var customVocabularySection = ""
         let customVocabularyWords = CustomVocabulary.getTerms()
         if !customVocabularyWords.isEmpty {
@@ -1414,7 +1473,10 @@ class AIService {
         let contextSections = customVocabularySection + clipboardContextSection + scriptSuffix
 
         if useSystemTemplate {
-            return PromptsTemplates.systemPrompt(with: promptInstructions) + contextSections
+            let template = compact
+                ? PromptsTemplates.compactSystemPrompt(with: promptInstructions)
+                : PromptsTemplates.systemPrompt(with: promptInstructions)
+            return template + contextSections
         } else {
             // Standalone preset - use instructions directly + context
             return promptInstructions + contextSections
@@ -2101,9 +2163,11 @@ class AIService {
         // AI Providers screen instead. The model id picks the runtime to query.
         if provider == .local {
             return provider.availableModels.filter { id in
-                isLiteRTGemmaModel(id)
-                    ? LiteRTGemmaVariant(modelID: id).isDownloaded
-                    : LocalMLXModel(modelID: id).isDownloaded
+                switch AIProvider.localRuntime(forModelID: id) {
+                case .coreML: CoreMLQwenVariant(modelID: id).isDownloaded
+                case .liteRT: LiteRTGemmaVariant(modelID: id).isDownloaded
+                case .mlx: LocalMLXModel(modelID: id).isDownloaded
+                }
             }
         }
         return provider.availableModels

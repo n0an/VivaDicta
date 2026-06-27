@@ -24,11 +24,12 @@ struct AIProviders: View {
     @State private var providerType: AIProviderType = .local
     @State private var gemmaModel = LiteRTGemmaModelViewModel()
     @State private var mlxModel = LocalMLXModelViewModel()
+    @State private var coreMLQwenModel = CoreMLQwenModelViewModel()
 
     /// One model downloads at a time - lock every card's download button while
     /// any is in progress (concurrent downloads aren't supported).
     private var anyDownloadInProgress: Bool {
-        gemmaModel.isDownloading || mlxModel.isDownloading
+        gemmaModel.isDownloading || mlxModel.isDownloading || coreMLQwenModel.isDownloading
     }
 
     private var deviceMemoryBytes: UInt64 { ProcessInfo.processInfo.physicalMemory }
@@ -93,6 +94,12 @@ struct AIProviders: View {
                         // Then everything else.
                         ForEach(Self.otherMLXModels, id: \.self) { model in
                             MLXModelCard(model: model, viewModel: mlxModel, downloadsLocked: anyDownloadInProgress)
+                                .padding(.horizontal)
+                        }
+                        // Finally the CoreML (ANE) models - slower, but the only
+                        // on-device option that also works from the keyboard.
+                        ForEach(CoreMLQwenVariant.allCases, id: \.self) { variant in
+                            CoreMLQwenModelCard(variant: variant, viewModel: coreMLQwenModel, downloadsLocked: anyDownloadInProgress)
                                 .padding(.horizontal)
                         }
                     }
@@ -296,6 +303,7 @@ struct AIProviders: View {
         .task {
             await gemmaModel.refresh()
             await mlxModel.refresh()
+            await coreMLQwenModel.refresh()
         }
         .navigationTitle("AI Providers")
         .navigationBarTitleDisplayMode(.large)

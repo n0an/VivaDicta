@@ -12,6 +12,7 @@
 import SwiftUI
 import Analytics
 import DesignSystem
+import AICore
 
 @MainActor
 @Observable
@@ -69,6 +70,8 @@ final class LocalMLXModelViewModel {
         let task = Task { @MainActor in
             let wasDownloaded = await engine.isDownloaded(model)
             do {
+                // A Settings download loads into RAM, so keep memory single-resident.
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.mlx)
                 try await engine.ensureLoaded(model: model) { fraction in
                     Task { @MainActor in
                         switch self.status[model] {
@@ -249,14 +252,20 @@ struct MLXModelCard: View {
             Label("Ready", systemImage: "checkmark.circle.fill")
                 .font(.subheadline)
                 .foregroundStyle(.green)
-        case .downloading(let fraction):
-            Text("Downloading \(fraction.formatted(.percent.precision(.fractionLength(0))))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        case .downloading:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Downloading...")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         case .preparing:
-            Text("Preparing...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Preparing...")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         case .notDownloaded, .checking:
             Text("Not downloaded")
                 .font(.subheadline)
@@ -282,30 +291,13 @@ struct MLXModelCard: View {
                 viewModel.prepare(model)
             }
         } label: {
-            if #available(iOS 26.0, *) {
-                Image(systemName: symbolName, variableValue: isDownloading ? viewModel.progress(for: model) : 1)
-                    .symbolVariableValueMode(.draw)
-                    .contentTransition(.symbolEffect(.replace))
-                    .foregroundStyle(symbolColor)
-                    .font(.system(size: 30))
-            } else if isDownloading {
-                Image(systemName: "xmark")
-                    .contentTransition(.symbolEffect(.replace))
-                    .foregroundStyle(symbolColor)
-                    .font(.system(size: 16, weight: .bold))
-                    .padding(8)
-                    .background {
-                        Circle()
-                            .trim(from: 0, to: viewModel.progress(for: model))
-                            .stroke(.primary, lineWidth: 3)
-                            .rotationEffect(.degrees(-90))
-                    }
-            } else {
-                Image(systemName: symbolName)
-                    .contentTransition(.symbolEffect(.replace))
-                    .foregroundStyle(symbolColor)
-                    .font(.system(size: 30))
-            }
+            // Indeterminate while downloading: the symbol is the cancel "x" (see
+            // symbolName); no progress ring because multi-file model progress is
+            // non-linear and reads as stuck.
+            Image(systemName: symbolName)
+                .contentTransition(.symbolEffect(.replace))
+                .foregroundStyle(symbolColor)
+                .font(.system(size: 30))
         }
         .buttonStyle(.plain)
         .disabled(downloadsLocked && isStartDownloadState)

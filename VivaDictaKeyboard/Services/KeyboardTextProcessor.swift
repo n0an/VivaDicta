@@ -40,6 +40,20 @@ final class KeyboardTextProcessor {
             return
         }
 
+        // GPU-backed on-device LLMs (Gemma/LiteRT, MLX) run on the Metal GPU, which
+        // iOS blocks while the app is backgrounded - and the keyboard always runs
+        // with the main app backgrounded. The doomed round-trip would otherwise
+        // hang or crash the app, so fail fast here with an actionable message.
+        // CoreML models (ANE) are exempt - they DO work backgrounded. Apple FM
+        // (out-of-process) and cloud providers also work from the keyboard.
+        if mode.aiProvider == .local, !AIProvider.localModelRunsOnNeuralEngine(mode.aiModel) {
+            logger.logInfo("📝 [TextProcessor] GPU on-device mode '\(mode.name)' unavailable from keyboard (GPU blocked in background)")
+            HapticManager.error()
+            dictationState.textProcessingPhase = .error("This on-device model runs on the GPU and needs the VivaDicta app open. Use a CoreML model, Apple Foundation Model, or a cloud model from the keyboard.")
+            autoDismissError(dictationState: dictationState)
+            return
+        }
+
         // Cancel any stale state
         cancel()
 

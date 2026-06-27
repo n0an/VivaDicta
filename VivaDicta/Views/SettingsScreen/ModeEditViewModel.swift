@@ -355,12 +355,16 @@ class ModeEditViewModel {
     }
 
     /// True if an on-device model id is downloaded, querying the right runtime
-    /// (Gemma ids = LiteRT, everything else = MLX).
+    /// (Gemma ids = LiteRT, `-coreml` = CoreML/ANE, everything else = MLX).
     static func isLocalModelDownloaded(_ id: String) -> Bool {
-        if LiteRTGemmaVariant(rawValue: id) != nil {
+        switch AIProvider.localRuntime(forModelID: id) {
+        case .coreML:
+            return CoreMLQwenVariant(modelID: id).isDownloaded
+        case .liteRT:
             return LiteRTGemmaVariant(modelID: id).isDownloaded
+        case .mlx:
+            return LocalMLXModel(modelID: id).isDownloaded
         }
-        return LocalMLXModel(modelID: id).isDownloaded
     }
 
     private func validateReminderExtractorModelSelection() {

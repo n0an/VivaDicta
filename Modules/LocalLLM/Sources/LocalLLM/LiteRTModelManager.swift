@@ -139,6 +139,40 @@ public actor LiteRTModelManager: LocalModelEngine {
     /// doubles the footprint and can OOM smaller devices.
     private var isLoading = false
 
+    // MARK: Stuck-flag recovery
+    // A GPU load/generation that hangs (e.g. the app is backgrounded mid-load and
+    // the Metal command buffer is aborted) would otherwise leave `isLoading` /
+    // `isGenerating` stuck `true` forever, poisoning every later request with
+    // `.busy` ("already processing another request"). These timestamps let the
+    // next attempt detect and clear an implausibly long-held flag. A legitimate
+    // model DOWNLOAD can be slow, so it is marked and never auto-cleared.
+    private let clock = ContinuousClock()
+    private var loadStartedAt: ContinuousClock.Instant?
+    private var generationStartedAt: ContinuousClock.Instant?
+    private var isDownloadingModel = false
+    private let stuckThreshold: Duration = .seconds(120)
+
+    /// Clears a flag held longer than `stuckThreshold` - a sign the underlying GPU
+    /// op hung and its cleanup never ran. Never clears an in-flight download.
+    private func recoverFromStuckStateIfNeeded() {
+        let now = clock.now
+        if isLoading, !isDownloadingModel, let started = loadStartedAt, started.duration(to: now) > stuckThreshold {
+            logger.warning("LiteRT recovery: clearing stale isLoading (held past timeout) - dropping half-loaded model")
+            isLoading = false
+            loadStartedAt = nil
+            #if canImport(LiteRTFoundation)
+            chat = nil
+            #endif
+            loadedVariant = nil
+            state = .notLoaded
+        }
+        if isGenerating, let started = generationStartedAt, started.duration(to: now) > stuckThreshold {
+            logger.warning("LiteRT recovery: clearing stale isGenerating (held past timeout)")
+            isGenerating = false
+            generationStartedAt = nil
+        }
+    }
+
     private init() {}
 
     var isReady: Bool { state == .ready }
@@ -162,9 +196,12 @@ public actor LiteRTModelManager: LocalModelEngine {
         // devices), and never swap the model out from under a running generation.
         // Set synchronously (no await before the assignment) so the actor can't
         // interleave two callers past this guard.
+        recoverFromStuckStateIfNeeded()
         guard !isLoading, !isGenerating else { throw LiteRTModelError.busy }
+        isDownloadingModel = !variant.isDownloaded
         isLoading = true
-        defer { isLoading = false }
+        loadStartedAt = clock.now
+        defer { isLoading = false; loadStartedAt = nil; isDownloadingModel = false }
 
         // Switching variants: drop the previously-loaded model first.
         chat = nil
@@ -231,16 +268,19 @@ public actor LiteRTModelManager: LocalModelEngine {
     /// output after a few runs).
     func stream(prompt: String) async throws -> AsyncThrowingStream<String, any Error> {
         #if canImport(LiteRTFoundation)
+        recoverFromStuckStateIfNeeded()
         guard let chat else { throw LiteRTModelError.notLoaded }
         guard !isGenerating else { throw LiteRTModelError.busy }
         // Claim the generation slot synchronously (before any await) so two
         // concurrent callers can't both pass the guard during resetConversation's
         // suspension and start overlapping streams. Release it if the reset fails.
         isGenerating = true
+        generationStartedAt = clock.now
         do {
             try await chat.resetConversation()
         } catch {
             isGenerating = false
+            generationStartedAt = nil
             throw error
         }
         let base = chat.stream(prompt)
@@ -265,15 +305,18 @@ public actor LiteRTModelManager: LocalModelEngine {
 
     private func endGeneration() {
         isGenerating = false
+        generationStartedAt = nil
     }
 
     /// Free the model (e.g. on memory pressure or when backgrounded). The next
     /// `ensureLoaded()` reloads from the on-disk cache (no re-download).
-    func unload() {
+    public func unload() {
         #if canImport(LiteRTFoundation)
         chat = nil
         #endif
         loadedVariant = nil
+        loadStartedAt = nil
+        isLoading = false
         state = .notLoaded
         logger.info("LiteRT Gemma model unloaded")
     }
