@@ -625,11 +625,49 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .customOpenAI:
             return [] // Model is configured by user
         case .local:
-            // Gemma (LiteRT) + MLX models; AIService picks the runtime by id.
+            // On-device models; AIService picks the runtime by id (see
+            // `localRuntime(forModelID:)`):
+            //   gemma-4-*   -> LiteRT (Metal GPU, foreground-only)
+            //   *-coreml    -> CoreML (Apple Neural Engine, works backgrounded)
+            //   *-mlx       -> MLX    (Metal GPU, foreground-only)
             return ["gemma-4-E2B", "gemma-4-E4B",
+                    "qwen3.5-2b-coreml", "qwen3.5-0.8b-coreml",
                     "qwen3.5-4b-mlx", "qwen3.5-2b-mlx", "qwen3.5-0.8b-mlx", "phi-4-mini-mlx",
                     "llama-3.2-1b-mlx", "llama-3.2-3b-mlx", "ministral-3b-mlx", "falcon3-3b-mlx", "granite-3.3-2b-mlx"]
         }
+    }
+}
+
+// MARK: - On-device runtime classification
+
+public extension AIProvider {
+    /// The on-device runtime backing a `.local` model id.
+    enum LocalRuntime: Sendable {
+        /// LiteRT-LM (Gemma) - runs on the Metal GPU.
+        case liteRT
+        /// MLX - runs on the Metal GPU.
+        case mlx
+        /// CoreML-LLM - runs on the Apple Neural Engine (ANE).
+        case coreML
+
+        /// Whether the runtime executes on the ANE rather than the Metal GPU.
+        /// GPU runtimes cannot run while the app is backgrounded (iOS blocks GPU
+        /// command-buffer submission), so only ANE runtimes work from the keyboard.
+        public var runsOnNeuralEngine: Bool { self == .coreML }
+    }
+
+    /// Classifies a `.local` model id by its backing runtime. The id suffix is the
+    /// discriminator (`-coreml`, `-mlx`); Gemma ids (`gemma-4-*`) default to LiteRT.
+    static func localRuntime(forModelID id: String) -> LocalRuntime {
+        if id.hasSuffix("-coreml") { return .coreML }
+        if id.hasSuffix("-mlx") { return .mlx }
+        return .liteRT
+    }
+
+    /// True when a `.local` model runs on the ANE and therefore works while the
+    /// app is backgrounded (e.g. driven from the keyboard).
+    static func localModelRunsOnNeuralEngine(_ id: String) -> Bool {
+        localRuntime(forModelID: id).runsOnNeuralEngine
     }
 }
 

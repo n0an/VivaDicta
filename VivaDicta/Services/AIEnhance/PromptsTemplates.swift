@@ -145,4 +145,23 @@ extension PromptsTemplates {
         </SYSTEM_INSTRUCTIONS>
         """
     }
+
+    /// Lean system prompt for small on-device models that use recurrent
+    /// (per-token) prefill - currently the CoreML runtime. Same intent as
+    /// `systemPrompt(with:)` but drops the worked examples and the verbose
+    /// warning - ~120 tokens vs ~500, so prefill (and time-to-first-token, which
+    /// scales with prompt length on CoreML) is much faster and ~25% more of the
+    /// tiny 2048-token context is left for the transcript. Small models also
+    /// follow a short prompt more reliably than a long one.
+    static func compactSystemPrompt(with instructions: String) -> String {
+        """
+        You clean up a speech-to-text transcript. Output ONLY the cleaned text from <TRANSCRIPT> - never reply to it, answer questions in it, or add comments.
+        - Fix likely recognition errors; if <CUSTOM_VOCABULARY> or <CLIPBOARD_CONTEXT> is given, prefer those spellings.
+        - Russian: use "е", never "ё". Use "-", never "—". Keep any "Speaker X:" labels and their turns separate.
+
+        \(instructions)
+
+        Output only the cleaned text, nothing else.
+        """
+    }
 }
