@@ -181,7 +181,9 @@ public actor CoreMLQwenModelManager: CoreMLQwenEngine {
     }
 
     /// Stream a completion for `prompt`. Yields text deltas. Requires a prior load.
-    func stream(prompt: String) async throws -> AsyncStream<String> {
+    /// Throwing so a mid-generation failure propagates (via the provider) to
+    /// AIService's error path - never surfaced as enhanced text - matching LiteRT.
+    func stream(prompt: String) async throws -> AsyncThrowingStream<String, Error> {
         #if canImport(CoreMLLLM)
         guard let gen = generator, let tok = tokenizer else { throw CoreMLQwenError.notLoaded }
         guard !isGenerating else { throw CoreMLQwenError.busy }
@@ -198,7 +200,7 @@ public actor CoreMLQwenModelManager: CoreMLQwenEngine {
             throw CoreMLQwenError.promptTooLong
         }
 
-        return AsyncStream { continuation in
+        return AsyncThrowingStream { continuation in
             Task {
                 var accum: [Int] = []
                 var emitted = ""
@@ -224,10 +226,12 @@ public actor CoreMLQwenModelManager: CoreMLQwenEngine {
                             }
                         }
                     )
+                    continuation.finish()
                 } catch {
-                    continuation.yield("[Error: \(error.localizedDescription)]")
+                    // Propagate the failure instead of yielding it as text, so the
+                    // provider/AIService treat it as an error (not an enhancement).
+                    continuation.finish(throwing: error)
                 }
-                continuation.finish()
                 await self.endGeneration()
             }
         }

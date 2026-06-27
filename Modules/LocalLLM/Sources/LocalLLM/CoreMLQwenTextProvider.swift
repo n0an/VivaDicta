@@ -50,7 +50,7 @@ public struct CoreMLQwenTextProvider: AITextProvider {
         let stream = try await CoreMLQwenModelManager.shared.stream(prompt: prompt)
 
         var full = ""
-        for await delta in stream {
+        for try await delta in stream {
             full += delta
             if let onPartialResponse {
                 let snapshot = full

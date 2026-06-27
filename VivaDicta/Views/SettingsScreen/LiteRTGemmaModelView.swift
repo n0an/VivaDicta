@@ -14,6 +14,7 @@ import SwiftUI
 import Analytics
 import DesignSystem
 import LocalLLM
+import AICore
 
 @MainActor
 @Observable
@@ -78,6 +79,8 @@ final class LiteRTGemmaModelViewModel {
         let task = Task { @MainActor in
             let wasDownloaded = await engine.isDownloaded(variant)
             do {
+                // A Settings download loads into RAM, so keep memory single-resident.
+                await OnDeviceModelMemory.shared.ensureOnlyResident(.liteRT)
                 try await engine.ensureLoaded(variant: variant) { fraction in
                     Task { @MainActor in
                         // Ignore late progress callbacks after a cancel/finish.
