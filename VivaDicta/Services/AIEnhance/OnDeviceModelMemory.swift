@@ -27,7 +27,10 @@ import os
 import AICore
 import LocalLLM
 
-final class OnDeviceModelMemory: @unchecked Sendable {
+// nonisolated: the memory-pressure handler fires on a utility queue; without
+// this the class inherits the project-default @MainActor isolation and the
+// handler's runtime isolation check aborts the process (3.7.1 crash).
+nonisolated final class OnDeviceModelMemory: @unchecked Sendable {
     static let shared = OnDeviceModelMemory()
 
     private let logger = Logger(subsystem: "com.antonnovoselov.VivaDicta", category: "OnDeviceModelMemory")
