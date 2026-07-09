@@ -414,7 +414,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cartesia:
             return "ink-whisper"
         case .assemblyAI:
-            return "universal-3-pro"
+            return "universal-3-5-pro"
         case .vercelAIGateway:
             // Note: Vercel AI Gateway uses "provider/model" format with dots for versions
             // (e.g., "claude-sonnet-4.6") unlike direct Anthropic API which uses hyphens

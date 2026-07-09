@@ -130,7 +130,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .cohere: "cohere-transcribe-03-2026"
         case .cartesia: "ink-whisper"
         case .xai: "grok-stt"
-        case .assemblyAI: "universal-3-pro"
+        case .assemblyAI: "universal-3-5-pro"
         default: nil
         }
     }
@@ -300,11 +300,23 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "universal-3-pro",
-                displayName: "AssemblyAI Universal-3 Pro",
-                description: "AssemblyAI's most accurate Universal model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get $50 in free credits, no credit card required.",
+                name: "universal-3-5-pro",
+                displayName: "AssemblyAI Universal-3.5 Pro",
+                description: "AssemblyAI's latest and most accurate Universal model with native code switching, improved speaker diarization and automatic language detection. Unsupported languages fall back to Universal-2 automatically. New accounts get $50 in free credits, no credit card required.",
                 provider: .assemblyAI,
                 recommended: true,
+                speed: 0.9,
+                accuracy: 0.99,
+                cost: 0.5,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "universal-3-pro",
+                displayName: "AssemblyAI Universal-3 Pro",
+                description: "AssemblyAI's previous-generation Universal Pro model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get $50 in free credits, no credit card required.",
+                provider: .assemblyAI,
                 speed: 0.85,
                 accuracy: 0.98,
                 cost: 0.5,

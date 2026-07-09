@@ -47,7 +47,7 @@ struct AssemblyAITranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "aai-test-key",
-        modelName: String = "universal-3-pro",
+        modelName: String = "universal-3-5-pro",
         language: String = "auto",
         vocabulary: [String] = [],
         isSpeakerDiarizationEnabled: Bool = false
@@ -194,13 +194,24 @@ struct AssemblyAITranscriptionServiceTests {
         let networkService = MockNetworkService()
         try stubHappyFlow(on: networkService)
         let audio = try makeAudioFile()
-        let sut = makeService(networkService: networkService, modelName: "universal-3-pro")
+        let sut = makeService(networkService: networkService, modelName: "universal-3-5-pro")
 
         _ = try await sut.transcribe(audioURL: audio)
 
         let body = try createBody(networkService)
         #expect(body["audio_url"] as? String == "https://cdn.assemblyai.com/upload/abc")
-        #expect(body["speech_models"] as? [String] == ["universal-3-pro", "universal-2"])
+        #expect(body["speech_models"] as? [String] == ["universal-3-5-pro", "universal-2"])
+    }
+
+    @Test func createBodyAppendsUniversal2FallbackForUniversal3Pro() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "universal-3-pro")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        #expect(try createBody(networkService)["speech_models"] as? [String] == ["universal-3-pro", "universal-2"])
     }
 
     @Test func createBodyUsesSpecifiedModelWhenNotDefault() async throws {

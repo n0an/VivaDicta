@@ -25,7 +25,7 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
-            modelName: String = "universal-3-pro",
+            modelName: String = "universal-3-5-pro",
             language: String = "auto",
             vocabulary: [String] = [],
             isSpeakerDiarizationEnabled: Bool = false
@@ -110,12 +110,16 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
 
         // `speech_models` is required and is a priority list: AssemblyAI routes
         // the request to the first model that supports the audio's language.
-        // Universal-3 Pro covers only en/es/de/fr/pt/it, so we append Universal-2
+        // The Universal-3 generation models cover a limited language set
+        // (Universal-3.5 Pro: 18 languages), so we append Universal-2
         // (99 languages) as a fallback to keep broad language coverage.
         let models: [String]
-        if config.modelName.isEmpty || config.modelName == "universal-3-pro" {
+        switch config.modelName {
+        case "", "universal-3-5-pro":
+            models = ["universal-3-5-pro", "universal-2"]
+        case "universal-3-pro":
             models = ["universal-3-pro", "universal-2"]
-        } else {
+        default:
             models = [config.modelName]
         }
 
