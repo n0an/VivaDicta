@@ -16,6 +16,9 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
 
     public struct Config: Sendable {
         public let apiKey: String
+        /// Internal model name: `speechmatics-batch-v2` (the enhanced model)
+        /// or `melia-1` (multilingual with code-switching).
+        public let modelName: String
         public let language: String
         public let vocabulary: [String]
         public let isSpeakerDiarizationEnabled: Bool
@@ -24,12 +27,14 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
+            modelName: String = "speechmatics-batch-v2",
             language: String = "auto",
             vocabulary: [String] = [],
             isSpeakerDiarizationEnabled: Bool = false,
             translationTargetLanguage: String = ""
         ) {
             self.apiKey = apiKey
+            self.modelName = modelName
             self.language = language
             self.vocabulary = vocabulary
             self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
@@ -88,10 +93,23 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        var transcriptionConfig: [String: Any] = [
-            "language": language.isEmpty ? "auto" : language,
-            "operating_point": "enhanced"
-        ]
+        // `model` replaced the deprecated `operating_point` property and takes
+        // the same values plus `melia-1`. Our legacy internal name maps to the
+        // enhanced model. Melia-1 detects languages automatically and requires
+        // `language: "multi"`; a concrete user-picked language becomes a hint.
+        let model = config.modelName.isEmpty || config.modelName == "speechmatics-batch-v2"
+            ? "enhanced"
+            : config.modelName
+
+        var transcriptionConfig: [String: Any] = ["model": model]
+        if model == "melia-1" {
+            transcriptionConfig["language"] = "multi"
+            if !language.isEmpty, language != "auto" {
+                transcriptionConfig["language_hints"] = [language]
+            }
+        } else {
+            transcriptionConfig["language"] = language.isEmpty ? "auto" : language
+        }
         if config.isSpeakerDiarizationEnabled {
             transcriptionConfig["diarization"] = "speaker"
         }

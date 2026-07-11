@@ -44,6 +44,7 @@ struct GladiaTranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "gld-test-key",
+        modelName: String = "solaria-1",
         language: String = "auto",
         vocabulary: [String] = [],
         isSpeakerDiarizationEnabled: Bool = false,
@@ -52,6 +53,7 @@ struct GladiaTranscriptionServiceTests {
         GladiaTranscriptionService(
             config: .init(
                 apiKey: apiKey,
+                modelName: modelName,
                 language: language,
                 vocabulary: vocabulary,
                 isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled,
@@ -187,6 +189,32 @@ struct GladiaTranscriptionServiceTests {
     private func createBody(_ networkService: MockNetworkService) throws -> [String: Any] {
         let body = try #require(networkService.capturedRequests[1].httpBody)
         return try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+    }
+
+    @Test func createBodyCarriesDefaultModel() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        #expect(try createBody(networkService)["model"] as? String == "solaria-1")
+    }
+
+    @Test func createBodyCarriesSolaria3WhenSelected() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "solaria-3", language: "de")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try createBody(networkService)
+        #expect(body["model"] as? String == "solaria-3")
+        let langConfig = try #require(body["language_config"] as? [String: Any])
+        #expect(langConfig["languages"] as? [String] == ["de"])
+        #expect(langConfig["code_switching"] as? Bool == false)
     }
 
     @Test func createBodyUsesCodeSwitchingWhenLanguageAuto() async throws {

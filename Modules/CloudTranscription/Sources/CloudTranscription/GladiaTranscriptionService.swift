@@ -6,8 +6,9 @@ import os
 import TranscriptionCore
 
 /// Pre-configured Gladia STT client. Uses an upload + create + poll flow.
-/// `modelName` is unused by the v2 API (the endpoint always uses the default
-/// pre-recorded model), so the config omits it.
+/// The v2 API selects the speech model via the `model` field: `solaria-1`
+/// (default, 100+ languages, code-switching) or `solaria-3` (async-only,
+/// EN/FR/DE/ES/IT, exactly one language required - no code switching).
 public struct GladiaTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "GladiaTranscription")
     private let apiBase = "https://api.gladia.io/v2"
@@ -16,6 +17,7 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
 
     public struct Config: Sendable {
         public let apiKey: String
+        public let modelName: String
         public let language: String
         public let vocabulary: [String]
         public let isSpeakerDiarizationEnabled: Bool
@@ -24,12 +26,14 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
+            modelName: String = "solaria-1",
             language: String = "auto",
             vocabulary: [String] = [],
             isSpeakerDiarizationEnabled: Bool = false,
             translationTargetLanguage: String = ""
         ) {
             self.apiKey = apiKey
+            self.modelName = modelName
             self.language = language
             self.vocabulary = vocabulary
             self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
@@ -110,6 +114,10 @@ public struct GladiaTranscriptionService: TranscriptionService, Sendable {
             "audio_url": audioURL,
             "diarization": config.isSpeakerDiarizationEnabled
         ]
+
+        if !config.modelName.isEmpty {
+            payload["model"] = config.modelName
+        }
 
         if config.language != "auto", !config.language.isEmpty {
             payload["language_config"] = [

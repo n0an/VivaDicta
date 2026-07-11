@@ -116,6 +116,17 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
     
+    /// Cloud model slugs that providers renamed or retired. Saved mode
+    /// selections may still carry the old name; normalize before any
+    /// catalog lookup so those modes keep transcribing.
+    static let renamedCloudModels: [String: String] = [
+        "stt-async-v4": "stt-async-v5"  // Soniox retired v4 on 2026-06-30
+    ]
+
+    static func normalizedCloudModelName(_ name: String) -> String {
+        renamedCloudModels[name] ?? name
+    }
+
     var defaultCloudTranscriptionModel: String? {
         switch self {
         case .groq: "whisper-large-v3-turbo"
@@ -124,7 +135,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-4o-mini-transcribe"
-        case .soniox: "stt-async-v4"
+        case .soniox: "stt-async-v5"
         case .gladia: "solaria-1"
         case .speechmatics: "speechmatics-batch-v2"
         case .cohere: "cohere-transcribe-03-2026"
@@ -187,9 +198,21 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "stt-async-v4",
-                displayName: "Soniox (stt-async-v4)",
-                description: "Soniox transcription model v4 with human-parity accuracy across 60+ languages. Powers Live Translation - super-fast real-time speech-to-speech translation, ideal for lectures and workshops.",
+                name: "whisper-large-v3",
+                displayName: "Whisper Large V3",
+                description: "Full-size Whisper on Groq's LPU - higher accuracy than Turbo and still 189x real-time speed. Free tier with generous daily limits",
+                provider: .groq,
+                speed: 0.95,
+                accuracy: 0.93,
+                cost: 0.15,  // $0.111/hr (~$0.00185/min) - same free tier as Turbo
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "stt-async-v5",
+                displayName: "Soniox (stt-async-v5)",
+                description: "Soniox transcription model v5 with human-parity accuracy across 60+ languages, reengineered speaker separation and better handling of numbers, dates and emails. Powers Live Translation - super-fast real-time speech-to-speech translation, ideal for lectures and workshops.",
                 provider: .soniox,
                 recommended: true,
                 speed: 0.95,
@@ -213,6 +236,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "solaria-3",
+                displayName: "Gladia Solaria-3",
+                description: "Gladia's most accurate model for real-world business audio in English, French, German, Spanish and Italian. Async only, one language per recording - pick Solaria for other languages or auto-detect.",
+                provider: .gladia,
+                speed: 0.85,
+                accuracy: 0.97,
+                cost: 0.6,
+                supportManyLanguages: true,
+                supportedLanguages: gladiaSolaria3Languages
+            ),
+
+            CloudModel(
                 name: "speechmatics-batch-v2",
                 displayName: "Speechmatics Enhanced",
                 description: "Speechmatics batch transcription with industry-leading accuracy on European languages, speaker diarization and built-in translation across 50+ languages.",
@@ -221,6 +256,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 speed: 0.7,
                 accuracy: 0.97,
                 cost: 0.7,
+                supportManyLanguages: true,
+                supportedLanguages: speechmaticsLanguages
+            ),
+
+            CloudModel(
+                name: "melia-1",
+                displayName: "Speechmatics Melia-1",
+                description: "Speechmatics' multilingual model with automatic code-switching across 56+ languages - no language selection needed. Their lowest-priced tier, in production preview for batch transcription.",
+                provider: .speechmatics,
+                speed: 0.75,
+                accuracy: 0.96,
+                cost: 0.3,
                 supportManyLanguages: true,
                 supportedLanguages: speechmaticsLanguages
             ),
@@ -467,6 +514,17 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             CloudModel(
+                name: "gpt-4o-transcribe-diarize",
+                displayName: "GPT-4o Transcribe Diarize",
+                description: "OpenAI's speaker-aware transcription model - returns speaker-labeled transcripts for conversations and meetings. Language is always auto-detected.",
+                provider: .openAI,
+                speed: 0.7,
+                accuracy: 0.95,
+                cost: 0.9,  // ~$0.006/min, same tier as gpt-4o-transcribe
+                supportManyLanguages: true,
+                supportedLanguages: ["auto": "Auto-detect"]
+            ),
+            CloudModel(
                 name: "gpt-4o-mini-transcribe",
                 displayName: "GPT-4o Mini Transcribe",
                 description: "Cost-effective OpenAI model for high-volume transcription with good accuracy",
@@ -525,6 +583,13 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Translation targets are the same set; auto-detect is also supported.
     static let gladiaLanguages: [String: String] = allLanguages
 
+    /// Gladia Solaria-3 supports 5 European languages, exactly one per
+    /// request. No auto-detect - language must be specified.
+    static let gladiaSolaria3Languages: [String: String] = {
+        let codes: Set<String> = ["en", "fr", "de", "es", "it"]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
+
     /// Speechmatics batch supports ~50 languages plus auto-detect.
     /// Note: Speechmatics uses `cmn` for Mandarin where we use `zh`; the service
     /// rewrites the code at request time so users still see "Chinese" in the picker.
@@ -575,7 +640,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "vi": "Vietnamese",
     ]
 
-    /// Soniox stt-async-v4 supports 60 languages plus auto-detect.
+    /// Soniox stt-async-v5 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.
     static let sonioxLanguages: [String: String] = {
         let codes: Set<String> = [

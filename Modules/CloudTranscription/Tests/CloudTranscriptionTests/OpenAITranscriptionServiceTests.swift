@@ -49,10 +49,16 @@ struct OpenAITranscriptionServiceTests {
         networkService: MockNetworkService,
         apiKey: String = "sk-test-key",
         modelName: String = "whisper-1",
-        language: String = "auto"
+        language: String = "auto",
+        isSpeakerDiarizationEnabled: Bool = false
     ) -> OpenAITranscriptionService {
         OpenAITranscriptionService(
-            config: .init(apiKey: apiKey, modelName: modelName, language: language),
+            config: .init(
+                apiKey: apiKey,
+                modelName: modelName,
+                language: language,
+                isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled
+            ),
             networkService: networkService
         )
     }
@@ -154,6 +160,75 @@ struct OpenAITranscriptionServiceTests {
         let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.contains("name=\"language\"") == false)
+    }
+
+    // MARK: - Diarize model (gpt-4o-transcribe-diarize)
+
+    @Test func diarizeModelBodySendsChunkingStrategyAndOmitsLanguageAndTemperature() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+
+        let sut = makeService(networkService: networkService, modelName: "gpt-4o-transcribe-diarize", language: "en")
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.range(of: "name=\"chunking_strategy\"\\s*\\r\\n\\r\\nauto", options: .regularExpression) != nil)
+        #expect(bodyString.contains("name=\"language\"") == false)
+        #expect(bodyString.contains("name=\"temperature\"") == false)
+    }
+
+    @Test func diarizeModelUsesJSONFormatWhenDiarizationOff() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "plain text result")
+        let audio = try makeAudioFile()
+
+        let sut = makeService(networkService: networkService, modelName: "gpt-4o-transcribe-diarize")
+        let result = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.range(of: "name=\"response_format\"\\s*\\r\\n\\r\\njson", options: .regularExpression) != nil)
+        #expect(result.text == "plain text result")
+        #expect(result.isSpeakerAttributed == false)
+    }
+
+    @Test func diarizeModelReturnsSpeakerAttributedTextWhenDiarizationOn() async throws {
+        let networkService = MockNetworkService()
+        let body = Data(#"{"segments":[{"text":"hi there","speaker":"A"},{"text":"hello back","speaker":"B"}]}"#.utf8)
+        networkService.stubUploadResponse = .success((body, makeHTTPResponse(200)))
+        let audio = try makeAudioFile()
+
+        let sut = makeService(
+            networkService: networkService,
+            modelName: "gpt-4o-transcribe-diarize",
+            isSpeakerDiarizationEnabled: true
+        )
+        let result = try await sut.transcribe(audioURL: audio)
+
+        let requestBody = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: requestBody, encoding: .utf8))
+        #expect(bodyString.range(of: "name=\"response_format\"\\s*\\r\\n\\r\\ndiarized_json", options: .regularExpression) != nil)
+        #expect(result.isSpeakerAttributed == true)
+        #expect(result.text.contains("hi there"))
+        #expect(result.text.contains("hello back"))
+    }
+
+    @Test func diarizeModelMergesConsecutiveSegmentsOfSameSpeaker() async throws {
+        let networkService = MockNetworkService()
+        let body = Data(#"{"segments":[{"text":"one","speaker":"A"},{"text":"two","speaker":"A"},{"text":"three","speaker":"B"}]}"#.utf8)
+        networkService.stubUploadResponse = .success((body, makeHTTPResponse(200)))
+        let audio = try makeAudioFile()
+
+        let sut = makeService(
+            networkService: networkService,
+            modelName: "gpt-4o-transcribe-diarize",
+            isSpeakerDiarizationEnabled: true
+        )
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.text.contains("one two"))
     }
 
     // MARK: - Validation / short-circuit

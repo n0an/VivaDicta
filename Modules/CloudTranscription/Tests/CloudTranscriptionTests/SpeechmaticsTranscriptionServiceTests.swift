@@ -41,6 +41,7 @@ struct SpeechmaticsTranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "smx-test-key",
+        modelName: String = "speechmatics-batch-v2",
         language: String = "auto",
         vocabulary: [String] = [],
         isSpeakerDiarizationEnabled: Bool = false,
@@ -49,6 +50,7 @@ struct SpeechmaticsTranscriptionServiceTests {
         SpeechmaticsTranscriptionService(
             config: .init(
                 apiKey: apiKey,
+                modelName: modelName,
                 language: language,
                 vocabulary: vocabulary,
                 isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled,
@@ -162,6 +164,46 @@ struct SpeechmaticsTranscriptionServiceTests {
     }
 
     // MARK: - Config body (inside the multipart upload)
+
+    @Test func configBodyMapsLegacyInternalNameToEnhancedModel() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try uploadBodyString(networkService)
+        #expect(body.contains("\"model\":\"enhanced\""))
+        #expect(!body.contains("operating_point"))
+    }
+
+    @Test func configBodyMelia1UsesMultiLanguageWithHint() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "melia-1", language: "de")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try uploadBodyString(networkService)
+        #expect(body.contains("\"model\":\"melia-1\""))
+        #expect(body.contains("\"language\":\"multi\""))
+        #expect(body.contains("\"language_hints\":[\"de\"]"))
+    }
+
+    @Test func configBodyMelia1OmitsHintsWhenLanguageAuto() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "melia-1", language: "auto")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try uploadBodyString(networkService)
+        #expect(body.contains("\"language\":\"multi\""))
+        #expect(!body.contains("language_hints"))
+    }
 
     @Test func configBodyMapsZhToCmn() async throws {
         let networkService = MockNetworkService()
