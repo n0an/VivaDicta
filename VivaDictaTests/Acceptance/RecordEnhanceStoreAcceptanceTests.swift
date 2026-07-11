@@ -103,7 +103,7 @@ struct RecordEnhanceStoreAcceptanceTests {
         let keychain = MockKeychainService()
         _ = keychain.save("ANTHROPIC_KEY", forKey: "anthropicAPIKey")
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"Enhanced acceptance output"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"Enhanced acceptance output"}]}"#.utf8), http(200)))
 
         let aiService = AIService(
             userDefaults: defaults,

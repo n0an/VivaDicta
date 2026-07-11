@@ -71,7 +71,7 @@ struct TextEnhancerTests {
         let keychain = MockKeychainService()
         _ = keychain.save("ANTHROPIC_KEY", forKey: "anthropicAPIKey")
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"OK"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"OK"}]}"#.utf8), http(200)))
         let sut = makeSUT(keychain: keychain, net: net)
 
         let result = try await sut.enhance(input(provider: .anthropic))
@@ -110,7 +110,7 @@ struct TextEnhancerTests {
         let keychain = MockKeychainService()
         _ = keychain.save("ANTHROPIC_KEY", forKey: "anthropicAPIKey")
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"CLOUD_OK"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"CLOUD_OK"}]}"#.utf8), http(200)))
         let cli = MockCLIServerEnhancer()
         cli.activeProviders = [.anthropic]
         cli.serverURL = "http://mac:4000"

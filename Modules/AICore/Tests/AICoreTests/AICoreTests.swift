@@ -82,8 +82,31 @@ struct AIProviderTests {
 
     @Test func defaultModelsAreStable() {
         #expect(AIProvider.apple.defaultModel == "foundation-model")
-        #expect(AIProvider.anthropic.defaultModel == "claude-sonnet-4-6")
-        #expect(AIProvider.openAI.defaultModel == "gpt-5.5")
+        #expect(AIProvider.anthropic.defaultModel == "claude-sonnet-5")
+        #expect(AIProvider.openAI.defaultModel == "gpt-5.6-terra")
+    }
+
+    @Test func defaultModelsAreListedAndNotRetired() {
+        // A provider's default must be selectable in the picker and must not
+        // itself be a retired id (the Cerebras llama3.1-8b default once was).
+        for provider in AIProvider.generalProviders where !provider.availableModels.isEmpty {
+            let defaultModel = provider.defaultModel
+            #expect(provider.availableModels.contains(defaultModel), "\(provider) default not in list")
+            #expect(AIProvider.retiredModelReplacements[defaultModel] == nil, "\(provider) default is retired")
+        }
+    }
+
+    @Test func retiredModelsMapToCurrentReplacements() {
+        #expect(AIProvider.normalizedModel("qwen/qwen3-32b") == "openai/gpt-oss-120b")
+        #expect(AIProvider.normalizedModel("llama-3.1-8b-instant") == "openai/gpt-oss-20b")
+        #expect(AIProvider.normalizedModel("gpt-5.1") == "gpt-5.5")
+        #expect(AIProvider.normalizedModel("llama3.1-8b") == "gpt-oss-120b")
+        // Unknown ids pass through untouched.
+        #expect(AIProvider.normalizedModel("gpt-5.6-terra") == "gpt-5.6-terra")
+        // No replacement may itself be retired (no chains).
+        for replacement in AIProvider.retiredModelReplacements.values {
+            #expect(AIProvider.retiredModelReplacements[replacement] == nil, "\(replacement) chains")
+        }
     }
 
     // MARK: - Capability flags

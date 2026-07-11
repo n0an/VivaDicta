@@ -69,10 +69,13 @@ public struct AnthropicService: Sendable {
             let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
 
             if httpResponse.statusCode == 200 {
+                // Models with adaptive thinking (Sonnet 5 and newer) can emit a
+                // `thinking` block before the text block, so pick the first
+                // text block rather than assuming content[0] is text.
                 guard let jsonResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                       let content = jsonResponse["content"] as? [[String: Any]],
-                      let firstContent = content.first,
-                      let enhancedText = firstContent["text"] as? String else {
+                      let textBlock = content.first(where: { ($0["type"] as? String) == "text" }),
+                      let enhancedText = textBlock["text"] as? String else {
                     logger.logError("Anthropic enhance - malformed 200 body")
                     throw EnhancementError.enhancementFailed
                 }

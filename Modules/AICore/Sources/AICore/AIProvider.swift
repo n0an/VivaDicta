@@ -378,21 +378,25 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .apple:
             return "foundation-model"
         case .cerebras:
-            return "llama3.1-8b"
+            // llama3.1-8b was retired from Cerebras' public catalog; gpt-oss-120b
+            // is their only production model.
+            return "gpt-oss-120b"
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
             return "gemini-3.5-flash"
         case .anthropic:
-            return "claude-sonnet-4-6"
+            return "claude-sonnet-5"
         case .openAI:
-            return "gpt-5.5"
+            return "gpt-5.6-terra"
         case .grok:
-            return "grok-4.20-beta"
+            // grok-4.5 is the newest flagship but is not yet available in the EU;
+            // grok-4.3 works everywhere.
+            return "grok-4.3"
         case .zai:
-            return "glm-5"
+            return "glm-5.2"
         case .kimi:
-            return "kimi-k2.5"
+            return "kimi-k2.6"
         case .minimax:
             return "MiniMax-M3"
         case .elevenLabs:
@@ -481,6 +485,28 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         }
     }
 
+    /// Chat models that providers retired or scheduled for shutdown, mapped to
+    /// their provider-recommended replacements. Saved mode selections may still
+    /// carry the old id; normalize before binding a model into a request so
+    /// those modes keep working after the provider-side shutdown.
+    public static let retiredModelReplacements: [String: String] = [
+        // Groq (qwen3-32b shut down 2026-07-17; Llama 3.x shut down 2026-08-16)
+        "qwen/qwen3-32b": "openai/gpt-oss-120b",
+        "llama-3.1-8b-instant": "openai/gpt-oss-20b",
+        "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
+        // OpenAI (gpt-5.1 and gpt-4.1-nano shut down 2026-07-23)
+        "gpt-5.1": "gpt-5.5",
+        "gpt-5.2": "gpt-5.5",
+        "gpt-4.1-nano": "gpt-5.4-nano",
+        // Cerebras (llama3.1-8b removed from the public catalog)
+        "llama3.1-8b": "gpt-oss-120b"
+    ]
+
+    /// Maps a retired model id to its replacement; unknown ids pass through.
+    public static func normalizedModel(_ model: String) -> String {
+        retiredModelReplacements[model] ?? model
+    }
+
     public var availableModels: [String] {
         switch self {
         case .apple:
@@ -491,12 +517,12 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "zai-glm-4.7"
             ]
         case .groq:
+            // Groq retired the Llama 3.x and qwen3-32b models in mid-2026;
+            // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
-                "llama-3.1-8b-instant",
-                "llama-3.3-70b-versatile",
-                "qwen/qwen3-32b",
                 "openai/gpt-oss-120b",
-                "openai/gpt-oss-20b"
+                "openai/gpt-oss-20b",
+                "qwen/qwen3.6-27b"
             ]
         case .gemini:
             return [
@@ -513,28 +539,34 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "claude-opus-4-8",
                 "claude-opus-4-7",
                 "claude-opus-4-6",
+                "claude-sonnet-5",
                 "claude-sonnet-4-6",
                 "claude-sonnet-4-5",
                 "claude-haiku-4-5"
             ]
         case .openAI:
+            // gpt-5.1, gpt-5.2 and gpt-4.1-nano are deprecated/shutting down;
+            // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
+                "gpt-5.6-sol",
+                "gpt-5.6-terra",
+                "gpt-5.6-luna",
                 "gpt-5.5",
                 "gpt-5.4",
                 "gpt-5.4-mini",
                 "gpt-5.4-nano",
-                "gpt-5.2",
-                "gpt-5.1",
                 "gpt-5-mini",
                 "gpt-5-nano",
                 "gpt-4.1",
                 "gpt-4.1-mini",
-                "gpt-4.1-nano",
                 "gpt-4o",
                 "gpt-4o-mini"
             ]
         case .grok:
+            // grok-4.5 is xAI's newest flagship (not yet EU-available at launch,
+            // so grok-4.3 stays the default).
             return [
+                "grok-4.5",
                 "grok-4.3",
                 "grok-4.20-reasoning",
                 "grok-4.20-non-reasoning",
@@ -543,6 +575,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .zai:
             return [
+                "glm-5.2",
                 "glm-5.1",
                 "glm-5-turbo",
                 "glm-5",

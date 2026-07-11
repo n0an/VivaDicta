@@ -21,7 +21,7 @@ struct TextProvidersTests {
 
     @Test func anthropicWrapperForwardsMessagesAndReturnsEnhancedText() async throws {
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"ENHANCED"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"ENHANCED"}]}"#.utf8), http(200)))
 
         let sut = AnthropicTextProvider(
             networkService: net, logger: logger(), baseTimeout: 30,

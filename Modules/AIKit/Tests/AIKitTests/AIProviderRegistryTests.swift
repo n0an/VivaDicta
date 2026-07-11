@@ -62,7 +62,7 @@ struct AIProviderRegistryTests {
         let keychain = MockKeychainService()
         seed(keychain, "ANTHROPIC_KEY", forKey: "anthropicAPIKey") // real key name -> catches a key-name swap
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"OK"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"OK"}]}"#.utf8), http(200)))
         let sut = makeSUT(keychain: keychain, net: net)
 
         let provider = try await sut.makeTextProvider(for: .anthropic, model: "claude-sonnet-4-6")
@@ -86,6 +86,23 @@ struct AIProviderRegistryTests {
 
         #expect(net.capturedRequest?.url?.absoluteString == "https://api.openai.com/v1/chat/completions")
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer OPENAI_KEY")
+    }
+
+    @Test func retiredModelIsReplacedBeforeBindingIntoRequest() async throws {
+        // Saved modes may still carry a retired model id; the registry maps it
+        // to the provider-recommended replacement so requests keep working.
+        let keychain = MockKeychainService()
+        seed(keychain, "GROQ_KEY", forKey: "groqAPIKey")
+        let net = MockNetworkService()
+        net.stubSendResponse = .success((Data(#"{"choices":[{"message":{"content":"OK"}}]}"#.utf8), http(200)))
+        let sut = makeSUT(keychain: keychain, net: net)
+
+        let provider = try await sut.makeTextProvider(for: .cloud(.groq), model: "qwen/qwen3-32b")
+        _ = try await provider.enhance(systemMessage: "S", userMessage: "U")
+
+        let body = try #require(net.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["model"] as? String == "openai/gpt-oss-120b")
     }
 
     @Test func missingAPIKeyThrowsNotConfigured() async {
