@@ -205,6 +205,19 @@ struct SpeechmaticsTranscriptionServiceTests {
         #expect(!body.contains("language_hints"))
     }
 
+    @Test func configBodyMelia1DropsTranslationConfig() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "melia-1", translationTargetLanguage: "de")
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        let body = try uploadBodyString(networkService)
+        #expect(!body.contains("translation_config"))
+        #expect(result.text == "hello world")
+    }
+
     @Test func configBodyMapsZhToCmn() async throws {
         let networkService = MockNetworkService()
         try stubHappyFlow(on: networkService)

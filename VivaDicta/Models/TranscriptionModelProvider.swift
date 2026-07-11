@@ -111,7 +111,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             return "Custom"
 
         default:
-            guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == modelName}) else { return modelName }
+            let normalized = TranscriptionModelProvider.normalizedCloudModelName(modelName)
+            guard let model = TranscriptionModelProvider.allCloudModels.first(where: {$0.name == normalized}) else { return modelName }
             return model.displayName
         }
     }

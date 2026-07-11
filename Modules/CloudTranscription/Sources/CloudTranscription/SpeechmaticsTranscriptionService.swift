@@ -53,11 +53,30 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         self.networkService = networkService
     }
 
+    /// Maps our internal model name to the API `model` value. The legacy
+    /// internal name predates the `model` property and means the enhanced model.
+    private var apiModel: String {
+        config.modelName.isEmpty || config.modelName == "speechmatics-batch-v2"
+            ? "enhanced"
+            : config.modelName
+    }
+
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
         guard !config.apiKey.isEmpty else {
             throw CloudTranscriptionError.missingAPIKey
         }
-        let translationTargetAPI = mapToSpeechmaticsCode(config.translationTargetLanguage)
+        // Melia-1 does not support translation (Enhanced/Standard only);
+        // Speechmatics rejects melia-1 jobs carrying a translation_config.
+        // Drop a configured target so the user still gets their transcription.
+        let translationTargetAPI: String
+        if apiModel == "melia-1" {
+            if !config.translationTargetLanguage.isEmpty {
+                logger.logInfo("Speechmatics Melia-1 does not support translation; ignoring target \(config.translationTargetLanguage)")
+            }
+            translationTargetAPI = ""
+        } else {
+            translationTargetAPI = mapToSpeechmaticsCode(config.translationTargetLanguage)
+        }
         let translationEnabled = !translationTargetAPI.isEmpty
         let languageAPI = mapToSpeechmaticsCode(config.language)
 
@@ -94,12 +113,10 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         // `model` replaced the deprecated `operating_point` property and takes
-        // the same values plus `melia-1`. Our legacy internal name maps to the
-        // enhanced model. Melia-1 detects languages automatically and requires
-        // `language: "multi"`; a concrete user-picked language becomes a hint.
-        let model = config.modelName.isEmpty || config.modelName == "speechmatics-batch-v2"
-            ? "enhanced"
-            : config.modelName
+        // the same values plus `melia-1`. Melia-1 detects languages
+        // automatically and requires `language: "multi"`; a concrete
+        // user-picked language becomes a hint.
+        let model = apiModel
 
         var transcriptionConfig: [String: Any] = ["model": model]
         if model == "melia-1" {
