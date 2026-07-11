@@ -118,7 +118,7 @@ class TranscriptionManager: Transcriber {
     /// Returns the transcription model for the current mode if it's available and usable.
     public func getCurrentTranscriptionModel() -> (any TranscriptionModel)? {
         let provider = currentMode.transcriptionProvider
-        let modelName = currentMode.transcriptionModel
+        let modelName = TranscriptionModelProvider.normalizedCloudModelName(currentMode.transcriptionModel)
 
         if provider == .customTranscription && modelName == "custom" {
             return customTranscriptionSource.configuredModel
@@ -272,7 +272,12 @@ class TranscriptionManager: Transcriber {
             )
 
         case .openAI:
-            return .openAI(.init(apiKey: try requireAPIKey(model), modelName: model.name, language: selectedLanguage))
+            return .openAI(.init(
+                apiKey: try requireAPIKey(model),
+                modelName: model.name,
+                language: selectedLanguage,
+                isSpeakerDiarizationEnabled: diarizationEnabled
+            ))
 
         case .groq:
             return .groq(.init(
@@ -334,6 +339,7 @@ class TranscriptionManager: Transcriber {
         case .gladia:
             return .gladia(.init(
                 apiKey: try requireAPIKey(model),
+                modelName: model.name,
                 language: selectedLanguage,
                 vocabulary: CustomVocabulary.getTerms(),
                 isSpeakerDiarizationEnabled: diarizationEnabled,
@@ -343,6 +349,7 @@ class TranscriptionManager: Transcriber {
         case .speechmatics:
             return .speechmatics(.init(
                 apiKey: try requireAPIKey(model),
+                modelName: model.name,
                 language: selectedLanguage,
                 vocabulary: CustomVocabulary.getTerms(),
                 isSpeakerDiarizationEnabled: diarizationEnabled,

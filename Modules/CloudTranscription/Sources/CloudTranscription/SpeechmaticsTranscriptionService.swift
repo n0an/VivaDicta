@@ -16,6 +16,9 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
 
     public struct Config: Sendable {
         public let apiKey: String
+        /// Internal model name: `speechmatics-batch-v2` (the enhanced model)
+        /// or `melia-1` (multilingual with code-switching).
+        public let modelName: String
         public let language: String
         public let vocabulary: [String]
         public let isSpeakerDiarizationEnabled: Bool
@@ -24,12 +27,14 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
+            modelName: String = "speechmatics-batch-v2",
             language: String = "auto",
             vocabulary: [String] = [],
             isSpeakerDiarizationEnabled: Bool = false,
             translationTargetLanguage: String = ""
         ) {
             self.apiKey = apiKey
+            self.modelName = modelName
             self.language = language
             self.vocabulary = vocabulary
             self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
@@ -48,11 +53,30 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         self.networkService = networkService
     }
 
+    /// Maps our internal model name to the API `model` value. The legacy
+    /// internal name predates the `model` property and means the enhanced model.
+    private var apiModel: String {
+        config.modelName.isEmpty || config.modelName == "speechmatics-batch-v2"
+            ? "enhanced"
+            : config.modelName
+    }
+
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
         guard !config.apiKey.isEmpty else {
             throw CloudTranscriptionError.missingAPIKey
         }
-        let translationTargetAPI = mapToSpeechmaticsCode(config.translationTargetLanguage)
+        // Melia-1 does not support translation (Enhanced/Standard only);
+        // Speechmatics rejects melia-1 jobs carrying a translation_config.
+        // Drop a configured target so the user still gets their transcription.
+        let translationTargetAPI: String
+        if apiModel == "melia-1" {
+            if !config.translationTargetLanguage.isEmpty {
+                logger.logInfo("Speechmatics Melia-1 does not support translation; ignoring target \(config.translationTargetLanguage)")
+            }
+            translationTargetAPI = ""
+        } else {
+            translationTargetAPI = mapToSpeechmaticsCode(config.translationTargetLanguage)
+        }
         let translationEnabled = !translationTargetAPI.isEmpty
         let languageAPI = mapToSpeechmaticsCode(config.language)
 
@@ -88,10 +112,21 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         let boundary = "Boundary-\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        var transcriptionConfig: [String: Any] = [
-            "language": language.isEmpty ? "auto" : language,
-            "operating_point": "enhanced"
-        ]
+        // `model` replaced the deprecated `operating_point` property and takes
+        // the same values plus `melia-1`. Melia-1 detects languages
+        // automatically and requires `language: "multi"`; a concrete
+        // user-picked language becomes a hint.
+        let model = apiModel
+
+        var transcriptionConfig: [String: Any] = ["model": model]
+        if model == "melia-1" {
+            transcriptionConfig["language"] = "multi"
+            if !language.isEmpty, language != "auto" {
+                transcriptionConfig["language_hints"] = [language]
+            }
+        } else {
+            transcriptionConfig["language"] = language.isEmpty ? "auto" : language
+        }
         if config.isSpeakerDiarizationEnabled {
             transcriptionConfig["diarization"] = "speaker"
         }
