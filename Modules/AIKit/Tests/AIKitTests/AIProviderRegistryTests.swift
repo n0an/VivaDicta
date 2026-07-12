@@ -62,7 +62,7 @@ struct AIProviderRegistryTests {
         let keychain = MockKeychainService()
         seed(keychain, "ANTHROPIC_KEY", forKey: "anthropicAPIKey") // real key name -> catches a key-name swap
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"OK"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"OK"}]}"#.utf8), http(200)))
         let sut = makeSUT(keychain: keychain, net: net)
 
         let provider = try await sut.makeTextProvider(for: .anthropic, model: "claude-sonnet-4-6")
@@ -86,6 +86,23 @@ struct AIProviderRegistryTests {
 
         #expect(net.capturedRequest?.url?.absoluteString == "https://api.openai.com/v1/chat/completions")
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer OPENAI_KEY")
+    }
+
+    @Test func retiredModelIsReplacedBeforeBindingIntoRequest() async throws {
+        // Saved modes may still carry a retired model id; the registry maps it
+        // to the provider-recommended replacement so requests keep working.
+        let keychain = MockKeychainService()
+        seed(keychain, "GROQ_KEY", forKey: "groqAPIKey")
+        let net = MockNetworkService()
+        net.stubSendResponse = .success((Data(#"{"choices":[{"message":{"content":"OK"}}]}"#.utf8), http(200)))
+        let sut = makeSUT(keychain: keychain, net: net)
+
+        let provider = try await sut.makeTextProvider(for: .cloud(.groq), model: "qwen/qwen3-32b")
+        _ = try await provider.enhance(systemMessage: "S", userMessage: "U")
+
+        let body = try #require(net.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["model"] as? String == "openai/gpt-oss-120b")
     }
 
     @Test func missingAPIKeyThrowsNotConfigured() async {
@@ -179,5 +196,28 @@ struct AIProviderRegistryTests {
         #expect(net.capturedRequest?.url == url)                                                  // caller URL, no Keychain lookup
         #expect(net.capturedRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer custom-token")
         #expect(net.capturedRequest?.timeoutInterval == 120)                                       // caller timeout, not the cloud baseTimeout (300)
+    }
+
+    @Test func passthroughEndpointModelIsNotRewrittenByRetirementMap() async throws {
+        // A custom endpoint can legitimately serve an id retired elsewhere
+        // (e.g. a proxy exposing gpt-5.1); the registry must send it untouched.
+        let net = MockNetworkService()
+        net.stubSendResponse = .success((Data(#"{"choices":[{"message":{"content":"OK"}}]}"#.utf8), http(200)))
+        let sut = makeSUT(net: net)
+
+        let provider = try await sut.makeTextProvider(
+            for: .openAICompatibleEndpoint(
+                url: URL(string: "http://localhost:8080/v1/chat/completions")!,
+                headers: [:],
+                timeout: 120,
+                errorPrefix: "Custom"
+            ),
+            model: "gpt-5.1"
+        )
+        _ = try await provider.enhance(systemMessage: "S", userMessage: "U")
+
+        let body = try #require(net.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["model"] as? String == "gpt-5.1")
     }
 }

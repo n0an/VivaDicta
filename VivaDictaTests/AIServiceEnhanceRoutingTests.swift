@@ -155,7 +155,7 @@ struct AIServiceEnhanceRoutingTests {
         let keychain = MockKeychainService()
         _ = keychain.save("ANTHROPIC_KEY", forKey: "anthropicAPIKey")
         let net = MockNetworkService()
-        net.stubSendResponse = .success((Data(#"{"content":[{"text":"OK"}]}"#.utf8), http(200)))
+        net.stubSendResponse = .success((Data(#"{"content":[{"type":"text","text":"OK"}]}"#.utf8), http(200)))
 
         let sut = AIService(
             userDefaults: makeDefaults(),

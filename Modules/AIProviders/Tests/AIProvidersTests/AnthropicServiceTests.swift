@@ -42,7 +42,7 @@ struct AnthropicServiceTests {
     // MARK: - Request shape (non-streaming)
 
     @Test func enhanceSendsXAPIKeyHeaderNotBearer() async throws {
-        let body = Data(#"{"content":[{"text":"ok"}]}"#.utf8)
+        let body = Data(#"{"content":[{"type":"text","text":"ok"}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
 
         _ = try await sut.enhance(
@@ -60,7 +60,7 @@ struct AnthropicServiceTests {
     }
 
     @Test func enhanceSendsAnthropicMessagesBodyShape() async throws {
-        let body = Data(#"{"content":[{"text":"ok"}]}"#.utf8)
+        let body = Data(#"{"content":[{"type":"text","text":"ok"}]}"#.utf8)
         networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
 
         _ = try await sut.enhance(
@@ -95,6 +95,22 @@ struct AnthropicServiceTests {
 
         // Whitespace is trimmed and the output filter is applied.
         #expect(result == "enhanced output")
+    }
+
+    @Test func enhanceSkipsThinkingBlockBeforeTextBlock() async throws {
+        // Adaptive-thinking models (Sonnet 5+) emit a thinking block before the
+        // text block; the parser must pick the text block, not content[0].
+        let body = Data(#"{"content":[{"type":"thinking","thinking":"","signature":"sig"},{"type":"text","text":"cleaned up"}]}"#.utf8)
+        networkService.stubSendResponse = .success((body, makeHTTPResponse(200)))
+
+        let result = try await sut.enhance(
+            systemMessage: "system",
+            userMessage: "user",
+            apiKey: "sk-ant-test",
+            model: "claude-sonnet-5"
+        )
+
+        #expect(result == "cleaned up")
     }
 
     @Test func enhanceThrowsEnhancementFailedOnMalformedBody() async throws {

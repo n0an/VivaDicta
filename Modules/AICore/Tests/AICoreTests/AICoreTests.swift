@@ -82,8 +82,40 @@ struct AIProviderTests {
 
     @Test func defaultModelsAreStable() {
         #expect(AIProvider.apple.defaultModel == "foundation-model")
-        #expect(AIProvider.anthropic.defaultModel == "claude-sonnet-4-6")
-        #expect(AIProvider.openAI.defaultModel == "gpt-5.5")
+        #expect(AIProvider.anthropic.defaultModel == "claude-sonnet-5")
+        #expect(AIProvider.openAI.defaultModel == "gpt-5.6-terra")
+    }
+
+    @Test func defaultModelsAreListedAndNotRetired() {
+        // A provider's default must be selectable in the picker and must not
+        // itself be a retired id (the Cerebras llama3.1-8b default once was).
+        for provider in AIProvider.generalProviders where !provider.availableModels.isEmpty {
+            let defaultModel = provider.defaultModel
+            #expect(provider.availableModels.contains(defaultModel), "\(provider) default not in list")
+            #expect(AIProvider.retiredModelReplacements[provider]?[defaultModel] == nil, "\(provider) default is retired")
+        }
+    }
+
+    @Test func retiredModelsMapToCurrentReplacements() {
+        #expect(AIProvider.normalizedModel("qwen/qwen3-32b", for: .groq) == "openai/gpt-oss-120b")
+        #expect(AIProvider.normalizedModel("llama-3.1-8b-instant", for: .groq) == "openai/gpt-oss-20b")
+        #expect(AIProvider.normalizedModel("gpt-5.1", for: .openAI) == "gpt-5.5")
+        #expect(AIProvider.normalizedModel("llama3.1-8b", for: .cerebras) == "gpt-oss-120b")
+        // Unknown ids pass through untouched.
+        #expect(AIProvider.normalizedModel("gpt-5.6-terra", for: .openAI) == "gpt-5.6-terra")
+        // Retirement is provider-scoped: another provider legitimately serving
+        // the same id must not be rewritten.
+        #expect(AIProvider.normalizedModel("gpt-5.1", for: .customOpenAI) == "gpt-5.1")
+
+        for (provider, replacements) in AIProvider.retiredModelReplacements {
+            for replacement in replacements.values {
+                // No replacement may itself be retired (no chains) ...
+                #expect(replacements[replacement] == nil, "\(replacement) chains")
+                // ... and every replacement must be a live, listed model,
+                // which also catches replacement-id typos.
+                #expect(provider.availableModels.contains(replacement), "\(replacement) not listed for \(provider)")
+            }
+        }
     }
 
     // MARK: - Capability flags
