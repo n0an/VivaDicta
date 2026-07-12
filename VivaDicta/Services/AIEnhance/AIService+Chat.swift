@@ -826,10 +826,13 @@ extension AIService {
             throw chatHTTPError(statusCode: httpResponse.statusCode, errorString: errorString, provider: "Anthropic")
         }
 
+        // Adaptive-thinking models (Sonnet 5 and newer) can emit a `thinking`
+        // block before the text block, so pick the first text block rather
+        // than assuming content[0] is text.
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let content = json["content"] as? [[String: Any]],
-              let first = content.first,
-              let text = first["text"] as? String else {
+              let textBlock = content.first(where: { ($0["type"] as? String) == "text" }),
+              let text = textBlock["text"] as? String else {
             throw EnhancementError.invalidResponse
         }
 

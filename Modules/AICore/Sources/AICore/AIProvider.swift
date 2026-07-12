@@ -489,22 +489,33 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// their provider-recommended replacements. Saved mode selections may still
     /// carry the old id; normalize before binding a model into a request so
     /// those modes keep working after the provider-side shutdown.
-    public static let retiredModelReplacements: [String: String] = [
-        // Groq (qwen3-32b shut down 2026-07-17; Llama 3.x shut down 2026-08-16)
-        "qwen/qwen3-32b": "openai/gpt-oss-120b",
-        "llama-3.1-8b-instant": "openai/gpt-oss-20b",
-        "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
-        // OpenAI (gpt-5.1 and gpt-4.1-nano shut down 2026-07-23)
-        "gpt-5.1": "gpt-5.5",
-        "gpt-5.2": "gpt-5.5",
-        "gpt-4.1-nano": "gpt-5.4-nano",
-        // Cerebras (llama3.1-8b removed from the public catalog)
-        "llama3.1-8b": "gpt-oss-120b"
+    ///
+    /// Scoped per provider so passthrough routes (custom endpoints, OpenRouter,
+    /// Ollama, ...) are never rewritten - an id retired on one provider can be
+    /// legitimately served by a user-configured endpoint.
+    public static let retiredModelReplacements: [AIProvider: [String: String]] = [
+        // qwen3-32b shut down 2026-07-17; Llama 3.x shut down 2026-08-16
+        .groq: [
+            "qwen/qwen3-32b": "openai/gpt-oss-120b",
+            "llama-3.1-8b-instant": "openai/gpt-oss-20b",
+            "llama-3.3-70b-versatile": "openai/gpt-oss-120b"
+        ],
+        // gpt-5.1 and gpt-4.1-nano shut down 2026-07-23; gpt-5.2 is deprecated
+        .openAI: [
+            "gpt-5.1": "gpt-5.5",
+            "gpt-5.2": "gpt-5.5",
+            "gpt-4.1-nano": "gpt-5.4-nano"
+        ],
+        // llama3.1-8b was removed from the public catalog
+        .cerebras: [
+            "llama3.1-8b": "gpt-oss-120b"
+        ]
     ]
 
-    /// Maps a retired model id to its replacement; unknown ids pass through.
-    public static func normalizedModel(_ model: String) -> String {
-        retiredModelReplacements[model] ?? model
+    /// Maps a retired model id on `provider` to its replacement; unknown ids
+    /// and providers without retirements pass through.
+    public static func normalizedModel(_ model: String, for provider: AIProvider) -> String {
+        retiredModelReplacements[provider]?[model] ?? model
     }
 
     public var availableModels: [String] {

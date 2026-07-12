@@ -50,7 +50,15 @@ public struct AIProviderRegistry {
     public func makeTextProvider(for route: AIProviderRoute, model: String) async throws -> any AITextProvider {
         // Saved mode selections can outlive a provider's model lineup; map
         // retired ids to their replacements so those modes keep working.
-        let model = AIProvider.normalizedModel(model)
+        // Only routes bound to a known provider catalog are normalized -
+        // passthrough routes (custom endpoints, Ollama, OpenRouter, ...) send
+        // the user-entered id untouched.
+        let model = switch route {
+        case .anthropic: AIProvider.normalizedModel(model, for: .anthropic)
+        case .cloud(let provider): AIProvider.normalizedModel(model, for: provider)
+        case .openAIOAuth: AIProvider.normalizedModel(model, for: .openAI)
+        default: model
+        }
         switch route {
         case .appleFoundationModel(let samplingProfile):
             if #available(iOS 26, macOS 26, *) {
