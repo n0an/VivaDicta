@@ -17,10 +17,14 @@ public struct TranscriptionOutputFilter {
         #"\{.*?\}"#      // {}
     ]
 
-    /// Hesitation sounds that have no real-word collisions across the supported
-    /// languages. Always stripped regardless of language.
+    /// Hesitation sounds that have no real-word collisions in any language.
+    /// Always stripped regardless of language.
+    ///
+    /// "um" is NOT universal: it's a core German preposition ("um zu", "um 10 Uhr")
+    /// and the Portuguese indefinite article ("um homem"), so it lives in the
+    /// per-language lists below instead.
     private static let universalFillers = [
-        "uh", "um", "uhm", "umm", "uhh", "uhhh",
+        "uh", "uhm", "umm", "uhh", "uhhh",
         "hmm", "hm", "mmm", "mm", "mh"
     ]
 
@@ -28,11 +32,11 @@ public struct TranscriptionOutputFilter {
     /// and are therefore only stripped when the transcript's language is known
     /// (either explicitly via the mode or detected with high confidence).
     private static let fillersByLanguage: [String: [String]] = [
-        "en": ["ah", "eh", "ehh", "ha"],
-        "ru": ["ээ", "эээ", "ээээ", "э-э", "э-э-э", "эм", "эмм", "ыы", "ыыы"],
-        "es": ["ehm", "ehmm", "eee", "eeh"],
+        "en": ["um", "ah", "eh", "ehh", "ha"],
+        "ru": ["um", "ээ", "эээ", "ээээ", "э-э", "э-э-э", "эм", "эмм", "ыы", "ыыы"],
+        "es": ["um", "ehm", "ehmm", "eee", "eeh"],
         "de": ["äh", "ähm", "ähh", "ähhh", "ähmm", "öh", "öhm"],
-        "fr": ["euh", "euhh", "euhhh", "euhm", "heu", "heuu"]
+        "fr": ["um", "euh", "euhh", "euhhh", "euhm", "heu", "heuu"]
     ]
 
     /// Returns true if the text contains meaningful content for a transcription.
@@ -54,7 +58,9 @@ public struct TranscriptionOutputFilter {
     ///   - language: ISO 639-1 code from the active mode (e.g. "en", "ru") or "auto"/nil.
     ///     When unspecified or "auto", `NLLanguageRecognizer` is used; if detection
     ///     also fails, English is the final fallback.
-    public static func filter(_ text: String, language: String? = nil) -> String {
+    ///   - removeFillers: When false, hesitation sounds are kept verbatim. Hallucination
+    ///     markers (bracketed segments, tag blocks) are stripped either way.
+    public static func filter(_ text: String, language: String? = nil, removeFillers: Bool = true) -> String {
         var filteredText = text
 
         // Remove <TAG>...</TAG> blocks
@@ -72,20 +78,25 @@ public struct TranscriptionOutputFilter {
             }
         }
 
-        // Resolve language and pick filler set.
-        let resolvedLanguage = resolveLanguage(explicit: language, text: text) ?? "en"
-        var fillers = universalFillers
-        if let extras = fillersByLanguage[resolvedLanguage] {
-            fillers.append(contentsOf: extras)
-        }
-
-        // Remove filler words
-        for fillerWord in fillers {
-            let pattern = "\\b\(NSRegularExpression.escapedPattern(for: fillerWord))\\b[,.]?"
-            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
-                let range = NSRange(filteredText.startIndex..., in: filteredText)
-                filteredText = regex.stringByReplacingMatches(in: filteredText, options: [], range: range, withTemplate: "")
+        // Resolve language, pick filler set, and remove filler words.
+        let fillerLanguage: String
+        if removeFillers {
+            let resolvedLanguage = resolveLanguage(explicit: language, text: text) ?? "en"
+            fillerLanguage = resolvedLanguage
+            var fillers = universalFillers
+            if let extras = fillersByLanguage[resolvedLanguage] {
+                fillers.append(contentsOf: extras)
             }
+
+            for fillerWord in fillers {
+                let pattern = "\\b\(NSRegularExpression.escapedPattern(for: fillerWord))\\b[,.]?"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                    let range = NSRange(filteredText.startIndex..., in: filteredText)
+                    filteredText = regex.stringByReplacingMatches(in: filteredText, options: [], range: range, withTemplate: "")
+                }
+            }
+        } else {
+            fillerLanguage = "off"
         }
 
         // Clean whitespace while preserving intentional line breaks.
@@ -97,9 +108,9 @@ public struct TranscriptionOutputFilter {
 
         // Log results
         if filteredText != text {
-            logger.notice("📝 Output filter (\(resolvedLanguage, privacy: .public)) result: \(filteredText, privacy: .public)")
+            logger.notice("📝 Output filter (\(fillerLanguage, privacy: .public)) result: \(filteredText, privacy: .public)")
         } else {
-            logger.notice("📝 Output filter (\(resolvedLanguage, privacy: .public)) result (unchanged): \(filteredText, privacy: .public)")
+            logger.notice("📝 Output filter (\(fillerLanguage, privacy: .public)) result (unchanged): \(filteredText, privacy: .public)")
         }
 
         return filteredText

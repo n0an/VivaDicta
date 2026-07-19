@@ -172,7 +172,8 @@ class TranscriptionManager: Transcriber {
             language: Self.outputLanguage(
                 transcriptionLanguage: currentMode.transcriptionLanguage,
                 translationTargetLanguage: currentMode.translationTargetLanguage
-            )
+            ),
+            removeFillers: UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isFillerRemovalEnabled) as? Bool ?? true
         )
 
         if currentMode.isAutoTextFormattingEnabled && transcriptionResult.isSpeakerAttributed == false {
