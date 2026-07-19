@@ -16,6 +16,20 @@ struct TranscriptionServiceResultTests {
         #expect(result.text == "Alice: hi")
         #expect(result.isSpeakerAttributed == true)
     }
+
+    @Test func helpersDefaultToNilLanguageProbabilities() {
+        #expect(TranscriptionServiceResult.plain("hello").languageProbabilities == nil)
+        #expect(TranscriptionServiceResult.speakerAttributed("Alice: hi").languageProbabilities == nil)
+    }
+
+    @Test func carriesLanguageProbabilities() {
+        let result = TranscriptionServiceResult(
+            text: "hello",
+            languageProbabilities: ["en": 0.7, "ru": 0.2]
+        )
+        #expect(result.languageProbabilities == ["en": 0.7, "ru": 0.2])
+        #expect(result.isSpeakerAttributed == false)
+    }
 }
 
 struct TranscriptionProgressInfoTests {

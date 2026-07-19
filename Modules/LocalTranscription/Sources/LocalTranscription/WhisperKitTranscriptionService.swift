@@ -82,14 +82,27 @@ public final class WhisperKitTranscriptionService: @unchecked Sendable {
                 .joined(separator: " ")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
 
+            let languageProbabilities = await detectLanguageProbabilities(
+                whisperKit: whisperKit,
+                audioURL: audioURL,
+                options: options
+            )
+
             if options.isSpeakerDiarizationEnabled,
                let diarizedResult = await makeSpeakerAttributedResult(from: result, audioURL: audioURL) {
                 logger.logNotice("✅ WhisperKit diarization completed successfully")
-                return diarizedResult
+                return TranscriptionServiceResult(
+                    text: diarizedResult.text,
+                    isSpeakerAttributed: diarizedResult.isSpeakerAttributed,
+                    languageProbabilities: languageProbabilities
+                )
             }
 
             logger.logNotice("✅ WhisperKit transcription completed, model kept in memory")
-            return .plain(transcribedText)
+            return TranscriptionServiceResult(
+                text: transcribedText,
+                languageProbabilities: languageProbabilities
+            )
         } catch {
             logger.logError("❌ WhisperKit transcription failed: \(error.localizedDescription)")
             throw TranscriptionError.transcriptionFailed
@@ -135,6 +148,28 @@ public final class WhisperKitTranscriptionService: @unchecked Sendable {
     public var currentModelState: ModelState { modelState }
 
     // MARK: - Private
+
+    /// Runs Whisper's language-identification pass and returns the full
+    /// probability distribution over language tokens, or `nil` when the pass
+    /// is skipped (explicit language selected) or fails. Detection is
+    /// best-effort: a failure here must never fail the transcription itself.
+    private func detectLanguageProbabilities(
+        whisperKit: WhisperKit,
+        audioURL: URL,
+        options: Options
+    ) async -> [String: Double]? {
+        guard options.language == "auto" else { return nil }
+
+        do {
+            let detection = try await whisperKit.detectLanguage(audioPath: audioURL.path)
+            let probabilities = detection.langProbs.mapValues { Double($0) }
+            logger.logNotice("🌐 Language detection: \(detection.language) (\(probabilities.count) languages scored)")
+            return probabilities
+        } catch {
+            logger.logError("⚠️ Language detection failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
 
     private func loadModel(modelName: String) async throws {
         if currentModelName == modelName && modelState == .loaded {

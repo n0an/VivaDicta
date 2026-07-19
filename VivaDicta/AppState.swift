@@ -240,7 +240,7 @@ class AppState {
     /// - Returns: The transcribed text.
     /// - Throws: Any error from the underlying transcription service.
     func transcribe(audioURL: URL) async throws -> String {
-        return try await transcriptionManager.transcribe(audioURL: audioURL)
+        return try await transcriptionManager.transcribe(audioURL: audioURL).text
     }
     
     

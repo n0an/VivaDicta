@@ -34,6 +34,7 @@ private struct PendingTranscriptionData {
     let transcriptionDuration: TimeInterval
     let modelContext: ModelContext
     let sourceTag: String?
+    let languageProbabilities: [String: Double]?
 }
 
 /// View model managing audio recording, transcription, and enhancement workflow.
@@ -431,7 +432,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 try Task.checkCancellation()
 
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(
+                let transcriptionResult = try await transcriptionManager.transcribe(
                     audioURL: audioURLToTranscribe,
                     progressHandler: { progress in
                         await MainActor.run {
@@ -439,6 +440,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         }
                     }
                 )
+                let transcribedText = transcriptionResult.text
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
                 // Check for cancellation after transcription
@@ -484,7 +486,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
                         transcriptionDuration: transcriptionDuration,
                         modelContext: modelContext,
-                        sourceTag: resolvedSourceTag
+                        sourceTag: resolvedSourceTag,
+                        languageProbabilities: transcriptionResult.languageProbabilities
                     )
 
                     // Update state to show enhancing animation
@@ -546,7 +549,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         audioDuration: audioDuration,
                         transcriptionDuration: transcriptionDuration,
                         modelContext: modelContext,
-                        sourceTag: resolvedSourceTag
+                        sourceTag: resolvedSourceTag,
+                        languageProbabilities: transcriptionResult.languageProbabilities
                     )
                     textToShare = enhancedText ?? transcribedText
 
@@ -713,7 +717,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     transcriptionDuration: pending.transcriptionDuration,
                     enhancementDuration: nil,
                     powerModeId: aiService.selectedMode.id.uuidString,
-                    sourceTag: pending.sourceTag
+                    sourceTag: pending.sourceTag,
+                    languageProbabilities: pending.languageProbabilities
                 )
 
                 pending.modelContext.insert(transcription)
@@ -842,7 +847,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         audioDuration: Double,
         transcriptionDuration: TimeInterval?,
         modelContext: ModelContext,
-        sourceTag: String?
+        sourceTag: String?,
+        languageProbabilities: [String: Double]? = nil
     ) throws -> Transcription {
         let transcription = Transcription(
             text: transcribedText,
@@ -857,7 +863,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             transcriptionDuration: transcriptionDuration,
             enhancementDuration: enhancementDur,
             powerModeId: aiService.selectedMode.id.uuidString,
-            sourceTag: sourceTag
+            sourceTag: sourceTag,
+            languageProbabilities: languageProbabilities
         )
 
         modelContext.insert(transcription)

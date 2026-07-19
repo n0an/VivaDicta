@@ -11,6 +11,7 @@ import TranscriptionCore
 final class MockTranscriber: Transcriber {
     var currentMode: VivaMode
     var stubbedText: String
+    var stubbedLanguageProbabilities: [String: Double]?
     private(set) var setCurrentModeCalls: [VivaMode] = []
     private(set) var transcribeCallCount = 0
 
@@ -26,8 +27,11 @@ final class MockTranscriber: Transcriber {
 
     func getCurrentTranscriptionModel() -> (any TranscriptionModel)? { nil }
 
-    func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String {
+    func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> TranscriptionServiceResult {
         transcribeCallCount += 1
-        return stubbedText
+        return TranscriptionServiceResult(
+            text: stubbedText,
+            languageProbabilities: stubbedLanguageProbabilities
+        )
     }
 }

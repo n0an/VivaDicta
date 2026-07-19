@@ -44,8 +44,8 @@ struct RecordEnhanceStoreAcceptanceTests {
         }
         func setCurrentMode(_ mode: VivaMode) { currentMode = mode }
         func getCurrentTranscriptionModel() -> (any TranscriptionModel)? { nil }
-        func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String {
-            stubbedText
+        func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> TranscriptionServiceResult {
+            .plain(stubbedText)
         }
     }
 

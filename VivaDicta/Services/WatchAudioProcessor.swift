@@ -68,7 +68,8 @@ final class WatchAudioProcessor {
 
             // Transcribe
             let transcriptionStart = Date()
-            let transcribedText = try await transcriptionManager.transcribe(audioURL: audioURL, progressHandler: nil)
+            let transcriptionResult = try await transcriptionManager.transcribe(audioURL: audioURL, progressHandler: nil)
+            let transcribedText = transcriptionResult.text
             let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
             // Validate
@@ -114,7 +115,8 @@ final class WatchAudioProcessor {
                 transcriptionDuration: transcriptionDuration,
                 enhancementDuration: enhancementDuration,
                 powerModeId: aiService.selectedMode.id.uuidString,
-                sourceTag: sourceTag
+                sourceTag: sourceTag,
+                languageProbabilities: transcriptionResult.languageProbabilities
             )
 
             transcription.timestamp = recordingTimestamp

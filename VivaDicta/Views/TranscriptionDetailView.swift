@@ -37,6 +37,7 @@ struct TranscriptionDetailView: View {
     @State private var showPresetPicker: Bool = false
     @State private var showExtractedRemindersSheet: Bool = false
     @State private var showMetaInfo: Bool = false
+    @State private var showLanguageScores: Bool = false
     @State private var showConfigureAI: Bool = false
     @State private var showConfigureChat: Bool = false
     @State private var generatingPresetId: String?
@@ -459,6 +460,10 @@ struct TranscriptionDetailView: View {
             )
             .presentationDetents([.medium])
         }
+        .sheet(isPresented: $showLanguageScores) {
+            LanguageScoresView(probabilities: transcription.languageProbabilities ?? [:])
+                .presentationDetents([.medium, .large])
+        }
         .sheet(isPresented: $showPresetPicker) {
             PresetPickerSheet(
                 presetManager: appState.presetManager,
@@ -546,6 +551,11 @@ struct TranscriptionDetailView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 8) {
+                    if transcription.languageProbabilities?.isEmpty == false {
+                        Button("Language Scores", systemImage: "globe") {
+                            showLanguageScores = true
+                        }
+                    }
                     Button("Info", systemImage: "info.circle") {
                         showMetaInfo = true
                     }
@@ -1088,13 +1098,14 @@ struct TranscriptionDetailView: View {
 
             do {
                 let transcriptionStart = Date()
-                let newText = try await appState.transcriptionManager.transcribe(audioURL: audioURL)
+                let result = try await appState.transcriptionManager.transcribe(audioURL: audioURL)
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
-                transcription.text = newText
+                transcription.text = result.text
                 transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
                 transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
+                transcription.languageProbabilities = result.languageProbabilities
 
                 // Update Spotlight index (AppState method is @concurrent - runs off MainActor)
                 let entity = transcription.entity

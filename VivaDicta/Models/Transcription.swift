@@ -95,6 +95,11 @@ class Transcription {
     /// Source that created this transcription (app, keyboard, shareExtension, actionExtension, macApp).
     var sourceTag: String?
 
+    /// Whisper language-identification probabilities keyed by language code
+    /// (e.g. `["en": 0.72, "ru": 0.21]`). Only set for local WhisperKit
+    /// transcriptions made with automatic language detection.
+    var languageProbabilities: [String: Double]?
+
     /// AI-generated text variations (Summary, Action Points, Professional, etc.).
     @Relationship(deleteRule: .cascade)
     var variations: [TranscriptionVariation]? = []
@@ -129,6 +134,7 @@ class Transcription {
     ///   - promptName: Name of the enhancement prompt.
     ///   - transcriptionDuration: Time taken to transcribe.
     ///   - enhancementDuration: Time taken to enhance.
+    ///   - languageProbabilities: Whisper language-identification scores, if available.
     init(text: String,
          enhancedText: String? = nil,
          audioDuration: TimeInterval,
@@ -141,7 +147,8 @@ class Transcription {
          transcriptionDuration: TimeInterval? = nil,
          enhancementDuration: TimeInterval? = nil,
          powerModeId: String? = nil,
-         sourceTag: String? = nil) {
+         sourceTag: String? = nil,
+         languageProbabilities: [String: Double]? = nil) {
         self.text = text
         self.enhancedText = enhancedText
         self.timestamp = Date()
@@ -156,6 +163,7 @@ class Transcription {
         self.enhancementDuration = enhancementDuration
         self.powerModeId = powerModeId
         self.sourceTag = sourceTag
+        self.languageProbabilities = languageProbabilities
     }
 
     /// Appends new raw transcription text to the original note body.

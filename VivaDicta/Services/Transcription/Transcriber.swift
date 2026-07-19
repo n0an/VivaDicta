@@ -25,6 +25,7 @@ protocol Transcriber {
     func getCurrentTranscriptionModel() -> (any TranscriptionModel)?
 
     /// Transcribe `audioURL` under the current mode, apply the post-processing
-    /// pipeline, and return the final text.
-    func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String
+    /// pipeline, and return the final text plus backend metadata (e.g.
+    /// language-identification scores from local WhisperKit).
+    func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> TranscriptionServiceResult
 }

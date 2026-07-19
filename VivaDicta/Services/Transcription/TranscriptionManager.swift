@@ -146,11 +146,13 @@ class TranscriptionManager: Transcriber {
 
     /// Transcribes audio using the current mode's model via `TranscriptionEngine`,
     /// then applies the app's post-processing pipeline (filter, text formatter,
-    /// replacements, trailing-period strip).
+    /// replacements, trailing-period strip). The returned result carries the
+    /// processed text plus backend metadata (speaker attribution, WhisperKit
+    /// language-identification scores).
     public func transcribe(
         audioURL: URL,
         progressHandler: TranscriptionProgressHandler? = nil
-    ) async throws -> String {
+    ) async throws -> TranscriptionServiceResult {
         guard let model = getCurrentTranscriptionModel() else {
             throw TranscriptionError.transcriptionFailed
         }
@@ -194,7 +196,11 @@ class TranscriptionManager: Transcriber {
             outputLength: result.count
         ))
 
-        return result
+        return TranscriptionServiceResult(
+            text: result,
+            isSpeakerAttributed: transcriptionResult.isSpeakerAttributed,
+            languageProbabilities: transcriptionResult.languageProbabilities
+        )
     }
 
     /// Resolves the language of the transcription *output* for post-processing.
