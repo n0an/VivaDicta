@@ -37,6 +37,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled)
     private var isStripTrailingPeriodEnabled: Bool = false
 
+    @AppStorage(UserDefaultsStorage.Keys.isFillerRemovalEnabled)
+    private var isFillerRemovalEnabled: Bool = true
+
     @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
     private var defaultAIModeId: String = ""
 
@@ -139,6 +142,16 @@ struct AdvancedSettingsView: View {
             }
 
             Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Remove Filler Words", isOn: $isFillerRemovalEnabled)
+                        .onChange(of: isFillerRemovalEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Strips hesitation sounds like \"uh\", \"um\", \"ähm\" from transcripts, matched to the transcript's language. Disable to keep them verbatim. Applies to all modes.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Trim Trailing Period", isOn: $isStripTrailingPeriodEnabled)
                         .onChange(of: isStripTrailingPeriodEnabled) { _, _ in

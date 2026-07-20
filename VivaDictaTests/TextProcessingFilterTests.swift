@@ -127,12 +127,57 @@ struct TranscriptionOutputFilterTests {
     // MARK: - filter Tests — Multilingual Fillers
 
     @Test func filter_universalFillers_strippedRegardlessOfLanguage() {
-        // "uh", "um", "hmm" should be removed for any language.
-        let inputRu = "Это um важное hmm сообщение для теста."
+        // "uh", "uhm", "hmm" should be removed for any language.
+        let inputRu = "Это uhm важное hmm сообщение для теста."
         let result = TranscriptionOutputFilter.filter(inputRu, language: "ru")
 
-        #expect(result.contains("um") == false)
+        #expect(result.contains("uhm") == false)
         #expect(result.contains("hmm") == false)
+    }
+
+    @Test(arguments: ["en", "ru", "es", "fr"])
+    func filter_um_strippedForLanguagesWhereItIsNotAWord(lang: String) {
+        let result = TranscriptionOutputFilter.filter("start um end", language: lang)
+
+        #expect(result.contains("um") == false, "[\(lang)] expected \"um\" to be removed; got: \(result)")
+    }
+
+    @Test func filter_germanUm_preserved() {
+        // German "um" is a core preposition ("um zu", "um 10 Uhr"), not a filler -
+        // it must survive while genuine German fillers are stripped.
+        let input = "Wir treffen uns um 10 Uhr, ähm, um das Projekt zu besprechen."
+        let result = TranscriptionOutputFilter.filter(input, language: "de")
+
+        #expect(result.contains("um 10 Uhr"), "expected German \"um\" to be kept; got: \(result)")
+        #expect(result.contains("um das Projekt zu besprechen"), "expected German \"um\" to be kept; got: \(result)")
+        #expect(result.contains("ähm") == false, "expected \"ähm\" to be removed; got: \(result)")
+    }
+
+    @Test func filter_portugueseUm_preserved() {
+        // Portuguese "um" is the indefinite article. Portuguese has no per-language
+        // filler list, so only universal fillers apply - "um" must survive.
+        let input = "Eu vi um homem na rua."
+        let result = TranscriptionOutputFilter.filter(input, language: "pt")
+
+        #expect(result.contains("um homem"), "expected Portuguese \"um\" to be kept; got: \(result)")
+    }
+
+    // MARK: - filter Tests — Filler Removal Toggle
+
+    @Test func filter_removeFillersDisabled_keepsFillerWords() {
+        let input = "So uh I think um we should hmm go"
+        let result = TranscriptionOutputFilter.filter(input, language: "en", removeFillers: false)
+
+        #expect(result == input)
+    }
+
+    @Test func filter_removeFillersDisabled_stillStripsHallucinations() {
+        // The toggle only gates filler words - hallucination markers go either way.
+        let input = "Hello [background noise] um world"
+        let result = TranscriptionOutputFilter.filter(input, language: "en", removeFillers: false)
+
+        #expect(result.contains("[background noise]") == false)
+        #expect(result.contains("um"), "expected \"um\" to be kept with fillers off; got: \(result)")
     }
 
     @Test(arguments: [

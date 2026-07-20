@@ -95,6 +95,7 @@ public enum UserDefaultsStorage {
         public static let isChatEnabled = "isChatEnabled"
         public static let isLiveTranslationEnabled = "isLiveTranslationEnabled"
         public static let isStripTrailingPeriodEnabled = "isStripTrailingPeriodEnabled"
+        public static let isFillerRemovalEnabled = "isFillerRemovalEnabled"
 
         /// UUID string of the mode used for AI actions in note detail when the
         /// currently selected mode has no AI processing configured. Empty = none.
