@@ -132,7 +132,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         switch self {
         case .groq: "whisper-large-v3-turbo"
         case .mistral: "voxtral-mini-latest"
-        case .gemini: "gemini-3.5-flash"
+        case .gemini: "gemini-3.6-flash"
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-4o-mini-transcribe"
@@ -435,13 +435,35 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
 
             // Gemini Models
             CloudModel(
+                name: "gemini-3.6-flash",
+                displayName: "Gemini 3.6 Flash",
+                description: "Google's latest fast multimodal model, successor to 3.5 Flash with better quality at lower cost.",
+                provider: .gemini,
+                speed: 0.93,
+                accuracy: 0.93,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3.5-flash",
                 displayName: "Gemini 3.5 Flash",
-                description: "Google's latest stable fast multimodal model with strong transcription quality.",
+                description: "Google's previous-generation fast multimodal model, superseded by Gemini 3.6 Flash.",
                 provider: .gemini,
                 speed: 0.92,
                 accuracy: 0.92,
                 cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
+                name: "gemini-3.5-flash-lite",
+                displayName: "Gemini 3.5 Flash Lite",
+                description: "Google's fastest 3.5-class model (350 tokens/sec) with significantly better quality than 3.1 Flash Lite.",
+                provider: .gemini,
+                speed: 0.97,
+                accuracy: 0.88,
+                cost: 0.2,  // Slightly above 3.1 Flash Lite tier - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),

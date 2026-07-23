@@ -14,15 +14,17 @@ public enum GeminiAPIClient {
 
     /// Default model for Gemini OAuth requests.
     /// Matches `AIProvider.gemini.defaultModel` so picker defaults agree across auth modes.
-    public static let defaultModel = "gemini-3.5-flash"
+    public static let defaultModel = "gemini-3.6-flash"
 
     /// Models available via Gemini OAuth (Cloud Code Assist endpoint).
     /// Kept in sync with `AIProvider.gemini.availableModels` since the Cloud Code Assist
     /// endpoint exposes the same generateContent surface as the standard API.
     public static let supportedModels: [String] = [
+        "gemini-3.6-flash",
         "gemini-3.1-pro-preview",
         "gemini-3.5-flash",
         "gemini-3-flash-preview",
+        "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
         "gemini-3.1-flash-lite-preview",
         "gemini-2.5-pro",
