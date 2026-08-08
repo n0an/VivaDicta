@@ -68,6 +68,24 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static let localProviders: [TranscriptionModelProvider] = [
         .whisperKit,
         .parakeet]
+
+    /// Soniox's current realtime model. Declared here rather than on
+    /// `SonioxRealtimeSTTClient` because this file is also compiled into the
+    /// app extensions, which don't link the app-only realtime client.
+    ///
+    /// Soniox retired `stt-rt-v4` on 2026-06-30; it still resolves as an alias
+    /// to v5, but name the current model explicitly rather than depend on that
+    /// aliasing surviving.
+    /// `nonisolated` so the realtime client - an actor - can read it without
+    /// hopping to MainActor just to look up a string constant.
+    nonisolated static let sonioxRealtimeModel = "stt-rt-v5"
+
+    /// Models that transcribe over a live socket while the user speaks, rather
+    /// than uploading the finished file. These need the engine-backed capture
+    /// path - `AVAudioRecorder` hands out no buffers to stream.
+    static func isStreamingModel(_ modelName: String) -> Bool {
+        modelName == sonioxRealtimeModel
+    }
     
     static let cloudProviders: [TranscriptionModelProvider] = [
         .groq,
@@ -220,6 +238,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 recommended: true,
                 speed: 0.95,
                 accuracy: 0.98,
+                cost: 0.25,
+                supportManyLanguages: true,
+                supportedLanguages: sonioxLanguages
+            ),
+
+            CloudModel(
+                name: sonioxRealtimeModel,
+                displayName: "Soniox Realtime (stt-rt-v5)",
+                description: "Streams audio to Soniox while you speak instead of uploading after you stop, so the transcript is essentially ready the moment you finish. Same 60+ language coverage as the async model. Falls back to the standard upload path if the connection drops.",
+                provider: .soniox,
+                speed: 1.0,
+                accuracy: 0.97,
                 cost: 0.25,
                 supportManyLanguages: true,
                 supportedLanguages: sonioxLanguages

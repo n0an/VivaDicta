@@ -163,6 +163,23 @@ class TranscriptionManager: Transcriber {
             progress: progressHandler
         )
 
+        return postProcess(transcriptionResult, model: model, startTime: startTime)
+    }
+
+    /// Runs the same post-processing the file-based path applies, for text that
+    /// arrived over the realtime WebSocket instead of an upload. Keeping this
+    /// one implementation is the point - filters, formatting, replacements, and
+    /// the completion analytics must not diverge between the two paths.
+    public func postProcessStreamedText(_ text: String, startTime: Date) -> String {
+        guard let model = getCurrentTranscriptionModel() else { return text }
+        return postProcess(.plain(text), model: model, startTime: startTime)
+    }
+
+    private func postProcess(
+        _ transcriptionResult: TranscriptionServiceResult,
+        model: any TranscriptionModel,
+        startTime: Date
+    ) -> String {
         // When inline translation is active (e.g. Soniox Spanish → Russian) the
         // output text is in the TARGET language, so the filler set must match the
         // target, not the source transcription language - otherwise target-language

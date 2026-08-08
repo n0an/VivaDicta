@@ -30,4 +30,11 @@ final class MockTranscriber: Transcriber {
         transcribeCallCount += 1
         return stubbedText
     }
+
+    func postProcessStreamedText(_ text: String, startTime: Date) -> String {
+        postProcessStreamedCallCount += 1
+        return text
+    }
+
+    private(set) var postProcessStreamedCallCount = 0
 }

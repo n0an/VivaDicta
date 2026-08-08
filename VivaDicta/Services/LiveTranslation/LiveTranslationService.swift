@@ -167,8 +167,8 @@ final class LiveTranslationService {
         sttTask = Task { [weak self] in
             let stream = await sttClient.connect(
                 apiKey: apiKey,
-                sourceLanguage: sourceLang,
-                targetLanguage: targetLang,
+                languageHints: [sourceLang.rawValue],
+                mode: .translation(target: targetLang),
                 vocabularyTerms: vocabularyTerms
             )
             for await event in stream {
