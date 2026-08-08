@@ -53,12 +53,20 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
         self.networkService = networkService
     }
 
-    /// Maps our internal model name to the API `model` value. The legacy
-    /// internal name predates the `model` property and means the enhanced model.
+    /// Maps our internal model name to the API `model` value. The internal names
+    /// carry a `speechmatics-` prefix so they stay unique in the shared cloud
+    /// model catalog; `speechmatics-batch-v2` is the legacy name for `enhanced`
+    /// and predates the `model` property. `melia-1` is already unambiguous and
+    /// passes through unchanged.
     private var apiModel: String {
-        config.modelName.isEmpty || config.modelName == "speechmatics-batch-v2"
-            ? "enhanced"
-            : config.modelName
+        switch config.modelName {
+        case "", "speechmatics-batch-v2":
+            return "enhanced"
+        case "speechmatics-standard":
+            return "standard"
+        default:
+            return config.modelName
+        }
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {

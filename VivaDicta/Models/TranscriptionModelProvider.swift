@@ -121,7 +121,9 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// selections may still carry the old name; normalize before any
     /// catalog lookup so those modes keep transcribing.
     static let renamedCloudModels: [String: String] = [
-        "stt-async-v4": "stt-async-v5"  // Soniox retired v4 on 2026-06-30
+        "stt-async-v4": "stt-async-v5",  // Soniox retired v4 on 2026-06-30
+        "scribe_v1": "scribe_v2",  // ElevenLabs removed Scribe v1 on 2026-07-09
+        "universal-3-pro": "universal-3-5-pro"  // AssemblyAI dropped it from the speech_models enum
     ]
 
     static func normalizedCloudModelName(_ name: String) -> String {
@@ -135,7 +137,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .gemini: "gemini-3.6-flash"
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
-        case .openAI: "gpt-4o-mini-transcribe"
+        case .openAI: "gpt-transcribe"
         case .soniox: "stt-async-v5"
         case .gladia: "solaria-1"
         case .speechmatics: "speechmatics-batch-v2"
@@ -274,6 +276,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "speechmatics-standard",
+                displayName: "Speechmatics Standard",
+                description: "Speechmatics' fastest and cheapest tier - lower accuracy than Enhanced, but the quickest turnaround across the same 50+ languages.",
+                provider: .speechmatics,
+                speed: 0.9,
+                accuracy: 0.92,
+                cost: 0.35,
+                supportManyLanguages: true,
+                supportedLanguages: speechmaticsLanguages
+            ),
+
+            CloudModel(
                 name: "voxtral-mini-latest",
                 displayName: "Voxtral Mini V2",
                 description: "State-of-the-art transcription with ~4% WER, speaker diarization, and 3-hour audio support. New signups get $500 free credits",
@@ -348,6 +362,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "cohere-transcribe-arabic-07-2026",
+                displayName: "Cohere Transcribe Arabic",
+                description: "Cohere's Arabic-specialist model, built for dialect variation and Arabic-English code-switching. Arabic and English only - pick Cohere Transcribe for other languages. Free trial tier with rate limits.",
+                provider: .cohere,
+                speed: 0.85,
+                accuracy: 0.97,
+                cost: 0.1,
+                supportManyLanguages: true,
+                supportedLanguages: cohereArabicLanguages
+            ),
+
+            CloudModel(
                 name: "universal-3-5-pro",
                 displayName: "AssemblyAI Universal-3.5 Pro",
                 description: "AssemblyAI's latest and most accurate Universal model with native code switching, improved speaker diarization and automatic language detection. Unsupported languages fall back to Universal-2 automatically. New accounts get $50 in free credits, no credit card required.",
@@ -355,18 +381,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 recommended: true,
                 speed: 0.9,
                 accuracy: 0.99,
-                cost: 0.5,
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-
-            CloudModel(
-                name: "universal-3-pro",
-                displayName: "AssemblyAI Universal-3 Pro",
-                description: "AssemblyAI's previous-generation Universal Pro model with broad multilingual coverage, automatic language detection and speaker diarization. New accounts get $50 in free credits, no credit card required.",
-                provider: .assemblyAI,
-                speed: 0.85,
-                accuracy: 0.98,
                 cost: 0.5,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
@@ -415,18 +429,6 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 description: "Enhanced accuracy model supporting 92+ languages with improved accent handling. Free tier: ~150 mins/month",
                 provider: .elevenLabs,
                 speed: 0.75,
-                accuracy: 1.0,
-                cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
-                supportManyLanguages: true,
-                supportedLanguages: allLanguages
-            ),
-
-            CloudModel(
-                name: "scribe_v1",
-                displayName: "Scribe v1",
-                description: "Industry-leading accuracy with excellent accent handling for batch transcription. Free tier: ~150 mins/month",
-                provider: .elevenLabs,
-                speed: 0.7,
                 accuracy: 1.0,
                 cost: 0.95,  // $0.0067/min - Free tier: 10K chars/month (~2.5 hours STT, non-commercial use only)
                 supportManyLanguages: true,
@@ -526,6 +528,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "gpt-transcribe",
+                displayName: "GPT Transcribe",
+                description: "OpenAI's recommended transcription model - roughly half Whisper's word error rate at a lower price per minute, with stronger handling of accents and noisy audio. No word-level timestamps.",
+                provider: .openAI,
+                recommended: true,
+                speed: 0.8,
+                accuracy: 0.97,
+                cost: 0.6,  // $0.0045/min - between GPT-4o Mini ($0.003) and GPT-4o ($0.006)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gpt-4o-transcribe",
                 displayName: "GPT-4o Transcribe",
                 description: "OpenAI's latest model with reduced hallucinations and enhanced accuracy across all languages",
@@ -580,6 +594,13 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Cohere supports 14 languages. No auto-detect - language must be specified.
     static let cohereLanguages: [String: String] = {
         let codes = ["en", "fr", "de", "it", "es", "pt", "el", "nl", "pl", "zh", "ja", "ko", "vi", "ar"]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
+
+    /// Cohere Transcribe Arabic is trained on Arabic and English only, including
+    /// code-switching between the two.
+    static let cohereArabicLanguages: [String: String] = {
+        let codes = ["ar", "en"]
         return allLanguages.filter { codes.contains($0.key) }
     }()
 

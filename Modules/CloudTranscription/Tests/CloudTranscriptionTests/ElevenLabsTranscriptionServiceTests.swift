@@ -39,7 +39,7 @@ struct ElevenLabsTranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "el-test-key",
-        modelName: String = "scribe_v1",
+        modelName: String = "scribe_v2",
         language: String = "auto",
         isSpeakerDiarizationEnabled: Bool = false
     ) -> ElevenLabsTranscriptionService {

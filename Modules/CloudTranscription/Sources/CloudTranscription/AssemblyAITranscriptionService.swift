@@ -117,8 +117,6 @@ public struct AssemblyAITranscriptionService: TranscriptionService, Sendable {
         switch config.modelName {
         case "", "universal-3-5-pro":
             models = ["universal-3-5-pro", "universal-2"]
-        case "universal-3-pro":
-            models = ["universal-3-pro", "universal-2"]
         default:
             models = [config.modelName]
         }
