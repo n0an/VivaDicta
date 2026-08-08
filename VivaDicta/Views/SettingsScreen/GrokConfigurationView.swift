@@ -141,6 +141,16 @@ private struct GrokSubscriptionSection: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 8)
 
+            // The opened URI usually carries the code already, so copying is an
+            // explicit action - it clobbers the clipboard and shows the system
+            // paste banner, which is rude to do on the user's behalf.
+            Button("Copy Code", systemImage: "doc.on.doc") {
+                UIPasteboard.general.string = code.userCode
+                HapticManager.success()
+            }
+            .font(.caption)
+            .frame(maxWidth: .infinity, alignment: .center)
+
             if let url = URL(string: code.browserURI) {
                 Link(destination: url) {
                     Label("Open x.ai to approve", systemImage: "arrow.up.right.square")
@@ -193,9 +203,6 @@ private struct GrokSubscriptionSection: View {
                 let code = try await aiService.startGrokDeviceCodeFlow()
                 deviceCode = code
 
-                // The pre-filled URI usually carries the code, but copy it too so
-                // the user can paste if xAI asks them to type it.
-                UIPasteboard.general.string = code.userCode
                 if let url = URL(string: code.browserURI) {
                     await UIApplication.shared.open(url)
                 }
@@ -207,6 +214,9 @@ private struct GrokSubscriptionSection: View {
                 deviceCode = nil
             } catch {
                 deviceCode = nil
+                // A cancelled request can still surface as a transport error,
+                // so don't alert on a sign-in the user walked away from.
+                guard !Task.isCancelled else { return }
                 errorMessage = error.localizedDescription
                 showError = true
                 HapticManager.error()
@@ -397,7 +407,14 @@ private struct GrokFallbackNote: View {
             }
             .foregroundStyle(.secondary)
 
-            Text("If the subscription cannot be used, the API key is tried automatically.")
+            // Be precise about which failure falls back: a broken token quietly
+            // switches to the key, but xAI refusing the plan is reported instead
+            // of silently spending API credits.
+            Text("If the sign-in cannot be used - the token fails to refresh, for example - the API key is used automatically.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+            Text("If xAI refuses the subscription itself, that is reported rather than switched to the API key.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         }

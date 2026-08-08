@@ -5,6 +5,7 @@ import Foundation
 @testable import OAuth
 import OAuthMocks
 import KeychainMocks
+import Networking
 import NetworkingMocks
 import TestUtilities
 
@@ -238,6 +239,31 @@ struct DeviceCodeFlowTests {
                 deviceCode: makeDeviceCode(expiresIn: 0)
             )
         }
+    }
+
+    /// A dropped connection (commonly -1005 right after the app backgrounds for
+    /// the browser) is transient - keep polling rather than failing the sign-in.
+    @Test func transientTransportErrorIsRetriedAsPending() async throws {
+        network.stubSendResponses = [
+            .failure(NetworkError.transport(URLError(.networkConnectionLost))),
+            .success((tokenBody(), httpResponse(200)))
+        ]
+
+        let credential = try await sut.pollForDeviceCodeToken(provider: provider, deviceCode: makeDeviceCode())
+
+        #expect(credential.accessToken == "granted-token")
+        #expect(network.sendCallCount == 2)
+    }
+
+    /// Cancelling the in-flight poll must read as cancellation, not as a network
+    /// failure - the caller stays silent instead of alerting the user.
+    @Test func cancelledRequestSurfacesAsCancellationError() async {
+        network.stubSendResponses = [.failure(NetworkError.transport(URLError(.cancelled)))]
+
+        await #expect(throws: CancellationError.self) {
+            _ = try await sut.pollForDeviceCodeToken(provider: provider, deviceCode: makeDeviceCode())
+        }
+        #expect(sut.isSignedIn(provider: provider) == false)
     }
 
     @Test func assumesOneHourLifetimeWhenTokenResponseOmitsExpiry() async throws {

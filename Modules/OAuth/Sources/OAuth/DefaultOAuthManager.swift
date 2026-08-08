@@ -287,7 +287,11 @@ public final class DefaultOAuthManager: OAuthManager {
         let data: Data
         do {
             data = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny).0
-        } catch NetworkError.transport(let underlying) where (underlying as? URLError)?.code != .cancelled {
+        } catch NetworkError.transport(let underlying) where (underlying as? URLError)?.code == .cancelled {
+            // The user cancelled mid-request. Report it as cancellation so the
+            // caller can stay silent instead of raising a network error.
+            throw CancellationError()
+        } catch NetworkError.transport(let underlying) {
             // Transient failure (commonly -1005 right after backgrounding);
             // treat as pending and retry on the next tick.
             logger.logInfo("Device-code poll network error, retrying: \(underlying.localizedDescription)")
