@@ -406,7 +406,8 @@ class TranscriptionManager: Transcriber {
                 apiEndpoint: customModel.apiEndpoint,
                 apiKey: customModel.apiKey,
                 modelName: customModel.modelName,
-                language: selectedLanguage
+                language: selectedLanguage,
+                requestFormat: customModel.requestFormat
             ))
         }
     }

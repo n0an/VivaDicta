@@ -8,9 +8,9 @@ import Testing
 import TranscriptionCore
 
 /// Tests exercise `CustomTranscriptionService` end-to-end with a stubbed
-/// `MockNetworkService`. Verifies request shape (URL, method, headers,
-/// multipart body) and response handling (success, non-2xx, undecodable
-/// JSON).
+/// `MockNetworkService`. Verifies request shape (URL, method, headers, and
+/// both body formats - multipart and JSON/base64) and response handling
+/// (success, non-2xx, undecodable JSON).
 ///
 /// Unlike the fixed-provider services, this service builds its endpoint from
 /// `config.apiEndpoint`, so the endpoint assertions match whatever base URL
@@ -53,17 +53,27 @@ struct CustomTranscriptionServiceTests {
         apiEndpoint: String = endpoint,
         apiKey: String? = "custom-test-key",
         modelName: String = "whisper-1",
-        language: String = "auto"
+        language: String = "auto",
+        requestFormat: CustomTranscriptionRequestFormat = .multipartFormData
     ) -> CustomTranscriptionService {
         CustomTranscriptionService(
             config: .init(
                 apiEndpoint: apiEndpoint,
                 apiKey: apiKey,
                 modelName: modelName,
-                language: language
+                language: language,
+                requestFormat: requestFormat
             ),
             networkService: networkService
         )
+    }
+
+    /// Decodes the captured body as the JSON object the `.jsonBase64` format
+    /// is supposed to produce.
+    private func capturedJSONBody(_ networkService: MockNetworkService) throws -> [String: Any] {
+        let body = try #require(networkService.capturedBody)
+        let object = try JSONSerialization.jsonObject(with: body)
+        return try #require(object as? [String: Any])
     }
 
     // MARK: - Success path
@@ -174,6 +184,102 @@ struct CustomTranscriptionServiceTests {
         let body = try #require(networkService.capturedBody)
         let bodyString = try #require(String(data: body, encoding: .utf8))
         #expect(bodyString.contains("name=\"language\"") == false)
+    }
+
+    // MARK: - JSON / base64 request format
+
+    @Test func jsonFormatSendsApplicationJSONContentTypeWithoutBoundary() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, requestFormat: .jsonBase64)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let req = try #require(networkService.capturedRequest)
+        #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/json")
+    }
+
+    @Test func jsonFormatInlinesAudioAsBase64DataURI() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, requestFormat: .jsonBase64)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let json = try capturedJSONBody(networkService)
+        let file = try #require(json["file"] as? String)
+        let prefix = "data:audio/wav;base64,"
+        #expect(file.hasPrefix(prefix))
+
+        let payload = String(file.dropFirst(prefix.count))
+        let decoded = try #require(Data(base64Encoded: payload))
+        #expect(decoded == (try Data(contentsOf: audio)))
+    }
+
+    @Test func jsonFormatBodyContainsModelResponseFormatAndTemperature() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(
+            networkService: networkService,
+            modelName: "custom-stt-v2",
+            requestFormat: .jsonBase64
+        )
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let json = try capturedJSONBody(networkService)
+        #expect(json["model"] as? String == "custom-stt-v2")
+        #expect(json["response_format"] as? String == "json")
+        #expect(json["temperature"] as? Double == 0)
+    }
+
+    @Test func jsonFormatIncludesLanguageWhenNotAuto() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, language: "de", requestFormat: .jsonBase64)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let json = try capturedJSONBody(networkService)
+        #expect(json["language"] as? String == "de")
+    }
+
+    @Test func jsonFormatOmitsLanguageWhenAuto() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, language: "auto", requestFormat: .jsonBase64)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let json = try capturedJSONBody(networkService)
+        #expect(json["language"] == nil)
+    }
+
+    @Test func jsonFormatSuccessReturnsTranscribedText() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "base64 hello")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, requestFormat: .jsonBase64)
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.text == "base64 hello")
+        #expect(networkService.uploadCallCount == 1)
+    }
+
+    @Test func jsonFormatMissingAudioFileThrowsAudioFileNotFound() async {
+        let networkService = MockNetworkService()
+        let audio = URL.temporaryDirectory.appending(path: "definitely-not-a-real-file-\(UUID()).wav")
+        let sut = makeService(networkService: networkService, requestFormat: .jsonBase64)
+
+        await #expect(throws: CloudTranscriptionError.self) {
+            _ = try await sut.transcribe(audioURL: audio)
+        }
     }
 
     // MARK: - Validation / short-circuit
