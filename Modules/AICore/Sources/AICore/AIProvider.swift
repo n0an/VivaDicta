@@ -390,13 +390,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .openAI:
             return "gpt-5.6-terra"
         case .grok:
-            // grok-4.5 is the newest flagship but is not yet available in the EU;
-            // grok-4.3 works everywhere.
-            return "grok-4.3"
+            return "grok-4.5"
         case .zai:
             return "glm-5.2"
         case .kimi:
-            return "kimi-k2.6"
+            return "kimi-k3"
         case .minimax:
             return "MiniMax-M3"
         case .elevenLabs:
@@ -506,9 +504,15 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "gpt-5.2": "gpt-5.5",
             "gpt-4.1-nano": "gpt-5.4-nano"
         ],
-        // llama3.1-8b was removed from the public catalog
+        // llama3.1-8b was removed from the public catalog;
+        // zai-glm-4.7 is deprecated from 2026-08-17
         .cerebras: [
-            "llama3.1-8b": "gpt-oss-120b"
+            "llama3.1-8b": "gpt-oss-120b",
+            "zai-glm-4.7": "gpt-oss-120b"
+        ],
+        // kimi-k2.5 is closed to new users and sunsets 2026-08-31
+        .kimi: [
+            "kimi-k2.5": "kimi-k2.6"
         ]
     ]
 
@@ -523,9 +527,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .apple:
             return ["foundation-model"]
         case .cerebras:
+            // zai-glm-4.7 is deprecated on Cerebras from 2026-08-17; legacy
+            // selections are mapped forward via `retiredModelReplacements`.
             return [
                 "gpt-oss-120b",
-                "zai-glm-4.7"
+                "gemma-4-31b"
             ]
         case .groq:
             // Groq retired the Llama 3.x and qwen3-32b models in mid-2026;
@@ -548,7 +554,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gemini-2.5-flash-lite"
             ]
         case .anthropic:
+            // claude-fable-5 is the top capability tier; it always thinks and
+            // rejects an explicit `thinking: disabled`. We never send a thinking
+            // parameter, so it works as-is - AnthropicService already skips the
+            // leading thinking block when reading the response.
             return [
+                "claude-fable-5",
+                "claude-opus-5",
                 "claude-opus-4-8",
                 "claude-opus-4-7",
                 "claude-opus-4-6",
@@ -576,8 +588,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gpt-4o-mini"
             ]
         case .grok:
-            // grok-4.5 is xAI's newest flagship (not yet EU-available at launch,
-            // so grok-4.3 stays the default).
+            // grok-4.5 is xAI's newest flagship. It was EU-blocked at launch;
+            // EU API access opened 2026-07-17, so it is now the default.
             return [
                 "grok-4.5",
                 "grok-4.3",
@@ -596,9 +608,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "glm-4.6"
             ]
         case .kimi:
+            // kimi-k2.5 closed to new users and sunsets 2026-08-31; legacy
+            // selections are mapped forward via `retiredModelReplacements`.
             return [
+                "kimi-k3",
+                "kimi-k2.7-code",
+                "kimi-k2.7-code-highspeed",
                 "kimi-k2.6",
-                "kimi-k2.5",
                 "moonshot-v1-128k",
                 "moonshot-v1-32k",
                 "moonshot-v1-8k"
