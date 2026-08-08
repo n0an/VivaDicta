@@ -89,6 +89,17 @@ Cloud transcription services use dynamic MIME types derived from the audio file 
 
 The iOS app records WAV (16kHz mono PCM). The Watch app records M4A (16kHz mono AAC). On-device providers (WhisperKit, Parakeet) use AVFoundation to load audio files and handle format detection automatically - no MIME type needed.
 
+## Custom Endpoint Request Formats
+
+`CustomTranscriptionService` can send the same set of fields (`file`, `model`, `language`, `response_format`, `temperature`) in two wire formats, selected per endpoint via `CustomTranscriptionRequestFormat` and stored on `CustomTranscriptionModel.requestFormat`:
+
+| Format | Content-Type | `file` field |
+|--------|--------------|--------------|
+| `.multipartFormData` (default) | `multipart/form-data; boundary=…` | raw audio bytes as a file part |
+| `.jsonBase64` | `application/json` | `data:<mime-type>;base64,<payload>` string |
+
+OpenAI's own API and most self-hosted Whisper servers want multipart. Some gateways only accept the JSON/base64 shape and answer multipart with HTTP 400, so the user picks the format in `AddCustomTranscriptionModelView`. Configurations saved before the field existed decode as `.multipartFormData`.
+
 ## Model Availability Checking
 
 ```

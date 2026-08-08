@@ -7,6 +7,7 @@
 
 import Foundation
 import AppGroup
+import CloudTranscription
 import Keychain
 import os
 
@@ -62,7 +63,13 @@ final class CustomTranscriptionModelManager: CustomTranscriptionModelSource {
 
     // MARK: - Save/Update
 
-    func saveConfiguration(apiEndpoint: String, apiKey: String, modelName: String, isMultilingual: Bool) -> Bool {
+    func saveConfiguration(
+        apiEndpoint: String,
+        apiKey: String,
+        modelName: String,
+        isMultilingual: Bool,
+        requestFormat: CustomTranscriptionRequestFormat
+    ) -> Bool {
         let errors = validateConfiguration(apiEndpoint: apiEndpoint, modelName: modelName)
         guard errors.isEmpty else {
             return false
@@ -82,7 +89,8 @@ final class CustomTranscriptionModelManager: CustomTranscriptionModelSource {
             displayName: "Custom",
             apiEndpoint: apiEndpoint.trimmingCharacters(in: .whitespaces),
             modelName: modelName.trimmingCharacters(in: .whitespaces),
-            isMultilingual: isMultilingual
+            isMultilingual: isMultilingual,
+            requestFormat: requestFormat
         )
 
         saveModel()

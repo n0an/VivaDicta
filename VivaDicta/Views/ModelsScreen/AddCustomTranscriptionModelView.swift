@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.01.17
 //
 
+import CloudTranscription
 import SwiftUI
 
 struct AddCustomTranscriptionModelView: View {
@@ -16,6 +17,7 @@ struct AddCustomTranscriptionModelView: View {
     @State private var apiKey: String = ""
     @State private var modelName: String = ""
     @State private var isMultilingual: Bool = true
+    @State private var requestFormat: CustomTranscriptionRequestFormat = .multipartFormData
     @State private var isChecking = false
     @State private var connectionStatus: ConnectionStatus = .unknown
     @State private var showingClearConfirmation = false
@@ -140,6 +142,25 @@ struct AddCustomTranscriptionModelView: View {
                                 }
 
                             Text("The model identifier as expected by your API server")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        // Request format picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Request Format")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Picker("Request Format", selection: $requestFormat) {
+                                ForEach(CustomTranscriptionRequestFormat.allCases, id: \.self) { format in
+                                    Text(format.title).tag(format)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+
+                            Text(requestFormat.explanation)
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
                         }
@@ -351,6 +372,7 @@ struct AddCustomTranscriptionModelView: View {
         apiEndpoint = model.apiEndpoint
         modelName = model.modelName
         isMultilingual = model.isMultilingual
+        requestFormat = model.requestFormat
 
         if let existingKey = manager.apiKey {
             apiKey = existingKey
@@ -379,7 +401,8 @@ struct AddCustomTranscriptionModelView: View {
             apiEndpoint: trimmedEndpoint,
             apiKey: trimmedApiKey,
             modelName: trimmedModelName,
-            isMultilingual: isMultilingual
+            isMultilingual: isMultilingual,
+            requestFormat: requestFormat
         )
 
         handleSaveResult(success)
@@ -409,6 +432,24 @@ struct AddCustomTranscriptionModelView: View {
         manager.clearConfiguration()
         onSave()
         dismiss()
+    }
+}
+
+private extension CustomTranscriptionRequestFormat {
+    var title: LocalizedStringKey {
+        switch self {
+        case .multipartFormData: "Multipart"
+        case .jsonBase64: "JSON Base64"
+        }
+    }
+
+    var explanation: LocalizedStringKey {
+        switch self {
+        case .multipartFormData:
+            "Uploads the audio as a binary file. Works with OpenAI and most self-hosted servers."
+        case .jsonBase64:
+            "Sends a JSON body with the audio inlined as a Base64 data URI. Pick this if the server rejects file uploads."
+        }
     }
 }
 
