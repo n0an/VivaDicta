@@ -203,15 +203,15 @@ struct AssemblyAITranscriptionServiceTests {
         #expect(body["speech_models"] as? [String] == ["universal-3-5-pro", "universal-2"])
     }
 
-    @Test func createBodyAppendsUniversal2FallbackForUniversal3Pro() async throws {
+    @Test func createBodyAppendsUniversal2FallbackForEmptyModelName() async throws {
         let networkService = MockNetworkService()
         try stubHappyFlow(on: networkService)
         let audio = try makeAudioFile()
-        let sut = makeService(networkService: networkService, modelName: "universal-3-pro")
+        let sut = makeService(networkService: networkService, modelName: "")
 
         _ = try await sut.transcribe(audioURL: audio)
 
-        #expect(try createBody(networkService)["speech_models"] as? [String] == ["universal-3-pro", "universal-2"])
+        #expect(try createBody(networkService)["speech_models"] as? [String] == ["universal-3-5-pro", "universal-2"])
     }
 
     @Test func createBodyUsesSpecifiedModelWhenNotDefault() async throws {

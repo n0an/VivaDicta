@@ -162,6 +162,38 @@ struct OpenAITranscriptionServiceTests {
         #expect(bodyString.contains("name=\"language\"") == false)
     }
 
+    // MARK: - gpt-transcribe
+
+    @Test func gptTranscribeSendsLanguagesArrayFieldAndOmitsTemperature() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+
+        let sut = makeService(networkService: networkService, modelName: "gpt-transcribe", language: "en")
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.range(of: "name=\"languages\\[\\]\"\\s*\\r\\n\\r\\nen", options: .regularExpression) != nil)
+        // OpenAI rejects a request carrying both `language` and `languages[]`.
+        #expect(bodyString.contains("name=\"language\"") == false)
+        #expect(bodyString.contains("name=\"temperature\"") == false)
+    }
+
+    @Test func gptTranscribeOmitsLanguagesFieldWhenAuto() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+
+        let sut = makeService(networkService: networkService, modelName: "gpt-transcribe", language: "auto")
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try #require(networkService.capturedBody)
+        let bodyString = try #require(String(data: body, encoding: .utf8))
+        #expect(bodyString.contains("name=\"languages[]\"") == false)
+        #expect(bodyString.range(of: "name=\"response_format\"\\s*\\r\\n\\r\\njson", options: .regularExpression) != nil)
+    }
+
     // MARK: - Diarize model (gpt-4o-transcribe-diarize)
 
     @Test func diarizeModelBodySendsChunkingStrategyAndOmitsLanguageAndTemperature() async throws {

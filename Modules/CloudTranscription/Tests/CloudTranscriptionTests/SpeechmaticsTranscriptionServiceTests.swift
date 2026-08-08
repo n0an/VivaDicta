@@ -178,6 +178,19 @@ struct SpeechmaticsTranscriptionServiceTests {
         #expect(!body.contains("operating_point"))
     }
 
+    @Test func configBodyMapsPrefixedStandardNameToStandardModel() async throws {
+        let networkService = MockNetworkService()
+        try stubHappyFlow(on: networkService)
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, modelName: "speechmatics-standard", language: "de")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let body = try uploadBodyString(networkService)
+        #expect(body.contains("\"model\":\"standard\""))
+        #expect(body.contains("\"language\":\"de\""))
+    }
+
     @Test func configBodyMelia1UsesMultiLanguageWithHint() async throws {
         let networkService = MockNetworkService()
         try stubHappyFlow(on: networkService)

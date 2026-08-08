@@ -40,6 +40,13 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
         config.modelName == "gpt-4o-transcribe-diarize"
     }
 
+    /// `gpt-transcribe` replaced the singular `language` field with a repeated
+    /// `languages[]` hint list (OpenAI rejects requests carrying both), and does
+    /// not accept `temperature`.
+    private var isGPTTranscribeModel: Bool {
+        config.modelName == "gpt-transcribe"
+    }
+
     private let config: Config
     private let networkService: any NetworkService
 
@@ -147,8 +154,9 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
         body.append(crlf.data(using: .utf8)!)
 
         if !isDiarizeModel, config.language != "auto", !config.language.isEmpty {
+            let languageField = isGPTTranscribeModel ? "languages[]" : "language"
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(languageField)\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append(config.language.data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
         }
@@ -164,7 +172,7 @@ public struct OpenAITranscriptionService: TranscriptionService, Sendable {
             body.append("Content-Disposition: form-data; name=\"chunking_strategy\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append("auto".data(using: .utf8)!)
             body.append(crlf.data(using: .utf8)!)
-        } else {
+        } else if !isGPTTranscribeModel {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
             body.append("Content-Disposition: form-data; name=\"temperature\"\(crlf)\(crlf)".data(using: .utf8)!)
             body.append("0".data(using: .utf8)!)

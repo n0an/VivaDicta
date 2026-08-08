@@ -398,7 +398,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .minimax:
             return "MiniMax-M3"
         case .elevenLabs:
-            return "scribe_v1"
+            return "scribe_v2"
         case .deepgram:
             return "whisper-1"
         case .mistral:
