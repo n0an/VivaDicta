@@ -26,4 +26,17 @@ public protocol OAuthManager {
 
     /// Returns a valid access token, refreshing if needed.
     func validAccessToken(for provider: some OAuthProvider) async throws -> (token: String, accountId: String?, projectId: String?)
+
+    /// Requests a device code (RFC 8628) for providers that advertise a
+    /// ``OAuthProvider/deviceCodeURL``. The caller shows the returned
+    /// `userCode`, opens `browserURI`, then awaits
+    /// ``pollForDeviceCodeToken(provider:deviceCode:)``.
+    ///
+    /// Throws ``OAuthError/deviceCodeUnsupported(_:)`` for redirect-only providers.
+    func startDeviceCodeFlow(provider: some OAuthProvider) async throws -> DeviceCodeResponse
+
+    /// Polls the token endpoint until the user authorizes `deviceCode`, then
+    /// stores and returns the credential. Cancelling the surrounding task
+    /// abandons the poll.
+    func pollForDeviceCodeToken(provider: some OAuthProvider, deviceCode: DeviceCodeResponse) async throws -> OAuthCredential
 }

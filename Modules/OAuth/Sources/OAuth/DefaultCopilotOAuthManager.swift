@@ -291,19 +291,28 @@ public struct DeviceCodeResponse: Sendable {
     public let deviceCode: String
     public let userCode: String
     public let verificationUri: String
+    /// Verification URI with the user code pre-filled (RFC 8628 optional field).
+    /// Preferred over ``verificationUri`` when the issuer supplies it, since it
+    /// saves the user from typing the code.
+    public let verificationUriComplete: String?
     public let interval: Int
     public let expiresIn: Int
+
+    /// The URI to open in the browser - pre-filled when available.
+    public var browserURI: String { verificationUriComplete ?? verificationUri }
 
     public init(
         deviceCode: String,
         userCode: String,
         verificationUri: String,
+        verificationUriComplete: String? = nil,
         interval: Int,
         expiresIn: Int
     ) {
         self.deviceCode = deviceCode
         self.userCode = userCode
         self.verificationUri = verificationUri
+        self.verificationUriComplete = verificationUriComplete
         self.interval = interval
         self.expiresIn = expiresIn
     }

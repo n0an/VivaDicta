@@ -68,6 +68,7 @@ class AIService {
         case copilot
         case geminiOAuth
         case openAIOAuth
+        case grokOAuth
         case openAICompatibleCloud
         case ollama
         case customOpenAI
@@ -85,6 +86,11 @@ class AIService {
     public var isGeminiSignedIn: Bool = false
     public var geminiEmail: String?
     public var isGeminiSigningIn: Bool = false
+
+    // MARK: - Grok OAuth (SuperGrok / X Premium subscription)
+    public var isGrokSignedIn: Bool = false
+    public var grokEmail: String?
+    public var isGrokSigningIn: Bool = false
 
     // MARK: - GitHub Copilot
     public var isCopilotSignedIn: Bool = false
@@ -223,6 +229,7 @@ class AIService {
         switch provider {
         case .openAI: return isOpenAISignedIn
         case .gemini: return isGeminiSignedIn
+        case .grok: return isGrokSignedIn
         case .copilot: return isCopilotSignedIn
         default: return false
         }
@@ -277,6 +284,7 @@ class AIService {
         Task {
             refreshOpenAIOAuthState()
             refreshGeminiOAuthState()
+            refreshGrokOAuthState()
             refreshCopilotOAuthState()
             refreshConnectedProviders()
             await dismissTranscriptionTipsIfModelConfigured()
@@ -821,6 +829,8 @@ class AIService {
             // OpenAI is connected (via OpenAI OAuth or API key)
         } else if aiProvider == .gemini && connectedProviders.contains(.gemini) {
             // Gemini is connected (via Gemini OAuth or API key)
+        } else if aiProvider == .grok && connectedProviders.contains(.grok) {
+            // Grok is connected (via subscription OAuth or API key)
         } else if aiProvider == .copilot && isCopilotSignedIn {
             // Copilot is connected (OAuth only, no API key)
         } else {
@@ -1111,6 +1121,11 @@ class AIService {
                 return nil
             }
             return .anthropic
+        case .grok:
+            if isGrokSignedIn {
+                return .grokOAuth
+            }
+            return aiProvider.supportsResponseStreaming(model: mode.aiModel) ? .openAICompatibleCloud : nil
         case .copilot:
             return isCopilotSignedIn ? .copilot : nil
         case .ollama:
@@ -1258,6 +1273,22 @@ class AIService {
                     break
                 } else {
                     throw EnhancementError.customError(error.errorDescription ?? "OpenAI OAuth error")
+                }
+            }
+        case .grokOAuth:
+            do {
+                let provider = try await aiProviderRegistry.makeTextProvider(for: .grokOAuth, model: mode.aiModel)
+                let result = try await provider.enhanceStreaming(systemMessage: sysMsg, userMessage: userMsg, onPartialResponse: onPartialResponse)
+                return await finalizeStreamingResult(result, onPartialResponse: onPartialResponse)
+            } catch let error as EnhancementError {
+                // Carries the 403 subscription message - actionable as-is.
+                throw error
+            } catch let error as OAuthError {
+                if self.getAPIKey(for: aiProvider) != nil {
+                    logger.logWarning("Grok OAuth streaming failed, falling back to API key: \(error.localizedDescription)")
+                    break
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "Grok OAuth error")
                 }
             }
         case .openAICompatibleCloud:
@@ -1811,6 +1842,9 @@ class AIService {
                     && VivAgentsClient.isVerified
                     && VivAgentsClient.isGeminiCliActive
                 return cliAvailable || isGeminiSignedIn || provider.apiKey != nil
+            }
+            if provider == .grok {
+                return isGrokSignedIn || provider.apiKey != nil
             }
             if provider == .copilot {
                 return isCopilotSignedIn
@@ -2531,6 +2565,51 @@ extension AIService {
         oauthManager.signOut(provider: provider)
         isGeminiSignedIn = false
         geminiEmail = nil
+        refreshConnectedProviders()
+    }
+}
+
+// MARK: - Grok OAuth
+
+extension AIService {
+    /// Refreshes the Grok OAuth state from stored credentials.
+    @MainActor
+    func refreshGrokOAuthState() {
+        let provider = GrokOAuthProvider()
+        isGrokSignedIn = oauthManager.isSignedIn(provider: provider)
+        grokEmail = oauthManager.accountEmail(for: provider)
+    }
+
+    /// Starts the xAI device-code flow. The caller shows `userCode`, opens
+    /// `browserURI`, then awaits ``signInWithGrok(deviceCode:)``.
+    ///
+    /// Split in two because the user has to authorize in a browser between the
+    /// steps - the same shape as the Copilot flow.
+    @MainActor
+    func startGrokDeviceCodeFlow() async throws -> DeviceCodeResponse {
+        try await oauthManager.startDeviceCodeFlow(provider: GrokOAuthProvider())
+    }
+
+    /// Polls xAI until the device code is authorized, then stores the credential.
+    @MainActor
+    func signInWithGrok(deviceCode: DeviceCodeResponse) async throws {
+        isGrokSigningIn = true
+        defer { isGrokSigningIn = false }
+
+        let provider = GrokOAuthProvider()
+        let credential = try await oauthManager.pollForDeviceCodeToken(provider: provider, deviceCode: deviceCode)
+        isGrokSignedIn = true
+        grokEmail = credential.accountEmail
+        refreshConnectedProviders()
+    }
+
+    /// Signs out from Grok OAuth.
+    @MainActor
+    func signOutFromGrok() {
+        let provider = GrokOAuthProvider()
+        oauthManager.signOut(provider: provider)
+        isGrokSignedIn = false
+        grokEmail = nil
         refreshConnectedProviders()
     }
 }

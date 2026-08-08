@@ -34,6 +34,8 @@ extension AIService {
             return isOpenAISignedIn || provider.apiKey != nil
         case .gemini:
             return isGeminiSignedIn || provider.apiKey != nil
+        case .grok:
+            return isGrokSignedIn || provider.apiKey != nil
         case .copilot:
             return isCopilotSignedIn
         default:
@@ -184,6 +186,34 @@ extension AIService {
                     )
                 }
                 throw EnhancementError.customError(error.errorDescription ?? "Gemini OAuth error")
+            }
+
+        case .grokOAuth:
+            do {
+                let (token, _, _) = try await oauthManager.validAccessToken(for: GrokOAuthProvider())
+                guard let url = URL(string: provider.baseURL) else {
+                    throw EnhancementError.customError("Invalid URL for \(provider.displayName)")
+                }
+                return try await makeOpenAIChatStreamingRequest(
+                    url: url,
+                    model: model,
+                    systemMessage: systemMessage,
+                    messages: messages,
+                    headers: ["Authorization": "Bearer \(token)"],
+                    onPartialResponse: onPartialResponse
+                )
+            } catch let error as OAuthError {
+                if let apiKey = provider.apiKey, let url = URL(string: provider.baseURL) {
+                    return try await makeOpenAIChatStreamingRequest(
+                        url: url,
+                        model: model,
+                        systemMessage: systemMessage,
+                        messages: messages,
+                        headers: ["Authorization": "Bearer \(apiKey)"],
+                        onPartialResponse: onPartialResponse
+                    )
+                }
+                throw EnhancementError.customError(error.errorDescription ?? "Grok OAuth error")
             }
 
         case nil:
@@ -355,7 +385,7 @@ extension AIService {
     // MARK: - Private Helpers
 
     private enum ChatStreamingRoute {
-        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI, openAIOAuth, geminiOAuth
+        case anthropic, openAICompatibleCloud, copilot, ollama, customOpenAI, openAIOAuth, geminiOAuth, grokOAuth
     }
 
     private func chatStreamingRoute(for provider: AIProvider, model: String) -> ChatStreamingRoute? {
@@ -379,6 +409,14 @@ extension AIService {
         case .gemini:
             if isGeminiSignedIn {
                 return .geminiOAuth
+            }
+            if provider.supportsResponseStreaming(model: model), provider.apiKey != nil {
+                return .openAICompatibleCloud
+            }
+            return nil
+        case .grok:
+            if isGrokSignedIn {
+                return .grokOAuth
             }
             if provider.supportsResponseStreaming(model: model), provider.apiKey != nil {
                 return .openAICompatibleCloud
@@ -417,6 +455,14 @@ extension AIService {
                 headers["Authorization"] = "Bearer \(apiKey)"
             }
             return (url, headers)
+
+        case .grok where isGrokSignedIn:
+            // Subscription token in the API key's place - same endpoint.
+            let (token, _, _) = try await oauthManager.validAccessToken(for: GrokOAuthProvider())
+            guard let url = URL(string: provider.baseURL) else {
+                throw EnhancementError.customError("Invalid URL for \(provider.displayName)")
+            }
+            return (url, ["Authorization": "Bearer \(token)"])
 
         default:
             guard let apiKey = provider.apiKey else {

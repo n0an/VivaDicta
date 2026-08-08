@@ -28,6 +28,11 @@ public enum AIProviderRoute: Sendable {
     /// Gemini via OAuth (Google sign-in).
     case geminiOAuth
 
+    /// xAI Grok via OAuth (SuperGrok / X Premium subscription sign-in). Hits the
+    /// same OpenAI-compatible `api.x.ai` endpoint as `.cloud(.grok)`; only the
+    /// bearer differs - a subscription access token instead of an API key.
+    case grokOAuth
+
     /// GitHub Copilot via its device-code OAuth.
     case copilot
 

@@ -115,6 +115,27 @@ public struct TextEnhancer {
             }
         }
 
+        // Grok OAuth: route xAI requests through the subscription token when
+        // signed in. No CLI server for xAI, so an API key is the only fallback.
+        if input.provider == .grok && input.isOAuthSignedIn {
+            do {
+                let provider = try await registry.makeTextProvider(for: .grokOAuth, model: input.model)
+                let result = try await provider.enhance(systemMessage: input.systemMessage, userMessage: input.userMessage)
+                return AIEnhancementOutputFilter.filter(result)
+            } catch let error as EnhancementError {
+                // Includes the 403 "subscription not entitled" message, which is
+                // actionable on its own - surface it rather than silently
+                // spending the user's API credits instead.
+                throw error
+            } catch let error as OAuthError {
+                if input.hasAPIKey {
+                    logger.logWarning("Grok OAuth failed, falling back to API key: \(error.localizedDescription)")
+                } else {
+                    throw EnhancementError.customError(error.errorDescription ?? "Grok OAuth error")
+                }
+            }
+        }
+
         // Codex CLI via Mac server: route OpenAI requests through the CLI server when enabled.
         if input.provider == .openAI && cliServerEnhancer.isCliActive(for: .codex),
            let serverURL = cliServerEnhancer.serverURL, !serverURL.isEmpty {
