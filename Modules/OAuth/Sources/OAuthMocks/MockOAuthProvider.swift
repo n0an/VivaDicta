@@ -20,6 +20,8 @@ public final class MockOAuthProvider: OAuthProvider, @unchecked Sendable {
     public var tokenRequestUsesJSON: Bool
     public var clientSecret: String?
     public var userinfoURL: String?
+    public var deviceCodeURL: String?
+    public var deviceAuthExtraParams: [String: String]
 
     public var stubExtractedAccountInfo: (id: String?, email: String?) = (nil, nil)
     public var stubPostAuthSetupResponse: Result<String?, Error>?
@@ -40,7 +42,9 @@ public final class MockOAuthProvider: OAuthProvider, @unchecked Sendable {
         keychainKey: String = "mockOAuthCredential",
         tokenRequestUsesJSON: Bool = false,
         clientSecret: String? = nil,
-        userinfoURL: String? = nil
+        userinfoURL: String? = nil,
+        deviceCodeURL: String? = nil,
+        deviceAuthExtraParams: [String: String] = [:]
     ) {
         self.providerName = providerName
         self.clientId = clientId
@@ -53,6 +57,8 @@ public final class MockOAuthProvider: OAuthProvider, @unchecked Sendable {
         self.tokenRequestUsesJSON = tokenRequestUsesJSON
         self.clientSecret = clientSecret
         self.userinfoURL = userinfoURL
+        self.deviceCodeURL = deviceCodeURL
+        self.deviceAuthExtraParams = deviceAuthExtraParams
     }
 
     public func extractAccountInfo(from claims: [String: Any]) -> (id: String?, email: String?) {

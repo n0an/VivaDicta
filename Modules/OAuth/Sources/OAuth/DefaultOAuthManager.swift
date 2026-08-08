@@ -14,16 +14,19 @@ public final class DefaultOAuthManager: OAuthManager {
     private let logger = Logger(oauthCategory: "OAuthManager")
     private let keychain: any KeychainService
     private let networkService: any NetworkService
+    private let backgroundTaskService: (any BackgroundTaskService)?
 
     /// In-memory cache of credentials.
     private var credentials: [String: OAuthCredential] = [:]
 
     public init(
         keychain: any KeychainService,
-        networkService: any NetworkService = DefaultNetworkService(category: "OAuthManager")
+        networkService: any NetworkService = DefaultNetworkService(category: "OAuthManager"),
+        backgroundTaskService: (any BackgroundTaskService)? = nil
     ) {
         self.keychain = keychain
         self.networkService = networkService
+        self.backgroundTaskService = backgroundTaskService
     }
 
     // MARK: - Public API
@@ -152,6 +155,209 @@ public final class DefaultOAuthManager: OAuthManager {
         return (credential.accessToken, credential.accountId, credential.projectId)
     }
 
+    // MARK: - Device Code Flow (RFC 8628)
+
+    /// Requests a device code. Every field is validated before use: a malformed
+    /// or hostile payload must not reach the UI, and the verification URI is
+    /// opened in a browser so it is constrained to `https`.
+    public func startDeviceCodeFlow(provider: some OAuthProvider) async throws -> DeviceCodeResponse {
+        guard let endpoint = provider.deviceCodeURL, let url = URL(string: endpoint) else {
+            throw OAuthError.deviceCodeUnsupported(provider.providerName)
+        }
+
+        var fields = [
+            "client_id": provider.clientId,
+            "scope": provider.scopes
+        ]
+        for (key, value) in provider.deviceAuthExtraParams {
+            fields[key] = value
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Self.formEncoded(fields).data(using: .utf8)
+
+        let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw OAuthError.deviceCodeFailed("HTTP \(httpResponse.statusCode): invalid response")
+        }
+        guard httpResponse.statusCode == 200 else {
+            throw OAuthError.deviceCodeFailed(Self.errorDetail(json) ?? "HTTP \(httpResponse.statusCode)")
+        }
+
+        guard let deviceCode = Self.nonEmptyString(json["device_code"]),
+              let userCode = Self.nonEmptyString(json["user_code"]),
+              let rawVerificationURI = Self.nonEmptyString(json["verification_uri"]),
+              let verificationURI = Self.validatedHTTPSURI(rawVerificationURI) else {
+            throw OAuthError.deviceCodeFailed("Incomplete device authorization response")
+        }
+
+        // RFC 8628 makes `interval` optional and permits 0; fall back to the
+        // conventional 5s rather than hammering the endpoint.
+        let interval: Int = {
+            guard let raw = json["interval"] as? Int, raw > 0 else { return 5 }
+            return raw
+        }()
+
+        let expiresIn: Int = {
+            guard let raw = json["expires_in"] as? Int, raw > 0 else { return 900 }
+            return raw
+        }()
+
+        logger.logInfo("Device code issued for \(provider.providerName), expires in \(expiresIn)s")
+
+        return DeviceCodeResponse(
+            deviceCode: deviceCode,
+            userCode: userCode,
+            verificationUri: verificationURI,
+            verificationUriComplete: Self.nonEmptyString(json["verification_uri_complete"]).flatMap(Self.validatedHTTPSURI),
+            interval: interval,
+            expiresIn: expiresIn
+        )
+    }
+
+    public func pollForDeviceCodeToken(
+        provider: some OAuthProvider,
+        deviceCode: DeviceCodeResponse
+    ) async throws -> OAuthCredential {
+        var interval = max(deviceCode.interval, 1)
+        let deadline = Date().addingTimeInterval(TimeInterval(deviceCode.expiresIn))
+
+        // The user leaves for Safari to authorize, so the app backgrounds while
+        // we poll. Hold a background assertion the way the Copilot flow does.
+        let backgroundTaskId = backgroundTaskService?.beginBackgroundTask(name: "OAuthDeviceCodePoll", onExpiration: {})
+        defer {
+            if let backgroundTaskId {
+                backgroundTaskService?.endBackgroundTask(backgroundTaskId)
+            }
+        }
+
+        while Date() < deadline {
+            try await Task.sleep(for: .seconds(interval))
+
+            switch try await pollDeviceCodeOnce(provider: provider, deviceCode: deviceCode.deviceCode) {
+            case .authorized(let credential):
+                saveCredential(credential, for: provider)
+                logger.logInfo("Device-code sign-in complete for \(provider.providerName)")
+                return credential
+            case .pending:
+                continue
+            case .slowDown(let serverInterval):
+                interval = max(serverInterval ?? interval + 5, interval + 1)
+                logger.logInfo("Device-code poll throttled, backing off to \(interval)s")
+            case .denied(let reason):
+                throw OAuthError.authorizationDenied(reason)
+            case .expired:
+                throw OAuthError.deviceCodeExpired
+            }
+        }
+
+        throw OAuthError.deviceCodeExpired
+    }
+
+    private enum DeviceCodePollOutcome {
+        case authorized(OAuthCredential)
+        case pending
+        case slowDown(Int?)
+        case denied(String)
+        case expired
+    }
+
+    private func pollDeviceCodeOnce(
+        provider: some OAuthProvider,
+        deviceCode: String
+    ) async throws -> DeviceCodePollOutcome {
+        guard let url = URL(string: provider.tokenURL) else {
+            throw OAuthError.tokenExchangeFailed("Invalid token URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Self.formEncoded([
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+            "client_id": provider.clientId,
+            "device_code": deviceCode
+        ]).data(using: .utf8)
+
+        let data: Data
+        do {
+            data = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny).0
+        } catch NetworkError.transport(let underlying) where (underlying as? URLError)?.code != .cancelled {
+            // Transient failure (commonly -1005 right after backgrounding);
+            // treat as pending and retry on the next tick.
+            logger.logInfo("Device-code poll network error, retrying: \(underlying.localizedDescription)")
+            return .pending
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return .pending
+        }
+
+        if let error = json["error"] as? String {
+            switch error {
+            case "authorization_pending":
+                return .pending
+            case "slow_down":
+                return .slowDown(json["interval"] as? Int)
+            case "access_denied", "authorization_denied":
+                return .denied(Self.errorDetail(json) ?? "Authorization was denied")
+            case "expired_token":
+                return .expired
+            default:
+                throw OAuthError.tokenExchangeFailed(Self.errorDetail(json) ?? error)
+            }
+        }
+
+        let credential = try await buildCredential(json: json, provider: provider, existingRefreshToken: nil)
+        return .authorized(credential)
+    }
+
+    // MARK: - Request Helpers
+
+    /// Percent-encodes values against RFC 3986's *unreserved* set, so reserved
+    /// characters that carry meaning in a form body (`&`, `=`, `+`, spaces) are
+    /// escaped. `.urlQueryAllowed` would let those through intact.
+    private static let unreservedCharacters: CharacterSet = {
+        var set = CharacterSet.alphanumerics
+        set.insert(charactersIn: "-._~")
+        return set
+    }()
+
+    private static func formEncoded(_ fields: [String: String]) -> String {
+        fields.map { key, value in
+            let encoded = value.addingPercentEncoding(withAllowedCharacters: unreservedCharacters) ?? value
+            return "\(key)=\(encoded)"
+        }
+        .joined(separator: "&")
+    }
+
+    private static func nonEmptyString(_ value: Any?) -> String? {
+        guard let string = value as? String, !string.isEmpty else { return nil }
+        return string
+    }
+
+    /// Rejects anything that isn't an `https` URL. The result is handed to the
+    /// system opener, so a non-https scheme here would let a compromised or
+    /// spoofed response launch an arbitrary handler.
+    private static func validatedHTTPSURI(_ raw: String) -> String? {
+        guard let url = URL(string: raw), url.scheme?.lowercased() == "https", url.host != nil else {
+            return nil
+        }
+        return url.absoluteString
+    }
+
+    private static func errorDetail(_ json: [String: Any]) -> String? {
+        let error = json["error"] as? String
+        let description = json["error_description"] as? String
+        let detail = [error, description].compactMap { $0 }.joined(separator: ": ")
+        return detail.isEmpty ? nil : detail
+    }
+
     // MARK: - Token Exchange
 
     private func exchangeCodeForTokens(code: String, codeVerifier: String, state: String, provider: some OAuthProvider) async throws -> OAuthCredential {
@@ -253,10 +459,21 @@ public final class DefaultOAuthManager: OAuthManager {
             throw OAuthError.tokenExchangeFailed("Invalid JSON response")
         }
 
-        guard let accessToken = json["access_token"] as? String else {
+        return try await buildCredential(json: json, provider: provider, existingRefreshToken: existingRefreshToken)
+    }
+
+    /// Turns a successful token-endpoint payload into a stored-shape credential.
+    /// Shared by the redirect flow, the device-code flow, and refresh.
+    private func buildCredential(
+        json: [String: Any],
+        provider: some OAuthProvider,
+        existingRefreshToken: String?
+    ) async throws -> OAuthCredential {
+        guard let accessToken = json["access_token"] as? String, !accessToken.isEmpty else {
             throw OAuthError.tokenExchangeFailed("Missing access token in response")
         }
-        // Google's refresh endpoint omits refresh_token - fall back to existing one
+        // Google's refresh endpoint omits refresh_token, and xAI omits it when the
+        // token is not rotated - fall back to the existing one in both cases.
         let refreshToken = json["refresh_token"] as? String ?? existingRefreshToken ?? ""
 
         let expiresIn = json["expires_in"] as? TimeInterval ?? 3600

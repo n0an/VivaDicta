@@ -11,6 +11,12 @@ public enum OAuthError: LocalizedError {
     case tokenRefreshFailed(String)
     case noCredential
     case invalidResponse
+    /// The provider does not advertise a device authorization endpoint.
+    case deviceCodeUnsupported(String)
+    /// The device-authorization request failed or returned an unusable payload.
+    case deviceCodeFailed(String)
+    /// The user did not authorize the device code before it expired.
+    case deviceCodeExpired
 
     public var errorDescription: String? {
         switch self {
@@ -28,6 +34,12 @@ public enum OAuthError: LocalizedError {
             return "Not signed in."
         case .invalidResponse:
             return "Invalid response from server."
+        case .deviceCodeUnsupported(let providerName):
+            return "\(providerName) does not support device-code sign-in."
+        case .deviceCodeFailed(let reason):
+            return "Failed to start sign-in: \(reason)"
+        case .deviceCodeExpired:
+            return "The sign-in code expired before it was authorized. Please try again."
         }
     }
 }

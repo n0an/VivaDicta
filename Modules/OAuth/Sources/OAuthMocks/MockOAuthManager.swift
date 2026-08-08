@@ -54,6 +54,16 @@ public final class MockOAuthManager: OAuthManager {
     public private(set) var validAccessTokenCallCount = 0
     public private(set) var capturedValidAccessTokenProviderKey: String?
 
+    // MARK: device code
+
+    public var stubStartDeviceCodeFlowResponse: Result<DeviceCodeResponse, Error>?
+    public private(set) var startDeviceCodeFlowCallCount = 0
+    public private(set) var capturedStartDeviceCodeFlowProviderKey: String?
+
+    public var stubPollForDeviceCodeTokenResponse: Result<OAuthCredential, Error>?
+    public private(set) var pollForDeviceCodeTokenCallCount = 0
+    public private(set) var capturedPolledDeviceCode: String?
+
     // MARK: - OAuthManager conformance
 
     public func isSignedIn(provider: some OAuthProvider) -> Bool {
@@ -93,5 +103,23 @@ public final class MockOAuthManager: OAuthManager {
         validAccessTokenCallCount += 1
         capturedValidAccessTokenProviderKey = provider.keychainKey
         return try stubValidAccessTokenResponse.evaluate()
+    }
+
+    public func startDeviceCodeFlow(provider: some OAuthProvider) async throws -> DeviceCodeResponse {
+        startDeviceCodeFlowCallCount += 1
+        capturedStartDeviceCodeFlowProviderKey = provider.keychainKey
+        return try stubStartDeviceCodeFlowResponse.evaluate()
+    }
+
+    public func pollForDeviceCodeToken(provider: some OAuthProvider, deviceCode: DeviceCodeResponse) async throws -> OAuthCredential {
+        pollForDeviceCodeTokenCallCount += 1
+        capturedPolledDeviceCode = deviceCode.deviceCode
+        let credential = try stubPollForDeviceCodeTokenResponse.evaluate() as OAuthCredential
+        // Mirror DefaultOAuthManager: a completed poll stores the credential.
+        signedInProviders.insert(provider.keychainKey)
+        if let email = credential.accountEmail {
+            accountEmails[provider.keychainKey] = email
+        }
+        return credential
     }
 }

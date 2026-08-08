@@ -57,6 +57,7 @@ public struct AIProviderRegistry {
         case .anthropic: AIProvider.normalizedModel(model, for: .anthropic)
         case .cloud(let provider): AIProvider.normalizedModel(model, for: provider)
         case .openAIOAuth: AIProvider.normalizedModel(model, for: .openAI)
+        case .grokOAuth: AIProvider.normalizedModel(model, for: .grok)
         default: model
         }
         switch route {
@@ -91,6 +92,20 @@ public struct AIProviderRegistry {
             let (token, _, projectId) = try await oauthManager.validAccessToken(for: GeminiOAuthProvider())
             return GeminiTextProvider(model: model, accessToken: token, projectId: projectId, networkService: networkService)
 
+        case .grokOAuth:
+            // The subscription token is a drop-in for the API key: same host,
+            // same OpenAI-compatible wire format, `Authorization: Bearer`.
+            let (token, _, _) = try await oauthManager.validAccessToken(for: GrokOAuthProvider())
+            guard let url = URL(string: AIProvider.grok.baseURL) else { throw EnhancementError.notConfigured }
+            return OpenAICompatibleTextProvider(
+                networkService: networkService, logger: logger,
+                url: url, modelName: model,
+                headers: ["Authorization": "Bearer \(token)"],
+                timeout: baseTimeout,
+                errorPrefix: "\(AIProvider.grok.displayName) error",
+                unauthorizedMessage: Self.grokSubscriptionRequiredMessage
+            )
+
         case .copilot:
             let token = try await copilotOAuthManager.validCopilotToken()
             return CopilotTextProvider(model: model, copilotToken: token)
@@ -103,6 +118,19 @@ public struct AIProviderRegistry {
             )
         }
     }
+
+    /// Shown when xAI accepts the subscription token but refuses inference.
+    ///
+    /// xAI runs its own allowlist on the OAuth API surface, so sign-in can
+    /// succeed while `api.x.ai` still answers 403 - reported by standard
+    /// SuperGrok and X Premium subscribers alike. A generic "unauthorized"
+    /// would read as our bug, so name the actual cause and the way out.
+    static let grokSubscriptionRequiredMessage = """
+        xAI rejected this request for your Grok subscription. xAI limits which \
+        plans can use Grok through a connected app, and a new subscription can \
+        take a while to activate. You can add an xAI API key instead, which \
+        always works.
+        """
 
     /// Reads the provider's API key from the Keychain, mirroring `AIProvider.apiKey`.
     private func requireAPIKey(for provider: AIProvider) throws -> String {

@@ -287,6 +287,55 @@ struct OpenAICompatibleServiceTests {
         #expect(message.hasPrefix("HTTP 401"))
     }
 
+    /// Subscription-backed providers answer 403 when the account authenticates
+    /// but is not entitled, so `unauthorizedMessage` has to cover 403 as well as
+    /// 401 - otherwise the caller's actionable text is swallowed by the generic
+    /// "HTTP 403: <body>" branch.
+    @Test(arguments: [401, 403])
+    func enhanceSurfacesUnauthorizedMessageForAuthFailures(_ status: Int) async throws {
+        let body = Data(#"{"error":"no active subscription"}"#.utf8)
+        networkService.stubSendResponse = .success((body, makeHTTPResponse(status)))
+
+        let error = try await #require(throws: EnhancementError.self) {
+            _ = try await sut.enhance(
+                url: URL(string: endpointURL)!,
+                modelName: "m",
+                systemMessage: "s",
+                userMessage: "u",
+                headers: [:],
+                timeout: 30,
+                unauthorizedMessage: "Add an API key instead."
+            )
+        }
+        guard case let .customError(message) = error else {
+            Issue.record("Expected .customError, got \(error)")
+            return
+        }
+        #expect(message == "Add an API key instead.")
+    }
+
+    /// Without an override the existing generic mapping must stay intact.
+    @Test func enhanceKeepsGenericMappingFor403WithoutOverride() async throws {
+        let body = Data(#"{"error":"forbidden"}"#.utf8)
+        networkService.stubSendResponse = .success((body, makeHTTPResponse(403)))
+
+        let error = try await #require(throws: EnhancementError.self) {
+            _ = try await sut.enhance(
+                url: URL(string: endpointURL)!,
+                modelName: "m",
+                systemMessage: "s",
+                userMessage: "u",
+                headers: [:],
+                timeout: 30
+            )
+        }
+        guard case let .customError(message) = error else {
+            Issue.record("Expected .customError, got \(error)")
+            return
+        }
+        #expect(message.hasPrefix("HTTP 403"))
+    }
+
     // MARK: - verifyChatCompletionsAPIKey
 
     @Test func verifyChatCompletionsAPIKeyReturnsTrueOn200() async {

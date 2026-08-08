@@ -66,7 +66,15 @@ public struct OpenAICompatibleTextProvider: AITextProvider {
     }
 
     public func enhance(systemMessage: String, userMessage: String) async throws -> String {
-        try await service.enhance(url: url, modelName: modelName, systemMessage: systemMessage, userMessage: userMessage, headers: headers, timeout: timeout)
+        try await service.enhance(
+            url: url,
+            modelName: modelName,
+            systemMessage: systemMessage,
+            userMessage: userMessage,
+            headers: headers,
+            timeout: timeout,
+            unauthorizedMessage: unauthorizedMessage
+        )
     }
 
     public func enhanceStreaming(systemMessage: String, userMessage: String, onPartialResponse: @escaping @MainActor (String) -> Void) async throws -> String {

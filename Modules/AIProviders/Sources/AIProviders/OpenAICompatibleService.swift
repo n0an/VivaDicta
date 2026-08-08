@@ -117,6 +117,10 @@ public struct OpenAICompatibleService: Sendable {
     /// mapping; non-200 non-429 non-5xx maps to
     /// `.customError("HTTP <status>: <body>")`.
     ///
+    /// `unauthorizedMessage` overrides the default message on 401/403 when
+    /// provided, so callers can explain an auth or entitlement failure in terms
+    /// the user can act on.
+    ///
     /// Returns the filtered/trimmed `choices[0].message.content`. Throws
     /// `.enhancementFailed` on a malformed 200 body.
     public func enhance(
@@ -125,7 +129,8 @@ public struct OpenAICompatibleService: Sendable {
         systemMessage: String,
         userMessage: String,
         headers: [String: String],
-        timeout: TimeInterval
+        timeout: TimeInterval,
+        unauthorizedMessage: String? = nil
     ) async throws -> String {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -165,6 +170,10 @@ public struct OpenAICompatibleService: Sendable {
             } else if (500...599).contains(httpResponse.statusCode) {
                 logger.logError("OpenAI-compatible enhance - server error \(httpResponse.statusCode)")
                 throw EnhancementError.serverError
+            } else if let unauthorizedMessage, httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                let errorString = String(data: data, encoding: .utf8) ?? ""
+                logger.logError("OpenAI-compatible enhance - \(httpResponse.statusCode): \(errorString.prefix(500))")
+                throw EnhancementError.customError(unauthorizedMessage)
             } else {
                 let errorString = String(data: data, encoding: .utf8) ?? "Could not decode error response."
                 logger.logError("OpenAI-compatible enhance - HTTP \(httpResponse.statusCode): \(errorString.prefix(500))")
@@ -187,9 +196,10 @@ public struct OpenAICompatibleService: Sendable {
 
     /// Streaming chat-completions request via SSE. `errorPrefix` is
     /// prepended to the default error message; `notFoundMessage` /
-    /// `unauthorizedMessage` override the 404 / 401 default messages
+    /// `unauthorizedMessage` override the 404 / 401-and-403 default messages
     /// when provided (used by Ollama and Custom OpenAI to surface
-    /// model-name and auth hints).
+    /// model-name and auth hints, and by Grok OAuth to explain a missing
+    /// subscription entitlement).
     ///
     /// Calls `onPartialResponse` on the main actor as each SSE delta
     /// arrives. Returns the filtered/trimmed final text. Throws
@@ -233,10 +243,14 @@ public struct OpenAICompatibleService: Sendable {
             }
             let errorString = String(data: errorData, encoding: .utf8) ?? "Unknown error"
 
+            // 403 matters as much as 401 here: subscription-backed providers
+            // reject an authenticated-but-unentitled account with 403.
+            if let unauthorizedMessage, httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logger.logError("OpenAI-compatible streaming - \(httpResponse.statusCode): \(errorString.prefix(500))")
+                throw EnhancementError.customError(unauthorizedMessage)
+            }
+
             switch httpResponse.statusCode {
-            case 401 where unauthorizedMessage != nil:
-                logger.logError("OpenAI-compatible streaming - 401: \(errorString.prefix(500))")
-                throw EnhancementError.customError(unauthorizedMessage ?? errorString)
             case 404 where notFoundMessage != nil:
                 logger.logError("OpenAI-compatible streaming - 404: \(errorString.prefix(500))")
                 throw EnhancementError.customError(notFoundMessage ?? errorString)
