@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import AppGroup
 import Foundation
 import os
 
@@ -128,10 +129,15 @@ final class StreamingAudioCapture {
     private func configureSession() throws {
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.allowBluetoothHFP, .defaultToSpeaker])
+            try session.setCategory(
+                .playAndRecord,
+                mode: .spokenAudio,
+                options: RecordingAudioSession.categoryOptions(base: [.defaultToSpeaker])
+            )
             try session.setPreferredIOBufferDuration(0.02)
             try session.setActive(true, options: [])
             sessionActivated = true
+            RecordingAudioSession.applyPreferredInput(to: session)
         } catch {
             throw CaptureError.sessionFailure(error.localizedDescription)
         }

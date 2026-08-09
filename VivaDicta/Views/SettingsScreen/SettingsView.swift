@@ -29,6 +29,8 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
     private var isAutoReminderExtractionEnabled = false
     @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
+    @AppStorage(UserDefaultsStorage.Keys.preferredMicrophone, store: UserDefaultsStorage.shared)
+    private var preferredMicrophone: PreferredMicrophone = .default
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -336,6 +338,29 @@ struct SettingsView: View {
                         isSessionActive: prewarmManager.isSessionActiveObservable,
                         action: toggleKeyboardRecordingSession
                     )
+                }
+
+                Section("Microphone") {
+                    Picker("Input", selection: $preferredMicrophone) {
+                        Text("Automatic").tag(PreferredMicrophone.automatic)
+                        Text("iPhone Microphone").tag(PreferredMicrophone.builtIn)
+                    }
+                    // @AppStorage persists to the same store and key
+                    // RecordingAudioSession reads, so there is nothing to write
+                    // here. A live keyboard session keeps the route it was set
+                    // up with until it ends - deliberately, since restarting it
+                    // to apply the change tore down the Live Activity and its
+                    // terminate control. Ending the session above applies it
+                    // immediately.
+                    .onChange(of: preferredMicrophone) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    Text(preferredMicrophone == .automatic
+                         ? "Uses whichever microphone is connected - AirPods, a wired headset, or the iPhone - the same way Phone and Voice Memos do."
+                         : "Always records with the iPhone's own microphone, even when headphones are connected. Keeps Bluetooth headphones in full-quality audio while you dictate.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Feedback") {

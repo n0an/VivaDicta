@@ -97,6 +97,10 @@ public enum UserDefaultsStorage {
         public static let isStripTrailingPeriodEnabled = "isStripTrailingPeriodEnabled"
         public static let isFillerRemovalEnabled = "isFillerRemovalEnabled"
 
+        /// Raw value of `PreferredMicrophone`. Decides whether recording asks
+        /// iOS for the built-in mic or takes whatever input is connected.
+        public static let preferredMicrophone = "preferredMicrophone"
+
         /// UUID string of the mode used for AI actions in note detail when the
         /// currently selected mode has no AI processing configured. Empty = none.
         public static let defaultAIModeId = "defaultAIModeId"

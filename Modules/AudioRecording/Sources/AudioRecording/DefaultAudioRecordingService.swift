@@ -1,6 +1,7 @@
 // Copyright © 2026 Anton Novoselov. All rights reserved.
 
 @preconcurrency import AVFoundation
+import AppGroup
 import Foundation
 import os
 
@@ -41,11 +42,16 @@ public final class DefaultAudioRecordingService: NSObject, AudioRecordingService
     public func startRecording(to url: URL, settings: [String: Any]) throws {
         #if !os(macOS)
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, options: .defaultToSpeaker)
+        try session.setCategory(
+            .playAndRecord,
+            options: RecordingAudioSession.categoryOptions(base: [.defaultToSpeaker])
+        )
         #if os(iOS)
         try session.setAllowHapticsAndSystemSoundsDuringRecording(true)
         #endif
         try session.setActive(true)
+        // After activation - a preferred input set before it does not stick.
+        RecordingAudioSession.applyPreferredInput(to: session)
         #endif
 
         do {
