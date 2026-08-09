@@ -318,6 +318,7 @@ struct SettingsView: View {
                         }
                         .onChange(of: audioSessionTimeout) { _, _ in
                             HapticManager.selectionChanged()
+                            prewarmManager.applyTimeoutChange()
                         }
 
                         Text("Keep microphone session active to allow recording from keyboard")

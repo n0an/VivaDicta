@@ -357,6 +357,26 @@ final class AudioPrewarmManager: AudioPrewarmer {
         logger.logInfo("🎙️ Session timeout rescheduled: \(self.timeoutDescription)")
     }
 
+    /// Applies a changed `audioSessionTimeout` to the session already running, so
+    /// the new choice takes effect now rather than at the next session. Without
+    /// this the live session keeps whatever timer it started with: switching to
+    /// "Never" would still expire on the old deadline, and switching away from
+    /// "Never" would leave a session that has no timer at all.
+    ///
+    /// No-op during a real capture - `startRealCapture()` deliberately runs with
+    /// no expiry timer, and the `rescheduleSessionTimeout()` that follows
+    /// processing reads the current value anyway, so the change lands then.
+    func applyTimeoutChange() {
+        guard audioEngine?.isRunning == true else { return }
+
+        guard captureContext?.isCapturing != true else {
+            logger.logInfo("⏰ Timeout change deferred - real capture in progress")
+            return
+        }
+
+        rescheduleSessionTimeout()
+    }
+
     // MARK: - Private Helpers
 
     private var timeoutDescription: String {

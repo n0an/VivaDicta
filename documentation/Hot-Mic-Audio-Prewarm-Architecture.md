@@ -166,6 +166,8 @@ A "Never" session ends only on an explicit `endSession()`. Not every entry point
 
 The Settings row is therefore a start/stop control (`KeyboardSessionButton`): while `isSessionActiveObservable` it ends the session instead of being disabled, which covers every entry point since the state lives on the shared `AudioPrewarmManager`. The picker also shows a battery-cost warning while "Never" is selected.
 
+Changing the picker mid-session calls `applyTimeoutChange()`, because `scheduleSessionTimeout()` otherwise only runs at session start, on extend, and after processing - a live session would keep whatever timer it started with. Both directions matter: switching to "Never" would still expire on the old deadline, and switching away from "Never" would leave a session with no timer at all. The call is a no-op during a real capture, which runs without an expiry timer by design; the `rescheduleSessionTimeout()` that follows processing reads the current value, so the change lands then.
+
 ## AudioCaptureContext
 
 ```
