@@ -63,6 +63,8 @@
 			<string>Viva Nots</string>
 		</dict>
 	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mobilenotes</string>
