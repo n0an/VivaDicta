@@ -1,17 +1,12 @@
-//
-//  RecordingAudioSession.swift
-//  VivaDicta
-//
-//  Created by Anton Novoselov on 2026.08.09
-//
+// Copyright © 2026 Anton Novoselov. All rights reserved.
 
+#if !os(macOS)
 import AVFoundation
-import AppGroup
 import Foundation
 import os
 
 /// Which microphone recording asks iOS for.
-enum PreferredMicrophone: String, CaseIterable, Sendable {
+public enum PreferredMicrophone: String, CaseIterable, Sendable {
     /// Pin the built-in mic. Keeps AirPods in A2DP - they are never pulled
     /// into the low-quality HFP profile - and generally transcribes better.
     case builtIn
@@ -19,20 +14,20 @@ enum PreferredMicrophone: String, CaseIterable, Sendable {
     /// Let iOS choose, which means the connected headset when there is one.
     case automatic
 
-    static let `default`: PreferredMicrophone = .builtIn
+    public static let `default`: PreferredMicrophone = .builtIn
 }
 
 /// One place to configure the shared `AVAudioSession` for recording.
 ///
-/// Three call sites used to configure it independently and had already drifted
-/// apart - the prewarm engine, Live Translation, and the streaming capture.
-/// Anything that touches the mic route (input preference, Bluetooth options)
-/// has to be applied consistently or fixing one path silently leaves the
-/// others behaving differently, so it lives here.
-enum RecordingAudioSession {
-    private static let logger = Logger(category: .recordingAudioSession)
+/// Lives in `AppGroup` rather than the app target because
+/// `DefaultAudioRecordingService` - the app's primary recorder - sits in its
+/// own SPM module and cannot import app-target code. Four call sites used to
+/// configure the session independently and had already drifted apart; putting
+/// the policy below the lowest of them is what stops that recurring.
+public enum RecordingAudioSession {
+    private static let logger = Logger(appGroupCategory: "RecordingAudioSession")
 
-    static var preferredMicrophone: PreferredMicrophone {
+    public static var preferredMicrophone: PreferredMicrophone {
         get {
             let raw = UserDefaultsStorage.shared.string(forKey: UserDefaultsStorage.Keys.preferredMicrophone)
             return raw.flatMap(PreferredMicrophone.init(rawValue:)) ?? .default
@@ -47,13 +42,17 @@ enum RecordingAudioSession {
     /// `.allowBluetoothHFP` is what lets a headset mic be used at all, at the
     /// cost of dragging playback down to headset quality. iOS 26's
     /// `.bluetoothHighQualityRecording` asks the system for the better route
-    /// when the device supports it, falling back to HFP when it doesn't - so
-    /// it is added alongside rather than instead of HFP.
+    /// when the device supports it, falling back to HFP otherwise - so it is
+    /// added alongside HFP rather than instead of it.
     ///
     /// When the built-in mic is preferred there is no reason to request the
     /// Bluetooth mic route at all, and not requesting it is what keeps AirPods
     /// in A2DP.
-    static func categoryOptions(
+    ///
+    /// Note this is load-bearing in both directions: `setPreferredInput` can
+    /// only choose among devices the *category* permits, so omitting HFP here
+    /// silently pins the built-in mic no matter what the preference says.
+    public static func categoryOptions(
         base: AVAudioSession.CategoryOptions
     ) -> AVAudioSession.CategoryOptions {
         var options = base
@@ -71,9 +70,9 @@ enum RecordingAudioSession {
     }
 
     /// Pins the input device. Call after `setActive(true)` and before building
-    /// the engine and its tap - a preferred input set before activation does
+    /// any engine and its tap - a preferred input set before activation does
     /// not stick.
-    static func applyPreferredInput(to session: AVAudioSession) {
+    public static func applyPreferredInput(to session: AVAudioSession) {
         guard preferredMicrophone == .builtIn else {
             // Automatic: clear any pin so iOS is free to pick the connected device.
             try? session.setPreferredInput(nil)
@@ -92,3 +91,4 @@ enum RecordingAudioSession {
         }
     }
 }
+#endif

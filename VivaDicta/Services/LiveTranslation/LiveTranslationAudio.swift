@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import AppGroup
 import Foundation
 import os
 
@@ -179,20 +180,21 @@ final class LiveTranslationAudio {
             // Do NOT include .defaultToSpeaker — it overrides A2DP routing and
             // forces output to the iPhone speaker even when AirPods are paired,
             // which causes mic feedback.
+            //
+            // A2DP and duckOthers are specific to this feature (it plays TTS
+            // back), but the Bluetooth *input* options still have to come from
+            // RecordingAudioSession: `setPreferredInput` can only pick among
+            // devices the category permits, so omitting HFP here would pin the
+            // built-in mic no matter what the user selected.
             try session.setCategory(
                 .playAndRecord,
                 mode: .spokenAudio,
-                options: [.allowBluetoothA2DP, .duckOthers]
+                options: RecordingAudioSession.categoryOptions(base: [.allowBluetoothA2DP, .duckOthers])
             )
             try session.setPreferredSampleRate(48000)
             try session.setPreferredIOBufferDuration(0.02)
             try session.setActive(true, options: [])
             sessionActivated = true
-            // Category options stay hand-rolled here rather than going through
-            // RecordingAudioSession: this session also plays TTS, so it wants
-            // A2DP output and never requests the HFP mic route in the first
-            // place. The input preference still applies, so the user's mic
-            // choice does not silently differ between features.
             RecordingAudioSession.applyPreferredInput(to: session)
             try session.overrideOutputAudioPort(.none)
         } catch {

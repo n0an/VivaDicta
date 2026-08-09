@@ -13,11 +13,15 @@ let package = Package(
         .library(name: "AudioRecordingMocks", targets: ["AudioRecordingMocks"]),
     ],
     dependencies: [
+        .package(path: "../AppGroup"),
         .package(path: "../TestUtilities"),
     ],
     targets: [
         .target(
-            name: "AudioRecording"
+            name: "AudioRecording",
+            dependencies: [
+                .product(name: "AppGroup", package: "AppGroup"),
+            ]
         ),
         .target(
             name: "AudioRecordingMocks",

@@ -387,14 +387,17 @@ struct SettingsView: View {
                         Text("iPhone Microphone").tag(PreferredMicrophone.builtIn)
                         Text("Connected Device").tag(PreferredMicrophone.automatic)
                     }
-                    .onChange(of: preferredMicrophone) { _, newValue in
-                        RecordingAudioSession.preferredMicrophone = newValue
+                    // @AppStorage already persists to the same store and key
+                    // RecordingAudioSession reads, so there is nothing to write
+                    // here - only the live session to bring in line.
+                    .onChange(of: preferredMicrophone) { _, _ in
                         HapticManager.selectionChanged()
+                        reconfigureActiveSessionForMicrophoneChange()
                     }
 
                     Text(preferredMicrophone == .builtIn
                          ? "Records with the iPhone's own microphone. Bluetooth headphones stay in full-quality audio while you dictate."
-                         : "Records with whatever is connected - AirPods, a wired headset, or a USB mic. Bluetooth headphones switch to headset audio during recording.")
+                         : "Records with whatever is connected - AirPods, a wired headset, or a USB mic. Bluetooth headphones switch to headset audio while recording, including during Live Translation.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -825,6 +828,28 @@ iOS Version: \(systemVersion)
     }
 
     // MARK: - Keyboard Recording Session Actions
+
+    /// A live prewarm session applies its category options and preferred input
+    /// only at setup, so changing the picker mid-session would otherwise leave
+    /// the old route in place - the user switches to "iPhone Microphone"
+    /// precisely because their headphones sound muffled, and nothing would
+    /// happen until the session expired. Restart it so the choice takes effect
+    /// immediately.
+    private func reconfigureActiveSessionForMicrophoneChange() {
+        guard prewarmManager.isSessionActiveObservable else { return }
+
+        Task {
+            prewarmManager.endSession()
+            do {
+                try await prewarmManager.startPrewarmSession()
+                AppGroupCoordinator.shared.activateKeyboardSession(
+                    timeoutSeconds: prewarmManager.audioSessionTimeout
+                )
+            } catch {
+                prewarmErrorMessage = "Failed to apply microphone change: \(error.localizedDescription)"
+            }
+        }
+    }
 
     private func endKeyboardRecordingSession() {
         HapticManager.mediumImpact()

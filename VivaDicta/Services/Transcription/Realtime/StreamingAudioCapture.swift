@@ -6,6 +6,7 @@
 //
 
 import AVFoundation
+import AppGroup
 import Foundation
 import os
 
