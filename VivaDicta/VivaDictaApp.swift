@@ -483,11 +483,13 @@ struct VivaDictaApp: App {
                     // silently stop working. It is a background-execution
                     // anchor, not an audio feature.
                     //
-                    // Which mic route this acquires is decided by the user's
-                    // Microphone setting via RecordingAudioSession, not here.
-                    // Under the Automatic default it does request the Bluetooth
-                    // input route; "iPhone Microphone" keeps headphones on A2DP.
-                    try await AudioPrewarmManager.shared.startPrewarmSession()
+                    // needsMicrophone: false - this path processes text and
+                    // never reads the mic, so it holds the session without
+                    // acquiring a Bluetooth input route. Requesting one would
+                    // drop the user's headphones into headset audio for the
+                    // whole timeout in exchange for nothing. A recording
+                    // arriving later rebuilds the session with the real route.
+                    try await AudioPrewarmManager.shared.startPrewarmSession(needsMicrophone: false)
                     logger.logInfo("🎙️ Prewarm session ready for text processing")
 
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)

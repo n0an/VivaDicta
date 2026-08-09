@@ -49,6 +49,12 @@ final class AudioPrewarmManager: AudioPrewarmer {
     var audioEngine: AVAudioEngine?
     private var captureContext: AudioCaptureContext?
 
+    /// Whether the live session was configured with a microphone input route.
+    /// Text-processing sessions are not, so a recording arriving inside one has
+    /// to rebuild rather than inherit a session that cannot reach the mic the
+    /// user asked for.
+    private var sessionHasMicrophoneRoute = false
+
     // Audio level for visualization (0.0 to 1.0)
     private(set) var currentAudioLevel: Float = 0.0
 
@@ -78,7 +84,12 @@ final class AudioPrewarmManager: AudioPrewarmer {
 
     /// Starts pre-warm session - activates audio session and starts continuous dummy recorder
     /// - Parameter timeout: Session duration in seconds (uses configured timeout if not specified)
-    func startPrewarmSession(timeout: TimeInterval? = nil) async throws {
+    /// - Parameter needsMicrophone: `false` for the text-processing anchor,
+    ///   which holds the session only to keep the app resident and never reads
+    ///   the mic. Those sessions skip the Bluetooth input route entirely, so a
+    ///   text action does not drop the user's headphones into headset audio for
+    ///   the whole timeout in exchange for nothing.
+    func startPrewarmSession(timeout: TimeInterval? = nil, needsMicrophone: Bool = true) async throws {
         // If session is already active, just extend it
         if isSessionActive {
             // Don't extend if we're actively recording
@@ -86,9 +97,20 @@ final class AudioPrewarmManager: AudioPrewarmer {
                 logger.logInfo("🎙️ Prewarm session already active with recording - no action needed")
                 return
             }
-            logger.logInfo("🎙️ Prewarm session already active, extending timeout")
-            extendSession(timeout: timeout)
-            return
+
+            // A session opened for a text action has no mic route. If a
+            // recording now needs one, extending would silently dictate through
+            // the built-in mic regardless of the user's setting, so rebuild
+            // instead. The reverse never downgrades - a session that already
+            // has the route is fine for text.
+            if needsMicrophone && !sessionHasMicrophoneRoute {
+                logger.logInfo("🎙️ Upgrading mic-free session for recording")
+                endSession()
+            } else {
+                logger.logInfo("🎙️ Prewarm session already active, extending timeout")
+                extendSession(timeout: timeout)
+                return
+            }
         }
 
         // Update timeout if specified, otherwise use existing setting
@@ -105,14 +127,18 @@ final class AudioPrewarmManager: AudioPrewarmer {
         try audioSession.setCategory(
             .playAndRecord,
             mode: .default,
-            options: RecordingAudioSession.categoryOptions(base: [.mixWithOthers, .defaultToSpeaker])
+            options: RecordingAudioSession.categoryOptions(
+                base: [.mixWithOthers, .defaultToSpeaker],
+                requiresMicrophoneRoute: needsMicrophone
+            )
         )
         try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try audioSession.setActive(true)
         // After activation, before the engine and tap are built - a preferred
         // input set earlier does not stick.
-        RecordingAudioSession.applyPreferredInput(to: audioSession)
+        RecordingAudioSession.applyPreferredInput(to: audioSession, requiresMicrophoneRoute: needsMicrophone)
         #endif
+        sessionHasMicrophoneRoute = needsMicrophone
 
         // Start continuous dummy recorder and wait for it to complete
         try await startDummyRecording()
@@ -165,6 +191,7 @@ final class AudioPrewarmManager: AudioPrewarmer {
         expiryTimer = nil
 
         sessionStartTime = nil
+        sessionHasMicrophoneRoute = false
 
         // Update observable state
         isSessionActiveObservable = false

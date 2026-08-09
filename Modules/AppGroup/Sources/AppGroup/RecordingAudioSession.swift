@@ -59,12 +59,19 @@ public enum RecordingAudioSession {
     /// Note this is load-bearing in both directions: `setPreferredInput` can
     /// only choose among devices the *category* permits, so omitting HFP here
     /// silently pins the built-in mic no matter what the preference says.
+    /// - Parameter requiresMicrophoneRoute: `false` for sessions that are only
+    ///   held to keep the app alive and never read the mic - notably the
+    ///   keyboard's text-processing anchor. Those get the built-in treatment
+    ///   whatever the preference says, because acquiring a Bluetooth input
+    ///   route costs the user their playback quality for the whole session and
+    ///   buys nothing when nothing is listening.
     public static func categoryOptions(
-        base: AVAudioSession.CategoryOptions
+        base: AVAudioSession.CategoryOptions,
+        requiresMicrophoneRoute: Bool = true
     ) -> AVAudioSession.CategoryOptions {
         var options = base
 
-        guard preferredMicrophone == .automatic else {
+        guard requiresMicrophoneRoute, preferredMicrophone == .automatic else {
             options.remove(.allowBluetoothHFP)
             // Dropping HFP is not enough on its own. `.playAndRecord` needs
             // `.allowBluetoothA2DP` to keep a Bluetooth *output* route, so
@@ -85,8 +92,11 @@ public enum RecordingAudioSession {
     /// Pins the input device. Call after `setActive(true)` and before building
     /// any engine and its tap - a preferred input set before activation does
     /// not stick.
-    public static func applyPreferredInput(to session: AVAudioSession) {
-        guard preferredMicrophone == .builtIn else {
+    public static func applyPreferredInput(
+        to session: AVAudioSession,
+        requiresMicrophoneRoute: Bool = true
+    ) {
+        guard !requiresMicrophoneRoute || preferredMicrophone == .builtIn else {
             // Automatic: clear any pin so iOS is free to pick the connected device.
             try? session.setPreferredInput(nil)
             return
