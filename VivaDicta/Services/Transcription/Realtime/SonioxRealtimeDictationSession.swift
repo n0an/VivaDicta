@@ -44,9 +44,6 @@ actor SonioxRealtimeDictationSession {
     private var failureMessage: String?
     private var didFinish = false
 
-    /// Emits the best-known transcript (finals + current interim) as it grows,
-    /// so callers can show live text while the user is still speaking.
-    private var previewContinuation: AsyncStream<String>.Continuation?
     private var receiveTask: Task<Void, Never>?
 
     /// Text captured so far. Safe to read at any point.
@@ -73,12 +70,6 @@ actor SonioxRealtimeDictationSession {
         }
     }
 
-    func makePreviewStream() -> AsyncStream<String> {
-        AsyncStream<String> { continuation in
-            previewContinuation = continuation
-        }
-    }
-
     func send(_ pcmChunk: Data) async {
         guard isRunning, failureMessage == nil else { return }
         await client.sendAudioChunk(pcmChunk)
@@ -99,10 +90,22 @@ actor SonioxRealtimeDictationSession {
             try? await Task.sleep(for: .milliseconds(50))
         }
 
+        let didTimeOut = !didFinish && failureMessage == nil
+
         await teardown()
 
         if let failureMessage {
             throw SessionError.transportFailed(failureMessage)
+        }
+
+        // A timeout means the server never confirmed it was done, so whatever
+        // accumulated may be missing the tail and can still contain an
+        // unsettled interim region. Returning it would silently save a
+        // truncated transcript, so treat it as a transport failure and let the
+        // caller upload the recorded file instead.
+        if didTimeOut {
+            logger.logWarning("Realtime finalize timed out; deferring to the upload fallback")
+            throw SessionError.transportFailed("timed out waiting for final tokens")
         }
 
         let text = accumulator.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -131,7 +134,6 @@ actor SonioxRealtimeDictationSession {
 
     private func apply(_ batch: [LiveTranslationToken]) {
         accumulator.ingest(batch)
-        previewContinuation?.yield(accumulator.text)
     }
 
     private func markStreamEnded() {
@@ -142,8 +144,6 @@ actor SonioxRealtimeDictationSession {
         isRunning = false
         receiveTask?.cancel()
         receiveTask = nil
-        previewContinuation?.finish()
-        previewContinuation = nil
         await client.disconnect()
     }
 }

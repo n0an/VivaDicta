@@ -287,7 +287,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     // buffers to send. They get an engine-backed capture that
                     // writes the same WAV, so the fallback and storage are unaffected.
                     let modelName = transcriptionManager.getCurrentTranscriptionModel()?.name
-                    if RealtimeDictationCoordinator.canHandle(modelName: modelName) {
+                    if RealtimeDictationCoordinator.canHandle(
+                        mode: transcriptionManager.currentMode,
+                        modelName: modelName
+                    ) {
                         let coordinator = RealtimeDictationCoordinator()
                         try await coordinator.start(
                             writingTo: captureURL,
@@ -380,7 +383,17 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             // here just falls through to the normal upload path below.
             self.realtimeCoordinator = nil
 
-            Task {
+            // Leave `.recording` before awaiting the flush, which can take up
+            // to the finalize timeout. Staying in `.recording` would keep Stop
+            // enabled, and a second tap would take the normal branch and move
+            // the capture file out from under this task.
+            recordingState = .transcribing
+            appGroupBridge.updateRecordingState(false)
+
+            // Held in `transcribingSpeechTask` so `cancelTranscribe()` can
+            // actually cancel the flush; an untracked task would keep running
+            // and save a transcription the user already cancelled.
+            transcribingSpeechTask = Task {
                 do {
                     realtimeTranscript = try await realtimeCoordinator.finish()
                     logger.logInfo("🎙️ Realtime transcript ready at stop")
@@ -389,8 +402,12 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     logger.logWarning("🎙️ Realtime transcription failed, falling back to upload: \(error.localizedDescription)")
                 }
 
+                guard !Task.isCancelled else {
+                    await realtimeCoordinator.cancel()
+                    return
+                }
+
                 resetValues()
-                appGroupBridge.updateRecordingState(false)
                 finishRecording(sourceTag: sourceTag, destination: destination, modelContext: modelContext)
             }
         } else {

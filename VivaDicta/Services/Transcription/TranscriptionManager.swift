@@ -345,9 +345,15 @@ class TranscriptionManager: Transcriber {
             ))
 
         case .soniox:
+            // This provider is the upload-and-poll `/v1/transcriptions` job,
+            // which only accepts `stt-async-*` models. When the realtime model
+            // is selected we still land here for the keyboard path and for the
+            // fallback after a dropped socket, so swap in the async model -
+            // otherwise the very fallback the streaming design relies on would
+            // be rejected for sending a realtime slug to the async endpoint.
             return .soniox(.init(
                 apiKey: try requireAPIKey(model),
-                modelName: model.name,
+                modelName: TranscriptionModelProvider.asyncEquivalent(of: model.name),
                 language: selectedLanguage,
                 vocabulary: CustomVocabulary.getTerms(),
                 isSpeakerDiarizationEnabled: diarizationEnabled,

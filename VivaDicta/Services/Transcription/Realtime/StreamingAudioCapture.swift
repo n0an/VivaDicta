@@ -175,6 +175,13 @@ final class StreamingAudioCapture {
         // Install from a background queue so the tap closure does not inherit
         // MainActor isolation - AVAudioEngine calls it on its realtime thread
         // and an isolated closure trips _dispatch_assert_queue_fail.
+        //
+        // This is the one deliberate exception to the repo's no-GCD rule, and
+        // it matches what `LiveTranslationAudio.configureEngine` and
+        // `AudioPrewarmManager` already do for the same reason. A structured
+        // alternative that reliably strips the isolation from a closure handed
+        // to a C-level realtime callback does not exist today; swapping in a
+        // Task here reintroduces the crash those two call sites solved.
         await withCheckedContinuation { resume in
             DispatchQueue.global(qos: .userInitiated).async {
                 installStreamingInputTap(inputNode: inputNode, format: inputFormat, sink: sink)

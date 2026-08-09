@@ -80,11 +80,23 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// hopping to MainActor just to look up a string constant.
     nonisolated static let sonioxRealtimeModel = "stt-rt-v5"
 
+    /// Soniox's current async/batch model, used by the upload-and-poll path.
+    nonisolated static let sonioxAsyncModel = "stt-async-v5"
+
     /// Models that transcribe over a live socket while the user speaks, rather
     /// than uploading the finished file. These need the engine-backed capture
     /// path - `AVAudioRecorder` hands out no buffers to stream.
     static func isStreamingModel(_ modelName: String) -> Bool {
         modelName == sonioxRealtimeModel
+    }
+
+    /// The model to send to a batch/upload endpoint for a given selection.
+    /// Realtime slugs are rejected by Soniox's async `/v1/transcriptions` API,
+    /// so a realtime selection maps to its async counterpart whenever the
+    /// upload path runs - the keyboard flow, and the fallback after a dropped
+    /// socket. Everything else passes through untouched.
+    static func asyncEquivalent(of modelName: String) -> String {
+        isStreamingModel(modelName) ? sonioxAsyncModel : modelName
     }
     
     static let cloudProviders: [TranscriptionModelProvider] = [

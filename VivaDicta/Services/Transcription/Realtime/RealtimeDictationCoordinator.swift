@@ -5,6 +5,7 @@
 //  Created by Anton Novoselov on 2026.08.08
 //
 
+import AppGroup
 import Foundation
 import Keychain
 import os
@@ -36,15 +37,29 @@ final class RealtimeDictationCoordinator {
         self.keychain = keychain
     }
 
-    /// Whether realtime should be used for this model right now. A missing API
+    /// Whether realtime should be used for this mode right now. A missing API
     /// key is not an error here - the caller just records normally and the
     /// usual missing-key error surfaces from the upload path.
+    ///
+    /// Modes asking for inline translation or speaker labels stay on the
+    /// upload path. The socket is opened in transcription-only mode, and since
+    /// a successful stream bypasses the Soniox job entirely, streaming those
+    /// modes would quietly save untranslated text with no speaker attribution
+    /// - a worse failure than simply being slower.
     static func canHandle(
+        mode: VivaMode,
         modelName: String?,
         keychain: any KeychainService = DefaultKeychainService()
     ) -> Bool {
         guard let modelName, TranscriptionModelProvider.isStreamingModel(modelName) else { return false }
         guard let key = keychain.getString(forKey: "sonioxAPIKey"), !key.isEmpty else { return false }
+
+        let translationTarget = mode.translationTargetLanguage ?? ""
+        guard translationTarget.isEmpty else { return false }
+
+        // Speaker labels are a global setting rather than a mode property.
+        guard !AppGroupCoordinator.shared.isSpeakerDiarizationEnabled else { return false }
+
         return true
     }
 
@@ -89,7 +104,13 @@ final class RealtimeDictationCoordinator {
 
         // Stop the mic first so no audio arrives after the end-of-audio marker.
         await capture.stop()
-        pumpTask?.cancel()
+
+        // `capture.stop()` finishes the stream, but up to ~1s of chunks may
+        // still be buffered in it. Wait for the pump to drain them rather than
+        // cancelling - cancelling here drops the tail of the recording, and
+        // because the socket would still return a successful (just truncated)
+        // transcript, nothing downstream would notice the loss.
+        await pumpTask?.value
         pumpTask = nil
 
         return try await session.finish()
