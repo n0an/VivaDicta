@@ -72,8 +72,16 @@ final class AudioPrewarmManager: AudioPrewarmer {
         (isWithinSessionTimeout() || captureContext?.isCapturing == true)
     }
 
+    /// True when the user picked "Never" for the session timeout - the hot mic
+    /// then stays armed until it is ended explicitly (Live Activity terminate,
+    /// app relaunch) instead of expiring on a timer.
+    var isTimeoutDisabled: Bool {
+        audioSessionTimeout == AppGroupCoordinator.sessionTimeoutNever
+    }
+
     var timeoutRemaining: TimeInterval {
         guard let startTime = sessionStartTime else { return 0 }
+        guard !isTimeoutDisabled else { return .infinity }
         let elapsed = Date().timeIntervalSince(startTime)
         return max(0, TimeInterval(audioSessionTimeout) - elapsed)
     }
@@ -119,7 +127,7 @@ final class AudioPrewarmManager: AudioPrewarmer {
         }
         sessionStartTime = Date()
 
-        logger.logInfo("🎙️ Starting prewarm session (timeout: \(self.audioSessionTimeout)s)")
+        logger.logInfo("🎙️ Starting prewarm session (timeout: \(self.timeoutDescription))")
 
         // Configure audio session
         #if !os(macOS)
@@ -171,7 +179,7 @@ final class AudioPrewarmManager: AudioPrewarmer {
         // Reschedule timeout
         scheduleSessionTimeout()
 
-        logger.logInfo("🎙️ Prewarm session extended (new timeout: \(self.audioSessionTimeout)s)")
+        logger.logInfo("🎙️ Prewarm session extended (new timeout: \(self.timeoutDescription))")
     }
 
     /// Ends the prewarm session and cleans up all resources
@@ -250,6 +258,12 @@ final class AudioPrewarmManager: AudioPrewarmer {
 
     private func scheduleSessionTimeout() {
         expiryTimer?.invalidate()
+        expiryTimer = nil
+
+        guard !isTimeoutDisabled else {
+            logger.logInfo("⏰ Session timeout disabled (\"Never\") - session stays active until ended explicitly")
+            return
+        }
 
         expiryTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(audioSessionTimeout), repeats: false) { [weak self] _ in
 
@@ -383,13 +397,38 @@ final class AudioPrewarmManager: AudioPrewarmer {
             timeoutSeconds: audioSessionTimeout
         )
 
-        logger.logInfo("🎙️ Session timeout rescheduled: \(self.audioSessionTimeout)s from now")
+        logger.logInfo("🎙️ Session timeout rescheduled: \(self.timeoutDescription)")
+    }
+
+    /// Applies a changed `audioSessionTimeout` to the session already running, so
+    /// the new choice takes effect now rather than at the next session. Without
+    /// this the live session keeps whatever timer it started with: switching to
+    /// "Never" would still expire on the old deadline, and switching away from
+    /// "Never" would leave a session that has no timer at all.
+    ///
+    /// No-op during a real capture - `startRealCapture()` deliberately runs with
+    /// no expiry timer, and the `rescheduleSessionTimeout()` that follows
+    /// processing reads the current value anyway, so the change lands then.
+    func applyTimeoutChange() {
+        guard audioEngine?.isRunning == true else { return }
+
+        guard captureContext?.isCapturing != true else {
+            logger.logInfo("⏰ Timeout change deferred - real capture in progress")
+            return
+        }
+
+        rescheduleSessionTimeout()
     }
 
     // MARK: - Private Helpers
 
+    private var timeoutDescription: String {
+        isTimeoutDisabled ? "never" : "\(audioSessionTimeout)s"
+    }
+
     private func isWithinSessionTimeout() -> Bool {
         guard let startTime = sessionStartTime else { return false }
+        guard !isTimeoutDisabled else { return true }
         let elapsed = Date().timeIntervalSince(startTime)
         return elapsed < TimeInterval(audioSessionTimeout)
     }

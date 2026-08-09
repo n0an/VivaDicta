@@ -150,6 +150,24 @@ The session expires after `audioSessionTimeout` seconds of inactivity (default: 
 
 This design prevents the audio session from expiring while the app is actively transcribing or running AI processing after a recording ends. `rescheduleSessionTimeout()` is the explicit signal that the full pipeline (record → transcribe → AI process) is complete and the session can safely idle again.
 
+#### The "Never" option
+
+Settings → Keyboard → Session Timeout also offers **Never**, stored as the sentinel `audioSessionTimeout == AppGroupCoordinator.sessionTimeoutNever` (`0`). It short-circuits the timer machinery rather than picking a very large interval:
+
+| Site | Behavior with "Never" |
+|------|-----------------------|
+| `AudioPrewarmManager.isTimeoutDisabled` | `true` - single check the rest of the class branches on |
+| `scheduleSessionTimeout()` | Invalidates the existing timer and schedules nothing |
+| `isWithinSessionTimeout()` | `true` for any started session, so `startRealCapture()` never throws `.sessionExpired` |
+| `timeoutRemaining` | `.infinity` |
+| `activateKeyboardSession(timeoutSeconds:)` / `refreshKeyboardSessionExpiry(timeoutSeconds:)` | Stores `Date.distantFuture` as `keyboardSessionExpiryTime`, so the keyboard extension's existing expiry comparison keeps working unchanged |
+
+A "Never" session ends only on an explicit `endSession()`. Not every entry point offers one on its own: the `vivadicta://record-for-keyboard` deeplink starts a Live Activity (whose terminate action calls `endSession()`), but the Settings button and the `vivadicta://activate-for-keyboard` text-processing deeplink do not. With a finite timeout those two flows still self-terminate on the expiry timer; with "Never" they would strand an armed microphone until the process is relaunched.
+
+The Settings row is therefore a start/stop control (`KeyboardSessionButton`): while `isSessionActiveObservable` it ends the session instead of being disabled, which covers every entry point since the state lives on the shared `AudioPrewarmManager`. The picker also shows a battery-cost warning while "Never" is selected.
+
+Changing the picker mid-session calls `applyTimeoutChange()`, because `scheduleSessionTimeout()` otherwise only runs at session start, on extend, and after processing - a live session would keep whatever timer it started with. Both directions matter: switching to "Never" would still expire on the old deadline, and switching away from "Never" would leave a session with no timer at all. The call is a no-op during a real capture, which runs without an expiry timer by design; the `rescheduleSessionTimeout()` that follows processing reads the current value, so the change lands then.
+
 ## AudioCaptureContext
 
 ```
