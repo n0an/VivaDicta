@@ -483,10 +483,10 @@ struct VivaDictaApp: App {
                     // silently stop working. It is a background-execution
                     // anchor, not an audio feature.
                     //
-                    // The Bluetooth route flip this used to cause is addressed
-                    // in RecordingAudioSession instead: the default built-in-mic
-                    // preference means the session no longer requests
-                    // `.allowBluetoothHFP`, so headphones stay in A2DP.
+                    // Which mic route this acquires is decided by the user's
+                    // Microphone setting via RecordingAudioSession, not here.
+                    // Under the Automatic default it does request the Bluetooth
+                    // input route; "iPhone Microphone" keeps headphones on A2DP.
                     try await AudioPrewarmManager.shared.startPrewarmSession()
                     logger.logInfo("🎙️ Prewarm session ready for text processing")
 

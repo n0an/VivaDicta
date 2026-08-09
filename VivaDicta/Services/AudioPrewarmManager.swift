@@ -336,9 +336,14 @@ final class AudioPrewarmManager: AudioPrewarmer {
         // even though that would release the mic sooner. The session is what
         // keeps the app alive in the background for the keyboard flow, so
         // ending it here would trade AirPods audio quality for a keyboard that
-        // stops responding. The HFP route is avoided at the source instead -
-        // see RecordingAudioSession - and users who opt into "Connected Device"
-        // can release it early with "End Session Now" in Settings.
+        // stops responding.
+        //
+        // Under the Automatic default the session does hold the Bluetooth input
+        // route while idle. The escapes are the "iPhone Microphone" setting,
+        // which never acquires it, and "End Session Now" in Settings. On iOS 26
+        // `.bluetoothHighQualityRecording` means supported devices take the
+        // high-quality route rather than HFP, so the idle cost is much smaller
+        // there. See RecordingAudioSession.
 
         // Reset the session start time
         sessionStartTime = Date()
