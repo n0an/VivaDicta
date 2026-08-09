@@ -22,7 +22,7 @@ The **only** place short `X.Y` form survives is the internal `WhatsNewCatalog.re
 
 ## Related Skills
 
-- `asc-release-flow` — drive the App Store Connect submission flow (Step 11 covers the one-command `asc publish appstore` path; reach for this skill when a submission needs unpicking)
+- `asc-release-flow` — drive the App Store Connect submission flow (Step 11 covers the normal upload-and-submit path; reach for this skill when a submission needs unpicking)
 - `asc-whats-new-writer` — generate App Store release notes
 - `asc-metadata-sync` — sync and validate App Store metadata
 - `asc-localize-metadata` — sync metadata across localizations (used for ASO, not actual translation)
@@ -60,7 +60,7 @@ Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` ac
 > ```
 > Then confirm the same number carries the new value after the sed.
 
-Fastest approach - global sed replace catches all 30 entries in one shot:
+Fastest approach - a global sed replace catches every entry in one shot:
 ```bash
 N=$(grep -c "MARKETING_VERSION = " VivaDicta.xcodeproj/project.pbxproj)   # baseline, currently 27
 grep -cE "MARKETING_VERSION = {OLD}" VivaDicta.xcodeproj/project.pbxproj  # should equal $N
@@ -297,72 +297,62 @@ Before shipping (Step 11):
 - [ ] App Privacy confirmed published - `asc validate` **cannot** verify this via the public API, so it must be eyeballed: https://appstoreconnect.apple.com/apps/6758147238/appPrivacy
 - [ ] After the release ships: empty `whats-new-running.md` (clear items, keep the `Running What's New (next release)` header) so it only tracks the next upcoming release
 
-### Step 11 — Ship it (archive → upload → attach → submit)
+### Step 11 — Ship it (upload → attach → validate → submit)
 
-All five formerly-manual App Store Connect steps are automatable. `asc publish appstore` is the canonical high-level command and does the whole chain:
+The proven sequence, exactly as run for 3.8.0. **Anton archives and uploads in Xcode; the agent does everything after that with `asc`.**
 
-1. Archive + export locally (drives `xcodebuild` itself in local-build mode)
-2. Upload the IPA, wait for processing
-3. Find or create the App Store version
-4. Apply version localization metadata from `--metadata-dir`
-5. Attach the build
-6. Submit for review (`--submit --confirm`)
+Export compliance is **not** a step - `ITSAppUsesNonExemptEncryption = false` in `VivaDicta/Info.plist` means builds arrive already `exempt` (see Step 10).
 
-Export compliance is **not** a step here - it is declared once in `VivaDicta/Info.plist` (see Step 10).
+#### 1. Anton: archive + upload (Xcode)
 
-#### Always dry-run first
+Product > Archive, then Organizer > Distribute App > **App Store Connect > Upload**.
 
-```bash
-asc publish appstore --app 6758147238 --version X.Y.Z \
-  --workspace ./VivaDicta.xcodeproj/project.xcworkspace --scheme VivaDicta \
-  --metadata-dir ./metadata --dry-run
-```
+Use **Upload**, not Export. Upload goes straight to ASC; Export writes an `.ipa` to disk that nothing here needs. This is also why the repo has no `ExportOptions.plist` - only headless `xcodebuild -exportArchive` needs one, and we do not use that path.
 
-#### The real run
+Also create the version in App Store Connect (or let the agent: `asc versions create --app 6758147238 --version X.Y.Z --platform IOS`).
+
+#### 2. Agent: find the build and version IDs
 
 ```bash
-# Stage everything but stop before review (safe default - prefer this)
-asc publish appstore --app 6758147238 --version X.Y.Z \
-  --workspace ./VivaDicta.xcodeproj/project.xcworkspace --scheme VivaDicta \
-  --export-options ./ExportOptions.plist \
-  --metadata-dir ./metadata --wait
-
-asc validate --app 6758147238 --version X.Y.Z --platform IOS   # expect 0 errors / 0 blocking
-
-# Then, and only with explicit sign-off, submit:
-asc publish appstore --app 6758147238 --version X.Y.Z --submit --confirm
+asc builds list --app 6758147238 --limit 5 --output table       # confirm the new build is VALID
+asc versions list --app 6758147238 --platform IOS --output table
 ```
 
-**Archiving is slow** (18 SPM modules, 9 targets). Run it backgrounded and poll rather than blocking the session.
+Check the build's `Encryption` column reads `exempt`. If it reads `n/a`, the Info.plist key went missing - fix the plist, do not patch the build.
 
-#### Prerequisites
-
-- **`ExportOptions.plist`** at the repo root - required by local-build mode. `method` = `app-store-connect`, plus the team ID.
-- **Non-interactive code signing.** If the login keychain prompts for the Distribution private key the archive dies mid-run. `security unlock-keychain` once per session fixes it.
-- **`asc auth`** configured (`asc doctor` diagnoses).
-
-#### Never automate without explicit sign-off
-
-`--submit --confirm` puts the app in front of App Review. Treat it like a deploy: always ask, every single time, even though the rest of the chain is automatic. Everything up to and including `attach build` is reversible; submission is not (only cancellable).
-
-#### Alternative: stage without submitting
+#### 3. Agent: apply metadata, attach, validate
 
 ```bash
-asc release stage --app 6758147238 --version X.Y.Z --build BUILD_ID --metadata-dir ./metadata --confirm
+asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata --dry-run
+asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
+
+asc versions attach-build --version-id VERSION_ID --build BUILD_ID
+
+asc validate --app 6758147238 --version X.Y.Z --platform IOS --output table
+asc review doctor --app 6758147238 --output table
 ```
 
-Same pipeline, hard-stops before creating a review submission.
+Target state: `asc validate` = 0 errors / 0 blocking, `asc review doctor` = `blockingCount 0` with `nextAction: No submission blockers detected`.
 
-#### Readiness checks
+#### 4. Anton: confirm App Privacy, then submit
 
-```bash
-asc review doctor --app 6758147238    # "nextAction" tells you exactly what is blocking
-asc review status --app 6758147238
-```
+`asc validate` **cannot** verify App Privacy publish state through the public API - that is the one permanent info-level advisory. Eyeball it:
+https://appstoreconnect.apple.com/apps/6758147238/appPrivacy
+
+Then click **Add for Review**, or have the agent run `asc publish appstore --app 6758147238 --version X.Y.Z --submit --confirm`.
+
+**Always ask before submitting**, every time. Everything up to attaching the build is reversible; submission is not (only cancellable).
 
 #### Gotchas found in practice
 
+- `asc metadata push` **does not exist** - the subcommand is `asc metadata apply`.
 - `asc versions view` shows **empty Build ID / Build Version columns even when a build is correctly attached** - ASC omits relationship linkage unless `?include=` is passed, and the command does not. Do **not** read that as a missing build. `asc validate` is authoritative: its `build.required.missing` error clears the moment the build is attached.
-- `asc builds update --uses-non-exempt-encryption=false` is only a per-build patch for builds uploaded before the Info.plist key existed. The plist key is the real fix.
 - `asc metadata apply` reports `add` for `whatsNew` on a fresh version (the field does not exist yet) and `update` for `description`. Seeing zero `keywords` rows is the signal the per-locale ASO keyword sets were preserved - if keywords ever appear in the plan, stop and investigate.
 - Run `asc metadata apply` **without** `--allow-deletes`. With it, any locale missing locally is planned as a delete.
+- `asc builds update --uses-non-exempt-encryption=false` is only a patch for builds uploaded before the Info.plist key existed.
+
+#### If you ever want unattended releases
+
+`asc publish appstore` can drive the archive itself (`--workspace` + `--scheme` + `--export-options`), collapsing all of the above into one command. That is the only scenario needing an `ExportOptions.plist` (`method = app-store-connect`, `teamID = 358V8FBM3U`, `signingStyle = automatic`).
+
+**Not the default, deliberately.** It trades one reliable Xcode GUI action for a long headless run whose weakest point is automatic signing fetching distribution profiles for all 7 bundle IDs without a keychain prompt. Only worth it for CI or cron. To upload an already-exported IPA without local-build mode, use `asc publish appstore --ipa path/to.ipa` - no `ExportOptions.plist` required.
