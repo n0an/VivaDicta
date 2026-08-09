@@ -67,6 +67,34 @@ struct AppGroupCoordinatorSessionTests {
         #expect(expiry == 0)
     }
 
+    // MARK: - "Never" Timeout
+
+    @Test func activateKeyboardSession_neverTimeout_expiryInDistantFuture() {
+        sut.activateKeyboardSession(timeoutSeconds: AppGroupCoordinator.sessionTimeoutNever)
+
+        let expiry = defaults.double(forKey: "keyboardSessionExpiryTime")
+        #expect(expiry == Date.distantFuture.timeIntervalSince1970)
+        #expect(sut.isKeyboardSessionActive == true)
+    }
+
+    @Test func refreshSessionExpiry_neverTimeout_expiryInDistantFuture() {
+        sut.activateKeyboardSession(timeoutSeconds: 10)
+
+        sut.refreshKeyboardSessionExpiry(timeoutSeconds: AppGroupCoordinator.sessionTimeoutNever)
+
+        let expiry = defaults.double(forKey: "keyboardSessionExpiryTime")
+        #expect(expiry == Date.distantFuture.timeIntervalSince1970)
+        #expect(sut.isKeyboardSessionActive == true)
+    }
+
+    @Test func neverTimeoutSession_stillEndsOnExplicitDeactivate() {
+        sut.activateKeyboardSession(timeoutSeconds: AppGroupCoordinator.sessionTimeoutNever)
+
+        sut.deactivateKeyboardSession()
+
+        #expect(sut.isKeyboardSessionActive == false)
+    }
+
     // MARK: - Settings Flags
 
     @Test func settingsFlags_defaultValues() {
