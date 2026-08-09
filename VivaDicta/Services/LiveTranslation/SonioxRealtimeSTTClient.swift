@@ -9,6 +9,15 @@ import Foundation
 import os
 
 actor SonioxRealtimeSTTClient {
+    /// What the socket is asked to produce. Live Translation wants a
+    /// translated stream alongside the original; dictation wants transcript
+    /// only, and sending a `translation` object there would make Soniox emit
+    /// translation tokens nobody consumes.
+    enum Mode: Sendable {
+        case transcription
+        case translation(target: LiveTranslationLanguage)
+    }
+
     enum Event: Sendable {
         /// All tokens from a single Soniox server response, in order. Per the
         /// Soniox protocol the non-final tokens in each response are a *full
@@ -23,14 +32,20 @@ actor SonioxRealtimeSTTClient {
     private let logger = Logger(category: .liveTranslationSTT)
     private let endpoint = URL(string: "wss://stt-rt.soniox.com/transcribe-websocket")!
 
+    /// Defined on the model catalog because that file is shared with the app
+    /// extensions; see `TranscriptionModelProvider.sonioxRealtimeModel`.
+    static let model = TranscriptionModelProvider.sonioxRealtimeModel
+
     private var task: URLSessionWebSocketTask?
     private var receiveTask: Task<Void, Never>?
     private var continuation: AsyncStream<Event>.Continuation?
 
+    /// - Parameter languageHints: BCP-47 codes passed to Soniox as soft hints.
+    ///   Empty means no hint at all, which is what auto-detect dictation wants.
     func connect(
         apiKey: String,
-        sourceLanguage: LiveTranslationLanguage,
-        targetLanguage: LiveTranslationLanguage,
+        languageHints: [String],
+        mode: Mode,
         vocabularyTerms: [String]
     ) -> AsyncStream<Event> {
         disconnect()
@@ -51,8 +66,8 @@ actor SonioxRealtimeSTTClient {
         do {
             let config = makeConfigPayload(
                 apiKey: apiKey,
-                sourceLanguage: sourceLanguage,
-                targetLanguage: targetLanguage,
+                languageHints: languageHints,
+                mode: mode,
                 vocabularyTerms: vocabularyTerms
             )
             let data = try JSONSerialization.data(withJSONObject: config)
@@ -100,29 +115,36 @@ actor SonioxRealtimeSTTClient {
 
     private func makeConfigPayload(
         apiKey: String,
-        sourceLanguage: LiveTranslationLanguage,
-        targetLanguage: LiveTranslationLanguage,
+        languageHints: [String],
+        mode: Mode,
         vocabularyTerms: [String]
     ) -> [String: Any] {
         var payload: [String: Any] = [
             "api_key": apiKey,
-            "model": "stt-rt-v4",
+            "model": Self.model,
             "audio_format": "pcm_s16le",
             "sample_rate": 16000,
             "num_channels": 1,
-            // Soft hint only - do NOT set language_hints_strict here. Lecturers
-            // routinely code-switch into English for technical terms, names, and
-            // slide titles; strict mode forces those into the source language's
-            // phonetics and produces garbled transcripts. Keep enable_language_identification
-            // on so each token still carries its detected language.
-            "language_hints": [sourceLanguage.rawValue],
             "enable_language_identification": true,
-            "enable_endpoint_detection": true,
-            "translation": [
-                "type": "one_way",
-                "target_language": targetLanguage.rawValue
-            ]
+            "enable_endpoint_detection": true
         ]
+
+        // Soft hint only - do NOT set language_hints_strict here. Lecturers
+        // routinely code-switch into English for technical terms, names, and
+        // slide titles; strict mode forces those into the source language's
+        // phonetics and produces garbled transcripts. Keep enable_language_identification
+        // on so each token still carries its detected language. On auto-detect
+        // dictation the hint list is empty and the key is dropped entirely.
+        if !languageHints.isEmpty {
+            payload["language_hints"] = languageHints
+        }
+
+        if case .translation(let target) = mode {
+            payload["translation"] = [
+                "type": "one_way",
+                "target_language": target.rawValue
+            ]
+        }
 
         if !vocabularyTerms.isEmpty {
             payload["context"] = ["terms": vocabularyTerms]
@@ -177,9 +199,12 @@ actor SonioxRealtimeSTTClient {
                     batch.append(token)
                 }
             }
-            if !batch.isEmpty {
-                continuation?.yield(.tokens(batch))
-            }
+            // Forwarded even when empty. Non-final tokens are a full
+            // replacement set, so a response carrying none means the interim
+            // region was withdrawn - suppressing it leaves consumers holding
+            // text the server has retracted. Consumers that do not want that
+            // signal ignore empty batches themselves.
+            continuation?.yield(.tokens(batch))
         }
 
         if let finished = json["finished"] as? Bool, finished {

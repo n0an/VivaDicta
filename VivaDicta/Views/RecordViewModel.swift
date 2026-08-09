@@ -145,6 +145,14 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private var activeRecordingDestination: RecordingDestination = .newNote
     private var activeSourceTag: String = SourceTag.app
 
+    /// Non-nil only while a streaming model is recording. Its presence is what
+    /// makes stop/cancel take the realtime branch.
+    private var realtimeCoordinator: RealtimeDictationCoordinator?
+    /// Transcript produced by the realtime socket, handed to
+    /// `transcribeSpeechTask` so it skips the upload entirely. Nil means the
+    /// normal file-based path runs, including after a realtime failure.
+    private var realtimeTranscript: String?
+
     var captureURL: URL {
         FileManager.appDirectory(for: .audio).appendingPathComponent("recording.wav")
     }
@@ -212,6 +220,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             // Clear any stale selection now; the filter-inherited tags are seeded only
             // once capture has actually started, so failed/denied starts leave it empty.
             pendingTagIds.removeAll()
+            // Cleared here rather than in resetValues(), which the realtime stop
+            // path calls *after* capturing the transcript.
+            realtimeTranscript = nil
 
             // Check if prewarm session is active (keyboard recording)
             if prewarmManager.isSessionActive {
@@ -272,25 +283,68 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 appGroupBridge.updateRecordingState(true)
 
                 do {
-                    let settings: [String : Any] = [
-                        AVFormatIDKey: kAudioFormatLinearPCM,
-                        AVSampleRateKey: 16_000.0,
-                        AVNumberOfChannelsKey: 1,
-                        AVLinearPCMBitDepthKey: 16,
-                        AVLinearPCMIsBigEndianKey: false,
-                        AVLinearPCMIsFloatKey: false
-                    ]
-                    
-                    try audioRecordingService.startRecording(to: captureURL, settings: settings)
+                    // Streaming models can't use AVAudioRecorder - it exposes no
+                    // buffers to send. They get an engine-backed capture that
+                    // writes the same WAV, so the fallback and storage are unaffected.
+                    let modelName = transcriptionManager.getCurrentTranscriptionModel()?.name
+                    if RealtimeDictationCoordinator.canHandle(
+                        mode: transcriptionManager.currentMode,
+                        modelName: modelName
+                    ) {
+                        let coordinator = RealtimeDictationCoordinator()
+
+                        // Published BEFORE awaiting start: the state is already
+                        // `.recording`, so a Stop or Cancel landing during the
+                        // engine spin-up must find the coordinator. Otherwise
+                        // stop takes the normal branch and moves the capture
+                        // file out from under an engine that is still starting.
+                        realtimeCoordinator = coordinator
+
+                        do {
+                            try await coordinator.start(
+                                writingTo: captureURL,
+                                transcriptionLanguage: transcriptionManager.currentMode.transcriptionLanguage ?? "auto"
+                            )
+                        } catch {
+                            realtimeCoordinator = nil
+                            throw error
+                        }
+
+                        // Stop/cancel may have run while start was suspended.
+                        guard realtimeCoordinator === coordinator else {
+                            logger.logInfo("🎙️ Recording ended during realtime start-up; tearing down")
+                            await coordinator.cancel()
+                            return
+                        }
+
+                        logger.logInfo("🎙️ Recording with realtime streaming transcription")
+                    } else {
+                        let settings: [String : Any] = [
+                            AVFormatIDKey: kAudioFormatLinearPCM,
+                            AVSampleRateKey: 16_000.0,
+                            AVNumberOfChannelsKey: 1,
+                            AVLinearPCMBitDepthKey: 16,
+                            AVLinearPCMIsBigEndianKey: false,
+                            AVLinearPCMIsFloatKey: false
+                        ]
+
+                        try audioRecordingService.startRecording(to: captureURL, settings: settings)
+                    }
 
                     // Recording is live - seed tags inherited from an active filter.
                     pendingTagIds = initialTagIds
 
                     animationTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true, block: { [weak self]_ in
                         Task { @MainActor in
-                            guard let self, self.audioRecordingService.isRecording else { return }
-                            let rawPower = Double(self.audioRecordingService.currentAudioPower)
-                            let power = min(1, max(0, 1 - abs(rawPower / 50)))
+                            guard let self else { return }
+                            let power: Double
+                            if let realtimeCoordinator = self.realtimeCoordinator {
+                                power = realtimeCoordinator.currentAudioLevel
+                            } else {
+                                guard self.audioRecordingService.isRecording else { return }
+                                let rawPower = Double(self.audioRecordingService.currentAudioPower)
+                                power = min(1, max(0, 1 - abs(rawPower / 50)))
+                            }
                             self.audioPower = power
                             self.appGroupBridge.updateAudioLevel(power)
                         }
@@ -343,6 +397,39 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
                 }
             }
+        } else if let realtimeCoordinator {
+            // Realtime mode: close the socket and collect the transcript before
+            // touching the file. The WAV was written all along, so any failure
+            // here just falls through to the normal upload path below.
+            self.realtimeCoordinator = nil
+
+            // Leave `.recording` before awaiting the flush, which can take up
+            // to the finalize timeout. Staying in `.recording` would keep Stop
+            // enabled, and a second tap would take the normal branch and move
+            // the capture file out from under this task.
+            recordingState = .transcribing
+            appGroupBridge.updateRecordingState(false)
+
+            // Held in `transcribingSpeechTask` so `cancelTranscribe()` can
+            // actually cancel the flush; an untracked task would keep running
+            // and save a transcription the user already cancelled.
+            transcribingSpeechTask = Task {
+                do {
+                    realtimeTranscript = try await realtimeCoordinator.finish()
+                    logger.logInfo("🎙️ Realtime transcript ready at stop")
+                } catch {
+                    realtimeTranscript = nil
+                    logger.logWarning("🎙️ Realtime transcription failed, falling back to upload: \(error.localizedDescription)")
+                }
+
+                guard !Task.isCancelled else {
+                    await realtimeCoordinator.cancel()
+                    return
+                }
+
+                resetValues()
+                finishRecording(sourceTag: sourceTag, destination: destination, modelContext: modelContext)
+            }
         } else {
             // Normal mode
             resetValues()
@@ -350,18 +437,28 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             // Notify keyboard that recording has stopped
             appGroupBridge.updateRecordingState(false)
 
-            let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
-            do {
-                try audioFileService.move(from: captureURL, to: finalURL)
-                transcribingSpeechTask = transcribeSpeechTask(
-                    recordURL: finalURL,
-                    modelContext: modelContext,
-                    sourceTag: sourceTag,
-                    destination: destination
-                )
-            } catch {
-                logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
-            }
+            finishRecording(sourceTag: sourceTag, destination: destination, modelContext: modelContext)
+        }
+    }
+
+    /// Moves the capture file into place and kicks off transcription. Shared by
+    /// the normal and realtime paths so both persist audio identically.
+    private func finishRecording(
+        sourceTag: String,
+        destination: RecordingDestination,
+        modelContext: ModelContext
+    ) {
+        let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
+        do {
+            try audioFileService.move(from: captureURL, to: finalURL)
+            transcribingSpeechTask = transcribeSpeechTask(
+                recordURL: finalURL,
+                modelContext: modelContext,
+                sourceTag: sourceTag,
+                destination: destination
+            )
+        } catch {
+            logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
         }
     }
     
@@ -431,14 +528,22 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 try Task.checkCancellation()
 
                 let transcriptionStart = Date()
-                let transcribedText = try await transcriptionManager.transcribe(
-                    audioURL: audioURLToTranscribe,
-                    progressHandler: { progress in
-                        await MainActor.run {
-                            self.transcriptionProgress = progress
+                let transcribedText: String
+                if let streamed = realtimeTranscript {
+                    // Realtime already produced the text while recording; run it
+                    // through the same filters/formatting the upload path uses.
+                    realtimeTranscript = nil
+                    transcribedText = transcriptionManager.postProcessStreamedText(streamed, startTime: transcriptionStart)
+                } else {
+                    transcribedText = try await transcriptionManager.transcribe(
+                        audioURL: audioURLToTranscribe,
+                        progressHandler: { progress in
+                            await MainActor.run {
+                                self.transcriptionProgress = progress
+                            }
                         }
-                    }
-                )
+                    )
+                }
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
                 // Check for cancellation after transcription
@@ -653,6 +758,16 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             logger.logInfo("🎙️ Stopping real capture on cancel")
             prewarmManager.stopRealCapture()
         }
+
+        // Tear down the streaming engine and socket too - resetValues() only
+        // knows about AVAudioRecorder, so without this the mic and WebSocket
+        // would stay live after a cancel.
+        if let realtimeCoordinator {
+            self.realtimeCoordinator = nil
+            logger.logInfo("🎙️ Cancelling realtime dictation")
+            Task { await realtimeCoordinator.cancel() }
+        }
+        realtimeTranscript = nil
 
         resetValues()
         recordingState = .idle

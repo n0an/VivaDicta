@@ -27,4 +27,9 @@ protocol Transcriber {
     /// Transcribe `audioURL` under the current mode, apply the post-processing
     /// pipeline, and return the final text.
     func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String
+
+    /// Apply the same post-processing pipeline to text that arrived over the
+    /// realtime WebSocket rather than from an upload, so both paths produce
+    /// identically filtered and formatted output.
+    func postProcessStreamedText(_ text: String, startTime: Date) -> String
 }

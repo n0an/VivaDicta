@@ -163,6 +163,23 @@ class TranscriptionManager: Transcriber {
             progress: progressHandler
         )
 
+        return postProcess(transcriptionResult, model: model, startTime: startTime)
+    }
+
+    /// Runs the same post-processing the file-based path applies, for text that
+    /// arrived over the realtime WebSocket instead of an upload. Keeping this
+    /// one implementation is the point - filters, formatting, replacements, and
+    /// the completion analytics must not diverge between the two paths.
+    public func postProcessStreamedText(_ text: String, startTime: Date) -> String {
+        guard let model = getCurrentTranscriptionModel() else { return text }
+        return postProcess(.plain(text), model: model, startTime: startTime)
+    }
+
+    private func postProcess(
+        _ transcriptionResult: TranscriptionServiceResult,
+        model: any TranscriptionModel,
+        startTime: Date
+    ) -> String {
         // When inline translation is active (e.g. Soniox Spanish → Russian) the
         // output text is in the TARGET language, so the filler set must match the
         // target, not the source transcription language - otherwise target-language
@@ -328,9 +345,15 @@ class TranscriptionManager: Transcriber {
             ))
 
         case .soniox:
+            // This provider is the upload-and-poll `/v1/transcriptions` job,
+            // which only accepts `stt-async-*` models. When the realtime model
+            // is selected we still land here for the keyboard path and for the
+            // fallback after a dropped socket, so swap in the async model -
+            // otherwise the very fallback the streaming design relies on would
+            // be rejected for sending a realtime slug to the async endpoint.
             return .soniox(.init(
                 apiKey: try requireAPIKey(model),
-                modelName: model.name,
+                modelName: TranscriptionModelProvider.asyncEquivalent(of: model.name),
                 language: selectedLanguage,
                 vocabulary: CustomVocabulary.getTerms(),
                 isSpeakerDiarizationEnabled: diarizationEnabled,

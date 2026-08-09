@@ -47,6 +47,7 @@ struct RecordEnhanceStoreAcceptanceTests {
         func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String {
             stubbedText
         }
+        func postProcessStreamedText(_ text: String, startTime: Date) -> String { text }
     }
 
     /// CLI server is off, so the orchestration takes the cloud path.

@@ -10,7 +10,6 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "SonioxTranscription")
     private let apiBase = "https://api.soniox.com/v1"
     private let maxWaitSeconds: TimeInterval = 300
-    private let pollIntervalNanoseconds: UInt64 = 1_000_000_000
 
     public struct Config: Sendable {
         public let apiKey: String
@@ -190,7 +189,19 @@ public struct SonioxTranscriptionService: TranscriptionService, Sendable {
                 throw CloudTranscriptionError.apiRequestFailed(statusCode: 504, message: "Transcription timed out")
             }
 
-            try await Task.sleep(for: .nanoseconds(pollIntervalNanoseconds))
+            try await Task.sleep(for: Self.pollInterval(elapsed: Date().timeIntervalSince(start)))
+        }
+    }
+
+    /// A flat 1s poll cost every dictation up to a second of dead air after the
+    /// job was already done. Short recordings - the common case - finish within
+    /// the first couple of seconds, so poll tightly there and back off for the
+    /// long files where an extra half-second is noise anyway.
+    private static func pollInterval(elapsed: TimeInterval) -> Duration {
+        switch elapsed {
+        case ..<2: .milliseconds(200)
+        case ..<10: .milliseconds(500)
+        default: .seconds(1)
         }
     }
 
