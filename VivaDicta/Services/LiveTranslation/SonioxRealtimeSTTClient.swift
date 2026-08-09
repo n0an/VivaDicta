@@ -199,9 +199,12 @@ actor SonioxRealtimeSTTClient {
                     batch.append(token)
                 }
             }
-            if !batch.isEmpty {
-                continuation?.yield(.tokens(batch))
-            }
+            // Forwarded even when empty. Non-final tokens are a full
+            // replacement set, so a response carrying none means the interim
+            // region was withdrawn - suppressing it leaves consumers holding
+            // text the server has retracted. Consumers that do not want that
+            // signal ignore empty batches themselves.
+            continuation?.yield(.tokens(batch))
         }
 
         if let finished = json["finished"] as? Bool, finished {

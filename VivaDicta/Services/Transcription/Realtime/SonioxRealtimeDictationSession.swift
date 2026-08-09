@@ -87,6 +87,11 @@ actor SonioxRealtimeDictationSession {
 
         let deadline = ContinuousClock.now.advanced(by: Self.finalizeTimeout)
         while !didFinish, failureMessage == nil, ContinuousClock.now < deadline {
+            // On a cancelled task `Task.sleep` throws immediately and `try?`
+            // swallows it, so without this the loop spins at full speed until
+            // the deadline. Breaking lands in the timeout path below, which
+            // throws - the right outcome for a cancel.
+            if Task.isCancelled { break }
             try? await Task.sleep(for: .milliseconds(50))
         }
 

@@ -312,6 +312,12 @@ final class LiveTranslationService {
     }
 
     private func appendTokens(_ batch: [LiveTranslationToken]) {
+        // The client now forwards empty batches so dictation can clear its
+        // interim tail. Live Translation keeps its previous behaviour and
+        // ignores them, rather than have the on-screen interim text blink out
+        // on every token-less response.
+        guard !batch.isEmpty else { return }
+
         // Split the batch by stream (original vs translation) and merge each
         // into its respective list. We split first so a response that updates
         // only one side doesn't disturb the other side's non-final tail.

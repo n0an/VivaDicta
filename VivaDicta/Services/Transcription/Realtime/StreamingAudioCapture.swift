@@ -99,8 +99,8 @@ final class StreamingAudioCapture {
         tapInstalled = false
         sessionActivated = false
 
-        continuation?.finish()
-        continuation = nil
+        let continuation = self.continuation
+        self.continuation = nil
 
         let context = StreamingTeardownContext(
             engine: engine,
@@ -111,9 +111,16 @@ final class StreamingAudioCapture {
         )
         sink = nil
 
+        // Silence the producer BEFORE closing the stream. Finishing first
+        // leaves a window where an in-flight tap callback still writes its
+        // buffer to the WAV but yields into an already-terminated stream - the
+        // socket would then return a successful transcript quietly missing that
+        // audio, with nothing to trigger the upload fallback.
         await Task(priority: .userInitiated) { @concurrent in
             context.perform()
         }.value
+
+        continuation?.finish()
     }
 
     // MARK: - Private

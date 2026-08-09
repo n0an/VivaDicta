@@ -97,9 +97,11 @@ final class RealtimeDictationCoordinator {
     /// Throws when realtime produced nothing usable, signalling the caller to
     /// fall back to uploading the recorded file.
     func finish() async throws -> String {
-        guard isActive else {
-            throw SonioxRealtimeDictationSession.SessionError.producedNoText
-        }
+        // Tear down before deciding whether there is anything to return. A stop
+        // can land while `start()` is still suspended, and bailing out early
+        // there would strand a running engine and socket behind a UI that has
+        // already moved on.
+        let wasActive = isActive
         isActive = false
 
         // Stop the mic first so no audio arrives after the end-of-audio marker.
@@ -112,6 +114,11 @@ final class RealtimeDictationCoordinator {
         // transcript, nothing downstream would notice the loss.
         await pumpTask?.value
         pumpTask = nil
+
+        guard wasActive else {
+            await session.cancel()
+            throw SonioxRealtimeDictationSession.SessionError.producedNoText
+        }
 
         return try await session.finish()
     }

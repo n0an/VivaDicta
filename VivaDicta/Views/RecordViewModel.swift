@@ -292,11 +292,31 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         modelName: modelName
                     ) {
                         let coordinator = RealtimeDictationCoordinator()
-                        try await coordinator.start(
-                            writingTo: captureURL,
-                            transcriptionLanguage: transcriptionManager.currentMode.transcriptionLanguage ?? "auto"
-                        )
+
+                        // Published BEFORE awaiting start: the state is already
+                        // `.recording`, so a Stop or Cancel landing during the
+                        // engine spin-up must find the coordinator. Otherwise
+                        // stop takes the normal branch and moves the capture
+                        // file out from under an engine that is still starting.
                         realtimeCoordinator = coordinator
+
+                        do {
+                            try await coordinator.start(
+                                writingTo: captureURL,
+                                transcriptionLanguage: transcriptionManager.currentMode.transcriptionLanguage ?? "auto"
+                            )
+                        } catch {
+                            realtimeCoordinator = nil
+                            throw error
+                        }
+
+                        // Stop/cancel may have run while start was suspended.
+                        guard realtimeCoordinator === coordinator else {
+                            logger.logInfo("🎙️ Recording ended during realtime start-up; tearing down")
+                            await coordinator.cancel()
+                            return
+                        }
+
                         logger.logInfo("🎙️ Recording with realtime streaming transcription")
                     } else {
                         let settings: [String : Any] = [
