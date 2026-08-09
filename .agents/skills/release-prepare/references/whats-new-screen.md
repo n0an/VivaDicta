@@ -24,9 +24,10 @@ Integration points:
 
 **One file to edit:** `WhatsNewContent.swift`
 
-1. Add a new static property in `WhatsNewCatalog`:
+1. Add a new static property in `WhatsNewCatalog`, preceded by a **date comment**:
 
 ```swift
+// YYYY-MM-DD
 private static let release_X_Y = WhatsNewRelease(
     id: "X.Y",
     headline: "What's New in VivaDicta X.Y.Z",   // user-facing: ALWAYS use the full X.Y.Z form (e.g. "VivaDicta 3.3.0", not "3.3")
@@ -49,6 +50,27 @@ private static let releases: [String: WhatsNewRelease] = [
     // ... existing entries
 ]
 ```
+
+### The date comment
+
+Each release property is preceded by a single-line ISO date comment marking when the entry was written:
+
+```swift
+// 2026-08-09
+private static let release_3_8 = WhatsNewRelease(
+    id: "3.8",
+    ...
+)
+```
+
+`WhatsNewRelease` carries no date field, and the `releases` dictionary is keyed by version, so the file has no other record of *when* a release shipped. The comment supplies it at a glance when scrolling a catalog that now spans a dozen versions.
+
+Rules:
+- ISO `YYYY-MM-DD` only - no prose, no "shipped on", no month names.
+- Sits directly above `private static let release_X_Y`, at the same indentation.
+- Use the release-prep date (the day the entry is authored), not the eventual App Store approval date.
+- Newest entry goes at the top of the file, so the dates read newest-first downward.
+- Older entries predate the convention and have no comment. Do **not** backfill them - it would be guesswork, and a wrong date is worse than none.
 
 ## Feature Row Guidelines
 
