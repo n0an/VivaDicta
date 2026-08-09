@@ -43,7 +43,6 @@ public enum LogCategory: String {
     case customTranscriptionService = "CustomTranscriptionService"
     case sonioxRealtimeDictation = "SonioxRealtimeDictation"
     case streamingAudioCapture = "StreamingAudioCapture"
-    case recordingAudioSession = "RecordingAudioSession"
 
     // MARK: - Services - Live Translation
     case liveTranslationService = "LiveTranslationService"

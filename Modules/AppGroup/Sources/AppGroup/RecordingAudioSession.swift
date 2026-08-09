@@ -66,6 +66,12 @@ public enum RecordingAudioSession {
 
         guard preferredMicrophone == .automatic else {
             options.remove(.allowBluetoothHFP)
+            // Dropping HFP is not enough on its own. `.playAndRecord` needs
+            // `.allowBluetoothA2DP` to keep a Bluetooth *output* route, so
+            // without it activating a session pulls the user's music onto the
+            // phone speaker - the opposite of why someone picks this option.
+            // Input stays on the built-in mic via `applyPreferredInput`.
+            options.insert(.allowBluetoothA2DP)
             return options
         }
 

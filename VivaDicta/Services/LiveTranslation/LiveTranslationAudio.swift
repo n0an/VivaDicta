@@ -186,6 +186,11 @@ final class LiveTranslationAudio {
             // RecordingAudioSession: `setPreferredInput` can only pick among
             // devices the category permits, so omitting HFP here would pin the
             // built-in mic no matter what the user selected.
+            //
+            // Note A2DP output does not survive under Automatic when the
+            // headset mic is actually chosen - HFP is a duplex profile, so the
+            // device carries both directions and TTS playback drops to headset
+            // quality too. That is the trade the setting makes, not a bug.
             try session.setCategory(
                 .playAndRecord,
                 mode: .spokenAudio,
