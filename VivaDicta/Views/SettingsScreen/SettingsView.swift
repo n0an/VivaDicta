@@ -384,8 +384,8 @@ struct SettingsView: View {
 
                 Section("Microphone") {
                     Picker("Input", selection: $preferredMicrophone) {
+                        Text("Automatic").tag(PreferredMicrophone.automatic)
                         Text("iPhone Microphone").tag(PreferredMicrophone.builtIn)
-                        Text("Connected Device").tag(PreferredMicrophone.automatic)
                     }
                     // @AppStorage already persists to the same store and key
                     // RecordingAudioSession reads, so there is nothing to write
@@ -395,9 +395,9 @@ struct SettingsView: View {
                         reconfigureActiveSessionForMicrophoneChange()
                     }
 
-                    Text(preferredMicrophone == .builtIn
-                         ? "Records with the iPhone's own microphone. Bluetooth headphones stay in full-quality audio while you dictate."
-                         : "Records with whatever is connected - AirPods, a wired headset, or a USB mic. Bluetooth headphones switch to headset audio while recording, including during Live Translation.")
+                    Text(preferredMicrophone == .automatic
+                         ? "Uses whichever microphone is connected - AirPods, a wired headset, or the iPhone - the same way Phone and Voice Memos do."
+                         : "Always records with the iPhone's own microphone, even when headphones are connected. Keeps Bluetooth headphones in full-quality audio while you dictate.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

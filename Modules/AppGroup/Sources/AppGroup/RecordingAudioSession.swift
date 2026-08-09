@@ -7,14 +7,21 @@ import os
 
 /// Which microphone recording asks iOS for.
 public enum PreferredMicrophone: String, CaseIterable, Sendable {
-    /// Pin the built-in mic. Keeps AirPods in A2DP - they are never pulled
-    /// into the low-quality HFP profile - and generally transcribes better.
+    /// Pin the built-in mic regardless of what is connected. Keeps AirPods in
+    /// A2DP - they are never pulled into the low-quality HFP profile - at the
+    /// cost of ignoring a headset the user is wearing.
     case builtIn
 
-    /// Let iOS choose, which means the connected headset when there is one.
+    /// Let iOS route to whatever is connected, with no preferred-input pin.
+    /// This is how Phone and Voice Memos behave, and it is what people expect:
+    /// put AirPods in, and they are what hears you.
     case automatic
 
-    public static let `default`: PreferredMicrophone = .builtIn
+    /// Matches system behaviour rather than optimising for one failure mode.
+    /// Pinning the built-in mic by default silently ignores a headset the user
+    /// is wearing and speaking into, which reads as broken - see the distance
+    /// test in the report that prompted this.
+    public static let `default`: PreferredMicrophone = .automatic
 }
 
 /// One place to configure the shared `AVAudioSession` for recording.
