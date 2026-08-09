@@ -228,6 +228,7 @@ The PrewarmManager works with AppGroupCoordinator to maintain background audio s
 
 3. **Timeout Management**:
    - Session has configurable timeout (typically 180 seconds)
+   - `AppGroupCoordinator.sessionTimeoutNever` (`0`) is the sentinel for the Settings "Never" option: activation/refresh store `Date.distantFuture` as the expiry, so `isKeyboardSessionActive` needs no special case and only an explicit `deactivateKeyboardSession()` ends the session
    - If recording is active when timeout expires, session extends automatically
    - Expired sessions are cleaned up to prevent stale state
    - Stale recording state (>30s old with no active session) is auto-cleared

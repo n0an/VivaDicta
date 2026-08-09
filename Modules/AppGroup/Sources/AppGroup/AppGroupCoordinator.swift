@@ -292,16 +292,36 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     // MARK: - Keyboard Dictation Session Management
 
+    /// Sentinel `timeoutSeconds` for a keyboard session that never expires on its
+    /// own (Settings -> Keyboard -> Session Timeout -> "Never"). Such a session is
+    /// stored with an expiry in the distant future, so every expiry comparison
+    /// keeps working unchanged and only an explicit
+    /// ``deactivateKeyboardSession()`` ends it.
+    public static let sessionTimeoutNever = 0
+
+    /// Wall-clock expiry stamp for a session started/refreshed right now with
+    /// `timeoutSeconds`, honouring the ``sessionTimeoutNever`` sentinel.
+    private func expiryTime(forTimeout timeoutSeconds: Int) -> TimeInterval {
+        guard timeoutSeconds != Self.sessionTimeoutNever else {
+            return Date.distantFuture.timeIntervalSince1970
+        }
+        return Date().timeIntervalSince1970 + Double(timeoutSeconds)
+    }
+
     /// Activates a keyboard recording session with the specified timeout.
     ///
-    /// - Parameter timeoutSeconds: How long the session remains active without activity.
+    /// - Parameter timeoutSeconds: How long the session remains active without
+    ///   activity, or ``sessionTimeoutNever`` for a session with no expiry.
     public func activateKeyboardSession(timeoutSeconds: Int) {
-        let expiryTime = Date().timeIntervalSince1970 + Double(timeoutSeconds)
         sharedDefaults?.set(true, forKey: UserDefaultsKeys.keyboardSessionActive)
-        sharedDefaults?.set(expiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
+        sharedDefaults?.set(expiryTime(forTimeout: timeoutSeconds), forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         sharedDefaults?.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
         postDarwinNotification(NotificationNames.keyboardSessionActivated)
-        logger.logError("🔑 Keyboard session activated for \(timeoutSeconds) seconds")
+        if timeoutSeconds == Self.sessionTimeoutNever {
+            logger.logError("🔑 Keyboard session activated with no timeout")
+        } else {
+            logger.logError("🔑 Keyboard session activated for \(timeoutSeconds) seconds")
+        }
     }
 
     public var isKeyboardSessionActive: Bool {
@@ -337,10 +357,13 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         guard let defaults = sharedDefaults else { return }
         let isActive = defaults.bool(forKey: UserDefaultsKeys.keyboardSessionActive)
         guard isActive else { return }
-        let newExpiryTime = Date().timeIntervalSince1970 + Double(timeoutSeconds)
-        defaults.set(newExpiryTime, forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
+        defaults.set(expiryTime(forTimeout: timeoutSeconds), forKey: UserDefaultsKeys.keyboardSessionExpiryTime)
         defaults.set(Date().timeIntervalSince1970, forKey: UserDefaultsKeys.lastRecordingTimestamp)
-        logger.logError("🔁 Keyboard session expiry refreshed for \(timeoutSeconds) seconds")
+        if timeoutSeconds == Self.sessionTimeoutNever {
+            logger.logError("🔁 Keyboard session expiry refreshed with no timeout")
+        } else {
+            logger.logError("🔁 Keyboard session expiry refreshed for \(timeoutSeconds) seconds")
+        }
     }
 
     // MARK: - Keyboard Clipboard Context

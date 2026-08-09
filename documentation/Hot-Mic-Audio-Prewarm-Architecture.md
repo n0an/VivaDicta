@@ -150,6 +150,20 @@ The session expires after `audioSessionTimeout` seconds of inactivity (default: 
 
 This design prevents the audio session from expiring while the app is actively transcribing or running AI processing after a recording ends. `rescheduleSessionTimeout()` is the explicit signal that the full pipeline (record → transcribe → AI process) is complete and the session can safely idle again.
 
+#### The "Never" option
+
+Settings → Keyboard → Session Timeout also offers **Never**, stored as the sentinel `audioSessionTimeout == AppGroupCoordinator.sessionTimeoutNever` (`0`). It short-circuits the timer machinery rather than picking a very large interval:
+
+| Site | Behavior with "Never" |
+|------|-----------------------|
+| `AudioPrewarmManager.isTimeoutDisabled` | `true` - single check the rest of the class branches on |
+| `scheduleSessionTimeout()` | Invalidates the existing timer and schedules nothing |
+| `isWithinSessionTimeout()` | `true` for any started session, so `startRealCapture()` never throws `.sessionExpired` |
+| `timeoutRemaining` | `.infinity` |
+| `activateKeyboardSession(timeoutSeconds:)` / `refreshKeyboardSessionExpiry(timeoutSeconds:)` | Stores `Date.distantFuture` as `keyboardSessionExpiryTime`, so the keyboard extension's existing expiry comparison keeps working unchanged |
+
+A "Never" session ends only on an explicit `endSession()` - the Live Activity's terminate action, or the launch-time session reset when the app is relaunched. The Settings picker shows a battery-cost warning when this option is selected.
+
 ## AudioCaptureContext
 
 ```

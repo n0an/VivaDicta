@@ -314,6 +314,7 @@ struct SettingsView: View {
                             Text("15 minutes").tag(900)
                             Text("30 minutes").tag(1800)
                             Text("1 hour").tag(3600)
+                            Text("Never").tag(AppGroupCoordinator.sessionTimeoutNever)
                         }
                         .onChange(of: audioSessionTimeout) { _, _ in
                             HapticManager.selectionChanged()
@@ -322,6 +323,12 @@ struct SettingsView: View {
                         Text("Keep microphone session active to allow recording from keyboard")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        if audioSessionTimeout == AppGroupCoordinator.sessionTimeoutNever {
+                            Text("With Never the session stays active until you end it from the Live Activity or relaunch the app. The microphone stays armed, which uses more battery.")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                     }
                     
                     Button(action: activateKeyboardRecordingSession) {
