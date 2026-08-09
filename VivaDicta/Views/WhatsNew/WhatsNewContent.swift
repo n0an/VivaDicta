@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.8": release_3_8,
         "3.7": release_3_7,
         "3.6": release_3_6,
         "3.5": release_3_5,
@@ -43,6 +44,57 @@ enum WhatsNewCatalog {
         "2.1": release_2_1,
         "2.2": release_2_2
     ]
+    
+    // 2026-08-09
+    private static let release_3_8 = WhatsNewRelease(
+        id: "3.8",
+        headline: "What's New in VivaDicta 3.8.0",
+        features: [
+            WhatsNewFeature(
+                icon: "person.badge.key.fill",
+                iconColors: [.purple, .pink],
+                title: "Use Your Grok Subscription",
+                description: "Connect a SuperGrok or X Premium account and use xAI's Grok 4.5 for AI processing without an API key. An API key still works as a fallback."
+            ),
+            WhatsNewFeature(
+                icon: "waveform.badge.plus",
+                iconColors: [.green, .mint],
+                title: "New Transcription Models",
+                description: "AssemblyAI Universal-3.5 Pro, Gladia Solaria-3, Speechmatics Melia-1, GPT-4o Transcribe Diarize, Whisper Large V3 on Groq, and Soniox v5."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.indigo, .blue],
+                title: "Latest AI Models",
+                description: "Claude Sonnet 5, GPT-5.6, Grok 4.5, and GLM-5.2 join the lineup. Retired models are upgraded automatically, so nothing breaks."
+            ),
+            WhatsNewFeature(
+                icon: "bolt.fill",
+                iconColors: [.yellow, .orange],
+                title: "Soniox Realtime",
+                description: "Your speech is transcribed while you talk instead of being uploaded after you stop, so the text is ready almost the moment you finish."
+            ),
+            WhatsNewFeature(
+                icon: "headphones",
+                iconColors: [.blue, .cyan],
+                title: "Your Headphones' Microphone",
+                description: "Wearing AirPods or a Bluetooth headset? VivaDicta now records through them instead of the iPhone mic. A new Microphone setting lets you pin the iPhone mic if you prefer."
+            ),
+            WhatsNewFeature(
+                icon: "text.badge.minus",
+                iconColors: [.teal, .green],
+                title: "Smarter Filler Removal",
+                description: "Hesitation sounds are now removed per language, so the German and Portuguese word \"um\" survives. A new toggle turns the cleanup off entirely."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.pink, .purple],
+                title: "Quality of Life",
+                description: "A Never option for the keyboard session timeout, an in-app stop control for hot mic, and Base64 JSON support for custom transcription servers."
+            )
+        ],
+        tagline: "Your words, ready the moment you stop talking."
+    )
 
     private static let release_3_7 = WhatsNewRelease(
         id: "3.7",
