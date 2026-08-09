@@ -162,7 +162,9 @@ Settings → Keyboard → Session Timeout also offers **Never**, stored as the s
 | `timeoutRemaining` | `.infinity` |
 | `activateKeyboardSession(timeoutSeconds:)` / `refreshKeyboardSessionExpiry(timeoutSeconds:)` | Stores `Date.distantFuture` as `keyboardSessionExpiryTime`, so the keyboard extension's existing expiry comparison keeps working unchanged |
 
-A "Never" session ends only on an explicit `endSession()` - the Live Activity's terminate action, or the launch-time session reset when the app is relaunched. The Settings picker shows a battery-cost warning when this option is selected.
+A "Never" session ends only on an explicit `endSession()`. Not every entry point offers one on its own: the `vivadicta://record-for-keyboard` deeplink starts a Live Activity (whose terminate action calls `endSession()`), but the Settings button and the `vivadicta://activate-for-keyboard` text-processing deeplink do not. With a finite timeout those two flows still self-terminate on the expiry timer; with "Never" they would strand an armed microphone until the process is relaunched.
+
+The Settings row is therefore a start/stop control (`KeyboardSessionButton`): while `isSessionActiveObservable` it ends the session instead of being disabled, which covers every entry point since the state lives on the shared `AudioPrewarmManager`. The picker also shows a battery-cost warning while "Never" is selected.
 
 ## AudioCaptureContext
 

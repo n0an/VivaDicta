@@ -325,42 +325,16 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
 
                         if audioSessionTimeout == AppGroupCoordinator.sessionTimeoutNever {
-                            Text("With Never the session stays active until you end it from the Live Activity or relaunch the app. The microphone stays armed, which uses more battery.")
+                            Text("With Never the microphone stays armed until you end the session below, which uses more battery.")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         }
                     }
                     
-                    Button(action: activateKeyboardRecordingSession) {
-                        HStack {
-                            Image(systemName: "keyboard")
-                                .foregroundStyle(.blue)
-                                .font(.body)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Enable Keyboard Recording Session")
-                                    .foregroundStyle(.blue)
-                                    .font(.body)
-
-                                if prewarmManager.isSessionActiveObservable {
-                                    HStack {
-                                        Circle()
-                                            .fill(.green)
-                                            .frame(width: 6)
-
-                                        Text("Session active")
-                                            .font(.caption)
-                                            .foregroundStyle(.green)
-                                    }
-
-                                }
-                            }
-
-                            Spacer()
-                        }
-                    }
-                    .disabled(prewarmManager.isSessionActiveObservable)
-                    .buttonStyle(.plain)
+                    KeyboardSessionButton(
+                        isSessionActive: prewarmManager.isSessionActiveObservable,
+                        action: toggleKeyboardRecordingSession
+                    )
                 }
 
                 Section("Feedback") {
@@ -790,6 +764,18 @@ iOS Version: \(systemVersion)
 
     // MARK: - Keyboard Recording Session Actions
 
+    /// Starts the hot mic session, or ends the running one. The stop half is the
+    /// only in-app way out of a "Never" session started from Settings or from the
+    /// text-processing deep link - neither of those flows starts a Live Activity,
+    /// and with no timeout no expiry timer will end them either.
+    private func toggleKeyboardRecordingSession() {
+        if prewarmManager.isSessionActiveObservable {
+            endKeyboardRecordingSession()
+        } else {
+            activateKeyboardRecordingSession()
+        }
+    }
+
     private func activateKeyboardRecordingSession() {
         Task {
             HapticManager.lightImpact()
@@ -808,6 +794,54 @@ iOS Version: \(systemVersion)
                 showPrewarmError = true
             }
         }
+    }
+
+    /// Tears down the engine and audio session. `endSession()` also deactivates the
+    /// shared keyboard session, which notifies the keyboard and ends any Live
+    /// Activity through the existing `onKeyboardSessionExpired` handler.
+    private func endKeyboardRecordingSession() {
+        HapticManager.lightImpact()
+        prewarmManager.endSession()
+    }
+}
+
+// MARK: - Keyboard Session Button
+
+/// Start/stop control for the hot mic session. Doubles as the session's status
+/// row - the green dot shows while the microphone is armed.
+private struct KeyboardSessionButton: View {
+    let isSessionActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: isSessionActive ? "stop.circle" : "keyboard")
+                    .foregroundStyle(isSessionActive ? .red : .blue)
+                    .font(.body)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isSessionActive ? "End Keyboard Recording Session" : "Enable Keyboard Recording Session")
+                        .foregroundStyle(isSessionActive ? .red : .blue)
+                        .font(.body)
+
+                    if isSessionActive {
+                        HStack {
+                            Circle()
+                                .fill(.green)
+                                .frame(width: 6)
+
+                            Text("Session active")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                }
+
+                Spacer()
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 
