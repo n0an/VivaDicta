@@ -43,25 +43,32 @@ git checkout -b release/X.Y.Z
 
 ### Step 2 — Bump version numbers
 
-Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` across ALL 10 targets × 3 configs (**Debug, QA, Release**) = 30 entries each:
+Update `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` in `project.pbxproj` across ALL 9 targets × 3 configs (**Debug, QA, Release**) = 27 entries each:
 - VivaDicta (main app)
 - VivaDictaKeyboard
-- VivaDictaWidget
+- VivaDictaWidgetExtension
 - ShareExtension
 - ActionExtension
 - VivaDictaTests
 - VivaDictaWatch Watch App
 - VivaDictaWatch Watch AppTests
-- VivaDictaWatch Watch AppUITests
 - VivaDictaWatchWidgetExtension
+
+> Don't hardcode the expected count - targets come and go (a `VivaDictaWatch Watch AppUITests` target existed when this was written, which is why the doc long said 30/10). Derive it instead:
+> ```bash
+> grep -c "MARKETING_VERSION = " VivaDicta.xcodeproj/project.pbxproj   # current entry count
+> ```
+> Then confirm the same number carries the new value after the sed.
 
 Fastest approach - global sed replace catches all 30 entries in one shot:
 ```bash
-grep -cE "MARKETING_VERSION = {OLD}" VivaDicta.xcodeproj/project.pbxproj  # should print 30
+N=$(grep -c "MARKETING_VERSION = " VivaDicta.xcodeproj/project.pbxproj)   # baseline, currently 27
+grep -cE "MARKETING_VERSION = {OLD}" VivaDicta.xcodeproj/project.pbxproj  # should equal $N
 sed -i '' 's/MARKETING_VERSION = {OLD};/MARKETING_VERSION = {NEW};/g' VivaDicta.xcodeproj/project.pbxproj
 sed -i '' 's/CURRENT_PROJECT_VERSION = {OLD_BUILD};/CURRENT_PROJECT_VERSION = {NEW_BUILD};/g' VivaDicta.xcodeproj/project.pbxproj
 # verify
 grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION" VivaDicta.xcodeproj/project.pbxproj | sort -u  # should show only 2 unique lines
+grep -c "MARKETING_VERSION = {NEW}" VivaDicta.xcodeproj/project.pbxproj   # should equal $N
 ```
 
 Convention: `CURRENT_PROJECT_VERSION` is a **monotonic counter**, independent of `MARKETING_VERSION`. Bump it by `+1` for every new build uploaded to TestFlight/App Store Connect, regardless of whether the marketing version changed. Apple only requires the build number to be strictly greater than any previously uploaded build for the same marketing version, so a plain incrementing integer is the simplest correct approach.
@@ -87,6 +94,10 @@ Run a pre-release code sweep checking for:
 ### Step 4 — What's New in-app screen
 
 Use `references/whats-new-screen.md` for the full guide on adding What's New content to the in-app screen.
+
+Two things that are easy to miss, both covered in that guide:
+- Prefix the new `release_X_Y` property with an ISO date comment (`// YYYY-MM-DD`) - `WhatsNewRelease` has no date field, so this comment is the file's only record of when the entry was written. Don't backfill older entries.
+- The `headline` uses the full `X.Y.Z` form; only the `releases` dictionary key is `X.Y`.
 
 ### Step 5 — App Store What's New (release notes)
 
@@ -170,15 +181,32 @@ Also add a new `### vX.Y.Z (YYYY-MM-DD)` section with feature groupings and PR n
 
 ### Step 8.5 — Update iOS website changelog
 
-Add a new version section to the website's public iOS changelog at:
-`/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/vivadicta_website/app/ios/changelog/page.tsx`
+The changelog is **data-driven** - do not hand-write JSX. Add a new entry to the `releases` array in:
+`/Users/antonnovoselov/Desktop/_Projects/iOS/VivaDictaMeta/vivadicta_website/components/ios-changelog/releases-data.tsx`
 
-Insert the new section **above** the previous version (the changelog shows newest first) and add an `<hr className="my-12 border-border" />` separator between them. Pattern-match the existing entries:
-- `<h2>` with version string + `<span>` with absolute date
-- Intro paragraph (tagline + one-sentence summary, may link to docs)
-- For each feature group: `<p>` with group title + `<ul>` of 1-4 bullet points
+`app/ios/changelog/page.tsx` renders the index from that array, and `app/ios/changelog/[version]/` generates one static page per entry - so a new entry automatically creates `https://vivadicta.com/ios/changelog/X.Y.Z`, which is the URL the LinkedIn post links to (Step 8.6).
 
-Keep copy aligned with the in-app What's New and App Store release notes so messaging stays consistent across surfaces. Commit and push in the website repo (separate from the iOS app repo).
+Insert the new object at the **top** of the array (newest first). Required fields:
+
+```tsx
+{
+  version: "X.Y.Z",              // also the URL slug
+  date: "YYYY-MM-DD",            // ISO, used for sorting + sitemap lastModified
+  dateLabel: "Month D, YYYY",    // shown in the UI
+  summary: "...",                // lead paragraph; ReactNode, so it can carry inline <Link>s
+  summaryText: "...",            // plain-text lead for <meta description> / Open Graph
+  groups: [
+    { heading: "Feature Group", items: ["bullet 1", "bullet 2"] },
+  ],
+}
+```
+
+Gotchas:
+- The file is `.tsx`, **not** `.ts` - `grep`/`find` for `releases-data.ts` will miss it.
+- `items` entries containing an apostrophe or quotes need the string quoting swapped (`'...'` vs `"..."`) or escaping, since they are plain JS strings.
+- Verify with `npm run build` and confirm the log lists `/ios/changelog/X.Y.Z` among the generated routes.
+
+Keep copy aligned with the in-app What's New and App Store release notes so messaging stays consistent across surfaces. Commit and push in the website repo (separate from the iOS app repo - the website repo is auto-commit, no need to ask).
 
 ### Step 8.6 — Draft LinkedIn announcement post
 
@@ -250,14 +278,14 @@ Known-answer ASC questions (don't re-ask these):
 
 Before handing off to `asc-release-flow`:
 - [ ] Version and build number bumped across all 10 targets (30 pbxproj entries)
-- [ ] What's New in-app screen content added
+- [ ] What's New in-app screen content added, with the `// YYYY-MM-DD` comment above the new `release_X_Y` property
 - [ ] No debug triggers left in code (forced What's New, test flags, etc.)
 - [ ] Project builds with no errors
 - [ ] App Store release notes prepared (vault + `whats-new-X.Y.Z.md`)
 - [ ] App Store description updated if needed (under 4,000 chars)
 - [ ] `metadata/version/X.Y.Z/*.json` generated for all 10 locales
 - [ ] Feature changelog updated (Obsidian vault)
-- [ ] iOS website changelog updated (`vivadicta_website/app/ios/changelog/page.tsx` + push)
+- [ ] iOS website changelog updated (`vivadicta_website/components/ios-changelog/releases-data.tsx` + `npm run build` + push)
 - [ ] Website `llms.txt` + `llms-full.txt` refreshed if providers/presets/pricing changed (`vivadicta_website/public/` + push)
 - [ ] LinkedIn announcement drafted - working `.md` + paste-ready `-copy.md` (with `⠀` U+2800 blank lines and `➡️` bullets) in `Projects/VivaDicta/linkedin-posts/` - publish after App Store approval lands
 - [ ] CloudKit schema deployed if SwiftData models changed
