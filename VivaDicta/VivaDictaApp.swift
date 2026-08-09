@@ -473,6 +473,20 @@ struct VivaDictaApp: App {
 
             Task {
                 do {
+                    // The prewarm session is REQUIRED here even though this path
+                    // never records. The app declares the `audio` background
+                    // mode, and an active AVAudioSession with a running engine
+                    // is what keeps the main app resident once the keyboard
+                    // returns the user to the host app - which is how the
+                    // keyboard's text-processing request gets serviced at all.
+                    // Dropping this call suspends the app and text actions
+                    // silently stop working. It is a background-execution
+                    // anchor, not an audio feature.
+                    //
+                    // The Bluetooth route flip this used to cause is addressed
+                    // in RecordingAudioSession instead: the default built-in-mic
+                    // preference means the session no longer requests
+                    // `.allowBluetoothHFP`, so headphones stay in A2DP.
                     try await AudioPrewarmManager.shared.startPrewarmSession()
                     logger.logInfo("🎙️ Prewarm session ready for text processing")
 

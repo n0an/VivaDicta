@@ -29,6 +29,8 @@ struct SettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
     private var isAutoReminderExtractionEnabled = false
     @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
+    @AppStorage(UserDefaultsStorage.Keys.preferredMicrophone, store: UserDefaultsStorage.shared)
+    private var preferredMicrophone: PreferredMicrophone = .default
     @AppStorage(UserDefaultsStorage.Keys.audioSessionTimeout)
     private var audioSessionTimeout: Int = 180
     private let prewarmManager = AudioPrewarmManager.shared
@@ -354,6 +356,47 @@ struct SettingsView: View {
                     }
                     .disabled(prewarmManager.isSessionActiveObservable)
                     .buttonStyle(.plain)
+
+                    // Without this the only way to release the mic route early
+                    // was the Live Activity's terminate control, which is easy
+                    // to miss - leaving people to assume the muffled playback
+                    // was their headphones misbehaving.
+                    if prewarmManager.isSessionActiveObservable {
+                        Button(role: .destructive, action: endKeyboardRecordingSession) {
+                            HStack {
+                                Image(systemName: "stop.circle")
+                                    .font(.body)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("End Session Now")
+                                        .font(.body)
+                                    Text("Releases the microphone so Bluetooth headphones return to full audio quality")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                Section("Microphone") {
+                    Picker("Input", selection: $preferredMicrophone) {
+                        Text("iPhone Microphone").tag(PreferredMicrophone.builtIn)
+                        Text("Connected Device").tag(PreferredMicrophone.automatic)
+                    }
+                    .onChange(of: preferredMicrophone) { _, newValue in
+                        RecordingAudioSession.preferredMicrophone = newValue
+                        HapticManager.selectionChanged()
+                    }
+
+                    Text(preferredMicrophone == .builtIn
+                         ? "Records with the iPhone's own microphone. Bluetooth headphones stay in full-quality audio while you dictate."
+                         : "Records with whatever is connected - AirPods, a wired headset, or a USB mic. Bluetooth headphones switch to headset audio during recording.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("Feedback") {
@@ -782,6 +825,11 @@ iOS Version: \(systemVersion)
     }
 
     // MARK: - Keyboard Recording Session Actions
+
+    private func endKeyboardRecordingSession() {
+        HapticManager.mediumImpact()
+        prewarmManager.endSession()
+    }
 
     private func activateKeyboardRecordingSession() {
         Task {

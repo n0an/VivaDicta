@@ -188,6 +188,12 @@ final class LiveTranslationAudio {
             try session.setPreferredIOBufferDuration(0.02)
             try session.setActive(true, options: [])
             sessionActivated = true
+            // Category options stay hand-rolled here rather than going through
+            // RecordingAudioSession: this session also plays TTS, so it wants
+            // A2DP output and never requests the HFP mic route in the first
+            // place. The input preference still applies, so the user's mic
+            // choice does not silently differ between features.
+            RecordingAudioSession.applyPreferredInput(to: session)
             try session.overrideOutputAudioPort(.none)
         } catch {
             throw LiveTranslationError.audioSessionFailure(error.localizedDescription)

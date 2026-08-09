@@ -105,10 +105,13 @@ final class AudioPrewarmManager: AudioPrewarmer {
         try audioSession.setCategory(
             .playAndRecord,
             mode: .default,
-            options: [.mixWithOthers, .allowBluetoothHFP, .defaultToSpeaker]
+            options: RecordingAudioSession.categoryOptions(base: [.mixWithOthers, .defaultToSpeaker])
         )
         try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try audioSession.setActive(true)
+        // After activation, before the engine and tap are built - a preferred
+        // input set earlier does not stick.
+        RecordingAudioSession.applyPreferredInput(to: audioSession)
         #endif
 
         // Start continuous dummy recorder and wait for it to complete
@@ -328,6 +331,14 @@ final class AudioPrewarmManager: AudioPrewarmer {
             logger.logInfo("⏰ Session not active, skipping timeout reschedule")
             return
         }
+
+        // Deliberately does NOT end the session when idle on a Bluetooth route,
+        // even though that would release the mic sooner. The session is what
+        // keeps the app alive in the background for the keyboard flow, so
+        // ending it here would trade AirPods audio quality for a keyboard that
+        // stops responding. The HFP route is avoided at the source instead -
+        // see RecordingAudioSession - and users who opt into "Connected Device"
+        // can release it early with "End Session Now" in Settings.
 
         // Reset the session start time
         sessionStartTime = Date()
