@@ -13,6 +13,7 @@ import SwiftData
 import os
 @preconcurrency import LumoKit
 @preconcurrency import VecturaKit
+import VecturaEmbeddingsKit
 
 /// Result of a RAG semantic search, mapping chunks back to source transcriptions.
 struct RAGSearchResult: Sendable {
