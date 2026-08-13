@@ -2440,8 +2440,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/rryam/LumoKit.git";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.3.0;
+				kind = exactVersion;
+				version = 3.3.0;
 			};
 		};
 		18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
