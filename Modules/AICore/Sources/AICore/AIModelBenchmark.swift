@@ -25,7 +25,7 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 /// The best models for cleaning up dictation, measured rather than guessed.
 ///
 /// Only the top 10 ship in the app; the full table of
-/// 44 models is on the website, which is also where the
+/// 46 models is on the website, which is also where the
 /// method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
@@ -59,52 +59,52 @@ public enum AIModelBenchmarkCatalog {
         ),
         AIModelBenchmark(
             rank: 4,
+            provider: "Cerebras",
+            model: "gemma-4-31b",
+            quality: 9.6,
+            seconds: 0.29
+        ),
+        AIModelBenchmark(
+            rank: 5,
             provider: "OpenAI",
             model: "gpt-5.4-mini",
             quality: 9.6,
             seconds: 0.8
         ),
         AIModelBenchmark(
-            rank: 5,
+            rank: 6,
             provider: "OpenAI",
             model: "gpt-5.6-luna",
             quality: 9.5,
             seconds: 0.9
         ),
         AIModelBenchmark(
-            rank: 6,
+            rank: 7,
             provider: "Anthropic",
             model: "claude-haiku-4-5",
             quality: 9.6,
             seconds: 0.9
         ),
         AIModelBenchmark(
-            rank: 7,
+            rank: 8,
             provider: "Mistral",
             model: "mistral-medium-latest",
             quality: 9.4,
             seconds: 0.4
         ),
         AIModelBenchmark(
-            rank: 8,
+            rank: 9,
             provider: "Ollama Cloud",
             model: "gemma4:31b",
             quality: 9.4,
             seconds: 0.6
         ),
         AIModelBenchmark(
-            rank: 9,
+            rank: 10,
             provider: "Gemini",
             model: "gemini-3.1-flash-lite",
             quality: 9.4,
             seconds: 0.7
-        ),
-        AIModelBenchmark(
-            rank: 10,
-            provider: "Anthropic",
-            model: "claude-opus-4-7",
-            quality: 9.7,
-            seconds: 1.1
         )
     ]
 }
