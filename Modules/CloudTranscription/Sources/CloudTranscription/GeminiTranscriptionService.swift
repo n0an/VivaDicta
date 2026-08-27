@@ -76,7 +76,10 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
                         ))
                     ]
                 )
-            ]
+            ],
+            generationConfig: GeminiGenerationConfig(
+                thinkingConfig: GeminiThinkingConfig(thinkingLevel: "low")
+            )
         )
 
         do {
@@ -104,6 +107,18 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
 
     private struct GeminiRequest: Codable {
         let contents: [GeminiContent]
+        let generationConfig: GeminiGenerationConfig
+    }
+
+    /// Gemini 3.x Flash defaults to thinking on at medium, so every dictation
+    /// bought a reasoning pass it had no use for. Measured 2026-08-27 on a 2m12s
+    /// clip: 5.2s and 683 thought tokens by default, 2.8s and zero at "low".
+    private struct GeminiGenerationConfig: Codable {
+        let thinkingConfig: GeminiThinkingConfig
+    }
+
+    private struct GeminiThinkingConfig: Codable {
+        let thinkingLevel: String
     }
 
     private struct GeminiContent: Codable {

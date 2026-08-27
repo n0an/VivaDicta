@@ -415,11 +415,15 @@ class TranscriptionManager: Transcriber {
         case .xai:
             // xAI STT rejects `format=true` without a language, so fall back to
             // "en" whenever the globally selected language is "auto".
-            let language = normalizedLanguage(
-                for: selectedLanguage,
-                supportedCodes: Set(TranscriptionModelProvider.xaiLanguages.keys),
-                fallback: "en"
-            )
+            // nil on auto-detect: forcing "en" transcribed every non-English
+            // dictation as English. See XaiTranscriptionService.Config.language.
+            let language = selectedLanguage == "auto" || selectedLanguage.isEmpty
+                ? nil
+                : normalizedLanguage(
+                    for: selectedLanguage,
+                    supportedCodes: Set(TranscriptionModelProvider.xaiLanguages.keys),
+                    fallback: "en"
+                )
             return .xai(.init(
                 apiKey: try requireAPIKey(model),
                 language: language,

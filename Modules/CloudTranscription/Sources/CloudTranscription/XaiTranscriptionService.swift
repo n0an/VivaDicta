@@ -15,10 +15,12 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
 
     public struct Config: Sendable {
         public let apiKey: String
-        /// One of xAI's 24 documented codes (e.g. "en", "fil"). xAI rejects
-        /// `format=true` without a `language`, so no default is provided -
-        /// callers must pass a concrete code (or pre-normalize "auto" → "en").
-        public let language: String
+        /// One of xAI's 24 documented codes (e.g. "en", "fil"), or nil to let
+        /// xAI detect the language. xAI rejects `format=true` without a concrete
+        /// `language`, so nil drops both fields: losing Inverse Text
+        /// Normalization is a better trade than forcing English onto a dictation
+        /// in some other language.
+        public let language: String?
         /// When true the API returns naturally formatted text with Inverse
         /// Text Normalization (e.g. "$100" instead of "one hundred dollars").
         public let formatted: Bool
@@ -26,7 +28,7 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
-            language: String,
+            language: String?,
             formatted: Bool = true,
             isSpeakerDiarizationEnabled: Bool = false
         ) {
@@ -99,15 +101,17 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
             throw CloudTranscriptionError.audioFileNotFound
         }
 
-        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"format\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append((config.formatted ? "true" : "false").data(using: .utf8)!)
-        body.append(crlf.data(using: .utf8)!)
+        if let language = config.language {
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"format\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append((config.formatted ? "true" : "false").data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
 
-        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
-        body.append(config.language.data(using: .utf8)!)
-        body.append(crlf.data(using: .utf8)!)
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"language\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append(language.data(using: .utf8)!)
+            body.append(crlf.data(using: .utf8)!)
+        }
 
         if config.isSpeakerDiarizationEnabled {
             body.append("--\(boundary)\(crlf)".data(using: .utf8)!)

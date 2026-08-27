@@ -139,9 +139,16 @@ public struct SpeechmaticsTranscriptionService: TranscriptionService, Sendable {
             transcriptionConfig["diarization"] = "speaker"
         }
 
+        // Melia-1 supports no custom dictionary, the same way it supports no
+        // translation - which is already guarded below. Sending
+        // `additional_vocab` to it risks a rejected job.
         if !config.vocabulary.isEmpty {
-            transcriptionConfig["additional_vocab"] = config.vocabulary.map { ["content": $0] }
-            logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms to Speechmatics request")
+            if model == "melia-1" {
+                logger.logNotice("melia-1 does not support a custom dictionary; ignoring \(config.vocabulary.count) vocabulary terms")
+            } else {
+                transcriptionConfig["additional_vocab"] = config.vocabulary.map { ["content": $0] }
+                logger.logInfo("Adding \(config.vocabulary.count) custom vocabulary terms to Speechmatics request")
+            }
         }
 
         var jobConfig: [String: Any] = [
