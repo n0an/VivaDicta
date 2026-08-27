@@ -378,9 +378,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .apple:
             return "foundation-model"
         case .cerebras:
-            // llama3.1-8b was retired from Cerebras' public catalog; gpt-oss-120b
-            // is their only production model.
-            return "gpt-oss-120b"
+            // Measured 2026-08-27: gemma-4-31b scored 9.6 at 0.29s against
+            // gpt-oss-120b's 9.5 at 0.31s, and unlike it never ignored the
+            // no-"ё" rule or fumbled list formatting. Fastest model in the whole
+            // benchmark.
+            return "gemma-4-31b"
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
@@ -545,9 +547,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cerebras:
             // zai-glm-4.7 is deprecated on Cerebras from 2026-08-17; legacy
             // selections are mapped forward via `retiredModelReplacements`.
+            // Default first: gemma-4-31b outscored gpt-oss-120b on the
+            // cleanup eval and is marginally faster.
             return [
-                "gpt-oss-120b",
-                "gemma-4-31b"
+                "gemma-4-31b",
+                "gpt-oss-120b"
             ]
         case .groq:
             // Groq retired the Llama 3.x and qwen3-32b models in mid-2026;
