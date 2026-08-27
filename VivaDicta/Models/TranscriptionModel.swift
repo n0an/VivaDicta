@@ -27,10 +27,12 @@ extension TranscriptionModel {
 
     /// Whether this specific model can return speaker-labeled output.
     ///
-    /// A provider-level capability everywhere except OpenAI, where only the
-    /// dedicated `gpt-4o-transcribe-diarize` model diarizes.
+    /// A provider-level capability except at OpenAI and Google, where only one
+    /// dedicated model in the catalog diarizes: the rest are general-purpose
+    /// models that happen to accept audio.
     var supportsSpeakerDiarization: Bool {
         if provider == .openAI { return name == "gpt-4o-transcribe-diarize" }
+        if provider == .gemini { return name == "gemini-3.5-transcribe" }
         return provider.supportsSpeakerDiarization
     }
 

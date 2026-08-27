@@ -567,6 +567,17 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
 
             // Gemini Models
             CloudModel(
+                name: "gemini-3.5-transcribe",
+                displayName: "Gemini 3.5 Transcribe",
+                description: "Google's dedicated speech-to-text model - 85+ languages, speaker labels, and it removes fillers and self-corrections as it transcribes.",
+                provider: .gemini,
+                speed: 0.9,
+                accuracy: 0.97,
+                cost: 0.3,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3.6-flash",
                 displayName: "Gemini 3.6 Flash",
                 description: "Google's latest fast multimodal model, successor to 3.5 Flash with better quality at lower cost.",
