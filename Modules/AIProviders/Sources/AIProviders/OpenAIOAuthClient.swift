@@ -16,22 +16,18 @@ public enum OpenAIOAuthClient {
     /// Originator header required by the Codex endpoint.
     private static let originator = "codex_cli_rs"
 
-    /// Default model for OpenAI OAuth requests.
-    public static let defaultModel = "gpt-5.6-luna"
+    /// Default model for OpenAI OAuth requests. Matches the API-key default so
+    /// the picker agrees across auth modes, and follows the catalog when it is
+    /// bumped.
+    public static let defaultModel = AIProvider.openAI.defaultModel
 
-    /// Models supported by the Codex endpoint (OpenAI OAuth).
+    /// Models offered for OpenAI OAuth. Mirrors the API-key catalog so signing
+    /// in never shrinks the picker.
     ///
-    /// gpt-5.1 and gpt-5.2 are omitted: `AIProvider.retiredModelReplacements`
-    /// rewrites both to gpt-5.5 before the request is built, so listing them
-    /// only offers the user a picker entry that silently resolves elsewhere.
-    public static let supportedModels: [String] = [
-        "gpt-5.6-sol",
-        "gpt-5.6-terra",
-        "gpt-5.6-luna",
-        "gpt-5.5",
-        "gpt-5.4",
-        "gpt-5.4-mini"
-    ]
+    /// Retired ids stay out of the catalog: `AIProvider.retiredModelReplacements`
+    /// rewrites them before the request is built, so listing one only offers the
+    /// user a picker entry that silently resolves elsewhere.
+    public static let supportedModels: [String] = AIProvider.openAI.availableModels
 
     /// Returns the model to use for the Codex endpoint.
     /// Falls back to default if the requested model isn't supported.

@@ -12,25 +12,21 @@ import AICore
 public enum GeminiAPIClient {
     private static let logger = Logger(aiProvidersCategory: "GeminiAPIClient")
 
-    /// Default model for Gemini OAuth requests.
-    /// Matches `AIProvider.gemini.defaultModel` so picker defaults agree across auth modes.
-    public static let defaultModel = "gemini-3.6-flash"
+    /// Default model for Gemini OAuth requests. Matches the API-key default so
+    /// the picker agrees across auth modes, and follows the catalog when it is
+    /// bumped. Note `resolveModel` does no validation: if Cloud Code Assist
+    /// stops serving this id on some tier, the failure surfaces as the raw
+    /// endpoint error rather than a fallback.
+    public static let defaultModel = AIProvider.gemini.defaultModel
 
     /// Models available via Gemini OAuth (Cloud Code Assist endpoint).
-    /// Kept in sync with `AIProvider.gemini.availableModels` since the Cloud Code Assist
-    /// endpoint exposes the same generateContent surface as the standard API.
-    public static let supportedModels: [String] = [
-        "gemini-3.6-flash",
-        "gemini-3.1-pro-preview",
-        "gemini-3.5-flash",
-        "gemini-3-flash-preview",
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-flash-lite-preview",
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",
-        "gemini-2.5-flash-lite"
-    ]
+    ///
+    /// Cloud Code Assist exposes the same generateContent surface as the standard
+    /// API, so it serves the provider catalog verbatim. Deriving it rather than
+    /// copying keeps the two from drifting - a stale copy here offered
+    /// gemini-3.1-flash-lite-preview, which `AIProvider.retiredModelReplacements`
+    /// rewrites to gemini-3.1-flash-lite before the request is built.
+    public static let supportedModels: [String] = AIProvider.gemini.availableModels
 
     /// Cloud Code Assist endpoint (non-streaming).
     private static let endpoint = "https://cloudcode-pa.googleapis.com/v1internal:generateContent"
