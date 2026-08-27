@@ -287,7 +287,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     // buffers to send. They get an engine-backed capture that
                     // writes the same WAV, so the fallback and storage are unaffected.
                     let modelName = transcriptionManager.getCurrentTranscriptionModel()?.name
-                    if RealtimeDictationCoordinator.canHandle(
+                    if let modelName, RealtimeDictationCoordinator.canHandle(
                         mode: transcriptionManager.currentMode,
                         modelName: modelName
                     ) {
@@ -303,6 +303,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         do {
                             try await coordinator.start(
                                 writingTo: captureURL,
+                                modelName: modelName,
                                 transcriptionLanguage: transcriptionManager.currentMode.transcriptionLanguage ?? "auto"
                             )
                         } catch {
