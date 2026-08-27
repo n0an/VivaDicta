@@ -66,9 +66,11 @@ actor DeepgramFluxRealtimeSession: RealtimeDictationSession {
         var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "model", value: modelName),
             URLQueryItem(name: "encoding", value: "linear16"),
-            URLQueryItem(name: "sample_rate", value: "16000"),
-            URLQueryItem(name: "numerals", value: "true")
+            URLQueryItem(name: "sample_rate", value: "16000")
         ]
+        // No `numerals`: measured 2026-08-27 against Flux it rewrites spoken
+        // "one" as "1" in ordinary prose - "it's 1 of those things", "have a
+        // good 1" - which is worse for dictation than leaving counts as words.
 
         // Flux takes `language_hint`, not `language`, and omitting it is what
         // asks the model to auto-detect - so "auto" sends nothing at all.
