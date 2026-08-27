@@ -37,9 +37,9 @@ public struct OpenAICompatibleService: Sendable {
     // MARK: - Static utilities (also called by non-cloud paths)
 
     /// Builds an OpenAI-compatible chat-completions body. Applies model
-    /// quirks: GPT-5 series omits `temperature` (uses `reasoning_effort`
-    /// instead); reasoning models pick up extra body parameters from
-    /// `ReasoningConfig`.
+    /// quirks: `temperature` is omitted for the GPT-5 series (which uses
+    /// `reasoning_effort` instead) and for models that accept only 1;
+    /// reasoning models pick up extra body parameters from `ReasoningConfig`.
     public static func buildRequestBody(
         modelName: String,
         systemMessage: String,
@@ -57,7 +57,7 @@ public struct OpenAICompatibleService: Sendable {
             "stream": stream
         ]
 
-        if modelName.lowercased().hasPrefix("gpt-5") == false {
+        if ReasoningConfig.sendsTemperature(for: modelName) {
             requestBody["temperature"] = 0.3
         }
 

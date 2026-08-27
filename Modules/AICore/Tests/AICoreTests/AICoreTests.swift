@@ -188,7 +188,7 @@ struct AIProviderTests {
         #expect(!models.isEmpty)
         #expect(AIProvider.opencodeGo.availableModels == models)
         // The default must be in the catalog so a fresh pick is always valid.
-        #expect(AIProvider.opencodeGo.defaultModel == "deepseek-v4-flash")
+        #expect(AIProvider.opencodeGo.defaultModel == "qwen3.8-max")
         #expect(models.contains(AIProvider.opencodeGo.defaultModel))
     }
 

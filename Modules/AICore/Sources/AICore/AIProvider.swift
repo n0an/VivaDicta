@@ -390,7 +390,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .openAI:
             return "gpt-5.6-terra"
         case .grok:
-            return "grok-4.5"
+            // Not the flagship: enhancement is a cleanup task, and this scored
+            // the same as grok-4.6 (9.6) on a cleanup eval at 1.1s against
+            // 5.2s. See `ReasoningConfig.grokMinimalReasoningModels`.
+            return "grok-4.20-non-reasoning"
         case .zai:
             return "glm-5.2"
         case .kimi:
@@ -428,9 +431,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // works out of the box. See `opencodeZenFreeModels`.
             return "big-pickle"
         case .opencodeGo:
-            // An OpenAI-compatible Go model included with the $10/month
-            // subscription. See `opencodeGoModels`.
-            return "deepseek-v4-flash"
+            // Fast, and answers on a fresh key. The DeepSeek v4 builds that used
+            // to sit here now return 403 RegionError until the workspace opts
+            // into China hosting, so they cannot be the default.
+            // See `opencodeGoModels`.
+            return "qwen3.8-max"
         case .huggingFace:
             return "openai/gpt-oss-120b"
         case .copilot:
@@ -513,6 +518,17 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         // kimi-k2.5 is closed to new users and sunsets 2026-08-31
         .kimi: [
             "kimi-k2.5": "kimi-k2.6"
+        ],
+        // Not retired by Google - dropped by us. Measured 2026-08-26 it does not
+        // clean a transcript at all: it invents <CLIPBOARD_CONTEXT> and
+        // <CUSTOM_VOCABULARY> blocks and returns those, which the output filter
+        // cannot unwrap because they are siblings rather than one enclosing tag.
+        .gemini: [
+            "gemini-2.5-flash-lite": "gemini-3.5-flash-lite"
+        ],
+        // Ollama publishes the nano build tagged; the bare name 404s.
+        .ollamaCloud: [
+            "nemotron-3-nano": "nemotron-3-nano:30b"
         ]
     ]
 
@@ -551,7 +567,6 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gemini-3.1-flash-lite",
                 "gemini-2.5-pro",
                 "gemini-2.5-flash",
-                "gemini-2.5-flash-lite"
             ]
         case .anthropic:
             // claude-fable-5 is the top capability tier; it always thinks and
@@ -588,14 +603,19 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gpt-4o-mini"
             ]
         case .grok:
-            // grok-4.5 is xAI's newest flagship. It was EU-blocked at launch;
-            // EU API access opened 2026-07-17, so it is now the default.
+            // grok-4.20-non-reasoning leads because it is the default: measured
+            // 2026-08-26 it matched the flagship on a cleanup eval (9.6) at a
+            // fifth of the latency, and enhancement gains nothing from
+            // reasoning. The flagships follow for anyone who wants them.
+            //
+            // No multi-agent build: xAI answers `Multi Agent requests are not
+            // allowed on chat completions`, so it can never serve enhancement.
             return [
+                "grok-4.20-non-reasoning",
+                "grok-4.6",
                 "grok-4.5",
                 "grok-4.3",
                 "grok-4.20-reasoning",
-                "grok-4.20-non-reasoning",
-                "grok-4.20-multi-agent",
                 "grok-build-0.1"
             ]
         case .zai:
@@ -674,15 +694,28 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .ollamaCloud:
             // Curated fallback list of Ollama Cloud models. Refreshed at runtime
             // via `AIService.fetchOllamaCloudModels()` once an API key is added.
+            // Matches the live catalog as of 2026-08-27. Ollama tags several
+            // builds ("nemotron-3-nano:30b"), and the bare name 404s, so ids
+            // here are copied verbatim from `GET /v1/models`.
             return [
+                "gemma4:31b",
                 "gpt-oss:120b",
                 "gpt-oss:20b",
-                "deepseek-v3.1:671b",
-                "qwen3-coder:480b",
-                "qwen3-vl:235b",
-                "glm-4.6",
-                "kimi-k2:1t",
-                "minimax-m2"
+                "nemotron-3-nano:30b",
+                "nemotron-3-super",
+                "nemotron-3-ultra",
+                "minimax-m3",
+                "minimax-m2.7",
+                "glm-5.3-flash",
+                "glm-5.2",
+                "glm-5.1",
+                "kimi-k3",
+                "kimi-k2.7-code",
+                "kimi-k2.6",
+                "deepseek-v4-flash:0731",
+                "deepseek-v4-pro:0813",
+                "qwen3.5:397b",
+                "mistral-large-3:675b"
             ]
         case .customOpenAI:
             return [] // Model is configured by user
@@ -770,14 +803,20 @@ public extension AIProvider {
     /// Ollama Cloud models that require a paid subscription. Selecting one
     /// without a plan returns HTTP 403 "this model requires a subscription,
     /// upgrade for access" (verified 2026-06-19). See https://ollama.com/upgrade.
+    /// Verified against a free key 2026-08-27. `minimax-m3` and
+    /// `nemotron-3-ultra` are deliberately absent: both answer on the free tier
+    /// despite their size.
     static let ollamaCloudSubscriptionModels: [String] = [
         "deepseek-v3.1:671b",
         "deepseek-v3.2",
         "deepseek-v4-flash",
+        "deepseek-v4-flash:0731",
         "deepseek-v4-pro",
+        "deepseek-v4-pro:0813",
         "kimi-k2.5",
         "kimi-k2.6",
         "kimi-k2.7-code",
+        "kimi-k3",
         "glm-5",
         "glm-5.1",
         "glm-5.2",
@@ -881,11 +920,12 @@ public extension AIProvider {
     /// PROVISIONAL IDs (display names mapped to slugs); the runtime fetch returns
     /// the canonical ids, so this fallback may lag the live catalog slightly.
     static let opencodeGoModels: [String] = [
-        "glm-5.2", "glm-5.1",
-        "kimi-k2.7-code", "kimi-k2.6",
+        "glm-5.3", "glm-5.2", "glm-5.1",
+        "kimi-k3", "kimi-k2.7-code", "kimi-k2.6",
         "mimo-v2.5", "mimo-v2.5-pro",
         "minimax-m3", "minimax-m2.7",
-        "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
-        "deepseek-v4-pro", "deepseek-v4-flash"
+        "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
+        "deepseek-v4-pro", "deepseek-v4-flash",
+        "longcat-2.0", "hy3"
     ]
 }
