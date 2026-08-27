@@ -18,18 +18,8 @@ import os
 /// Soniox sends non-final tokens as a *full replacement set* for the current
 /// interim region, so this keeps finals and interims apart and rebuilds the
 /// preview text on every batch rather than appending blindly.
-actor SonioxRealtimeDictationSession {
-    enum SessionError: LocalizedError {
-        case transportFailed(String)
-        case producedNoText
-
-        var errorDescription: String? {
-            switch self {
-            case .transportFailed(let message): "Realtime transcription failed: \(message)"
-            case .producedNoText: "Realtime transcription returned no text"
-            }
-        }
-    }
+actor SonioxRealtimeDictationSession: RealtimeDictationSession {
+    typealias SessionError = RealtimeDictationSessionError
 
     /// How long `finish()` waits for the server to flush remaining tokens after
     /// the end-of-audio marker. Streaming has already delivered the bulk of the

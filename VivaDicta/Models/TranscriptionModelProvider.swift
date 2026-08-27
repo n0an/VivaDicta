@@ -108,11 +108,25 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Soniox's current async/batch model, used by the upload-and-poll path.
     nonisolated static let sonioxAsyncModel = "stt-async-v5"
 
+    /// Deepgram's Flux models. Realtime-only: Flux speaks `/v2/listen`, and the
+    /// pre-recorded `/v1/listen` endpoint rejects the slugs outright, so a Flux
+    /// selection that reaches the upload path has to transcribe as Nova 3.
+    /// `nonisolated` so the realtime session - an actor - can read them.
+    nonisolated static let deepgramFluxEnglishModel = "flux-general-en"
+    nonisolated static let deepgramFluxMultilingualModel = "flux-general-multi"
+
+    /// Deepgram's batch model, used when a Flux selection falls back to upload.
+    nonisolated static let deepgramBatchModel = "nova-3"
+
+    nonisolated static func isDeepgramFluxModel(_ modelName: String) -> Bool {
+        modelName == deepgramFluxEnglishModel || modelName == deepgramFluxMultilingualModel
+    }
+
     /// Models that transcribe over a live socket while the user speaks, rather
     /// than uploading the finished file. These need the engine-backed capture
     /// path - `AVAudioRecorder` hands out no buffers to stream.
     static func isStreamingModel(_ modelName: String) -> Bool {
-        modelName == sonioxRealtimeModel
+        modelName == sonioxRealtimeModel || isDeepgramFluxModel(modelName)
     }
 
     /// The model to send to a batch/upload endpoint for a given selection.
@@ -121,7 +135,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// upload path runs - the keyboard flow, and the fallback after a dropped
     /// socket. Everything else passes through untouched.
     static func asyncEquivalent(of modelName: String) -> String {
-        isStreamingModel(modelName) ? sonioxAsyncModel : modelName
+        if isDeepgramFluxModel(modelName) { return deepgramBatchModel }
+        return modelName == sonioxRealtimeModel ? sonioxAsyncModel : modelName
     }
     
     static let cloudProviders: [TranscriptionModelProvider] = [
@@ -368,28 +383,41 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "nova-3-multilingual",
-                displayName: "Nova 3 Multi-language",
-                description: "First AI model with real-time switching across 10+ languages. New signups get $200 free credits (~38,460 mins)",
+                name: "flux-general-multi",
+                displayName: "Flux Multi-language",
+                description: "Conversational model with turn detection, code-switching across 10 languages. Realtime only. New signups get $200 free credits",
                 provider: .deepgram,
                 recommended: true,
-                speed: 0.95,
+                speed: 0.98,
                 accuracy: 0.97,
-                cost: 0.75,  // $0.0052/min - New signups get $200 free credits (~38,460 mins)
+                cost: 0.9,
                 supportManyLanguages: true,
-                supportedLanguages: allLanguages
+                supportedLanguages: deepgramFluxLanguages
+            ),
+
+            CloudModel(
+                name: "flux-general-en",
+                displayName: "Flux English",
+                description: "Conversational English model with turn detection, built for low-latency dictation. Realtime only. $0.0065/min",
+                provider: .deepgram,
+                speed: 0.98,
+                accuracy: 0.97,
+                cost: 0.85,
+                supportManyLanguages: false,
+                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
             ),
 
             CloudModel(
                 name: "nova-3",
                 displayName: "Nova 3",
-                description: "Latest generation model with improved accuracy and speed for English transcription. New signups get $200 free credits (~46,511 mins)",
+                description: "Latest generation model with improved accuracy and speed. Auto-detect switches languages mid-sentence at $0.0052/min; pinning a language bills $0.0043/min. New signups get $200 free credits",
                 provider: .deepgram,
+                recommended: true,
                 speed: 0.95,
                 accuracy: 0.97,
-                cost: 0.65,  // $0.0043/min - New signups get $200 free credits (~46,511 mins)
-                supportManyLanguages: false,
-                supportedLanguages: getLanguageDictionary(supportManyLanguages: false)
+                cost: 0.75,  // $0.0052/min multilingual, $0.0043/min pinned
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
             ),
 
             CloudModel(
@@ -750,6 +778,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         "tr": "Turkish",
         "vi": "Vietnamese",
     ]
+
+    /// Deepgram Flux multilingual covers 10 languages. Auto-detect is the
+    /// no-hint case: Flux takes `language_hint`, not `language`, and omitting
+    /// it is what asks the model to detect.
+    static let deepgramFluxLanguages: [String: String] = {
+        let codes: Set<String> = [
+            "auto", "en", "es", "fr", "de", "hi", "ru", "pt", "ja", "it", "nl",
+        ]
+        return allLanguages.filter { codes.contains($0.key) }
+    }()
 
     /// Soniox stt-async-v5 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.

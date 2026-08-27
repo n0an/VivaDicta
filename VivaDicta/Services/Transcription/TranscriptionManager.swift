@@ -314,15 +314,20 @@ class TranscriptionManager: Transcriber {
             ))
 
         case .deepgram:
-            // The app exposes `nova-3-multilingual` as a friendly alias; Deepgram
-            // expects model=nova-3 with language=multi.
-            let modelName: String
+            // Nova 3 used to be two picker rows, the second a `nova-3-multilingual`
+            // alias. It was always one model - `nova-3` with `language=multi` -
+            // so the rows collapsed into one. Saved settings still carry the old
+            // id, so keep resolving it.
+            //
+            // Auto-detect maps to `multi` rather than being left off: Deepgram
+            // defaults an absent language to English, and silently transcribing
+            // a Spanish recording as English is a worse default than the price
+            // step up to code-switching.
+            let modelName = model.name == "nova-3-multilingual" ? "nova-3" : model.name
             let language: String
-            if model.name == "nova-3-multilingual" {
-                modelName = "nova-3"
+            if modelName == "nova-3", selectedLanguage == "auto" || selectedLanguage.isEmpty {
                 language = "multi"
             } else {
-                modelName = model.name
                 language = selectedLanguage
             }
             return .deepgram(.init(

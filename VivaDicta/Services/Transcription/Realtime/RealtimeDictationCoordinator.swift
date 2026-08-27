@@ -5,14 +5,18 @@
 //  Created by Anton Novoselov on 2026.08.08
 //
 
+import AICore
 import AppGroup
 import Foundation
 import Keychain
 import os
 
-/// Pairs `StreamingAudioCapture` with `SonioxRealtimeDictationSession` for one
+/// Pairs `StreamingAudioCapture` with a `RealtimeDictationSession` for one
 /// dictation, so `RecordViewModel` deals with a single object rather than an
 /// engine, a socket, and the pump task between them.
+///
+/// Which session runs is decided by the selected model, and the capture side
+/// does not vary with it - every backend is fed the same PCM.
 ///
 /// The recorded WAV is still written throughout. If the socket fails at any
 /// point the caller can simply transcribe that file the normal way, which is
@@ -21,8 +25,8 @@ import os
 final class RealtimeDictationCoordinator {
     private let logger = Logger(category: .sonioxRealtimeDictation)
     private let capture = StreamingAudioCapture()
-    private let session = SonioxRealtimeDictationSession()
     private let keychain: any KeychainService
+    private var session: (any RealtimeDictationSession)?
 
     private var pumpTask: Task<Void, Never>?
     private(set) var isActive = false
@@ -52,7 +56,7 @@ final class RealtimeDictationCoordinator {
         keychain: any KeychainService = DefaultKeychainService()
     ) -> Bool {
         guard let modelName, TranscriptionModelProvider.isStreamingModel(modelName) else { return false }
-        guard let key = keychain.getString(forKey: "sonioxAPIKey"), !key.isEmpty else { return false }
+        guard let key = apiKey(for: modelName, keychain: keychain), !key.isEmpty else { return false }
 
         let translationTarget = mode.translationTargetLanguage ?? ""
         guard translationTarget.isEmpty else { return false }
@@ -66,18 +70,21 @@ final class RealtimeDictationCoordinator {
     /// Starts capture and opens the socket. Throws only if *capture* fails -
     /// a socket that never connects surfaces later, at `finish()`, by which
     /// point the WAV is complete and the fallback can take over.
-    func start(writingTo url: URL, transcriptionLanguage: String) async throws {
+    func start(writingTo url: URL, modelName: String, transcriptionLanguage: String) async throws {
         guard !isActive else { return }
 
-        guard let apiKey = keychain.getString(forKey: "sonioxAPIKey"), !apiKey.isEmpty else {
-            throw SonioxRealtimeDictationSession.SessionError.transportFailed("missing Soniox API key")
+        guard let apiKey = Self.apiKey(for: modelName, keychain: keychain), !apiKey.isEmpty else {
+            throw RealtimeDictationSessionError.transportFailed("missing API key for \(modelName)")
         }
+
+        let session = Self.makeSession(for: modelName)
+        self.session = session
 
         let stream = capture.makeStream()
         try await capture.start(writingTo: url)
         isActive = true
 
-        // "auto" means let Soniox detect; sending it as a hint would be wrong.
+        // "auto" means let the provider detect; sending it as a hint would be wrong.
         let hints = (transcriptionLanguage == "auto" || transcriptionLanguage.isEmpty) ? [] : [transcriptionLanguage]
 
         await session.start(
@@ -91,6 +98,23 @@ final class RealtimeDictationCoordinator {
                 await session.send(chunk)
             }
         }
+    }
+
+    /// The backend that serves this model's realtime socket.
+    private static func makeSession(for modelName: String) -> any RealtimeDictationSession {
+        if TranscriptionModelProvider.isDeepgramFluxModel(modelName) {
+            return DeepgramFluxRealtimeSession(modelName: modelName)
+        }
+        return SonioxRealtimeDictationSession()
+    }
+
+    /// Realtime models come from two providers with two keys, so the key is
+    /// resolved from the model rather than assumed to be Soniox's.
+    private static func apiKey(for modelName: String, keychain: any KeychainService) -> String? {
+        if TranscriptionModelProvider.isDeepgramFluxModel(modelName) {
+            return AIProvider.deepgram.apiKey
+        }
+        return keychain.getString(forKey: "sonioxAPIKey")
     }
 
     /// Stops capture, flushes the socket, and returns the transcript.
@@ -115,9 +139,11 @@ final class RealtimeDictationCoordinator {
         await pumpTask?.value
         pumpTask = nil
 
+        guard let session else { throw RealtimeDictationSessionError.producedNoText }
+
         guard wasActive else {
             await session.cancel()
-            throw SonioxRealtimeDictationSession.SessionError.producedNoText
+            throw RealtimeDictationSessionError.producedNoText
         }
 
         return try await session.finish()
@@ -128,6 +154,7 @@ final class RealtimeDictationCoordinator {
         await capture.stop()
         pumpTask?.cancel()
         pumpTask = nil
-        await session.cancel()
+        await session?.cancel()
+        session = nil
     }
 }
