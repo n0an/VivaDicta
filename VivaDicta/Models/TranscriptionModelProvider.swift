@@ -27,7 +27,32 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     case customTranscription
     
     var id: Self { self }
-    
+
+    /// Whether this provider can return speaker-labeled transcripts.
+    ///
+    /// OpenAI is deliberately excluded: only its dedicated
+    /// `gpt-4o-transcribe-diarize` model diarizes, so the capability is decided
+    /// per model - see `TranscriptionModel.supportsSpeakerDiarization`.
+    var supportsSpeakerDiarization: Bool {
+        switch self {
+        case .deepgram, .elevenLabs, .mistral, .soniox, .gladia, .speechmatics, .assemblyAI, .xai:
+            true
+        default:
+            false
+        }
+    }
+
+    /// Whether this provider can translate inline, during transcription, without
+    /// a separate AI pass.
+    var supportsNativeTranslation: Bool {
+        switch self {
+        case .soniox, .gladia, .speechmatics:
+            true
+        default:
+            false
+        }
+    }
+
     var displayName: String {
         switch self {
         case .parakeet:

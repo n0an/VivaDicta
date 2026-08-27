@@ -146,6 +146,11 @@ struct CloudModelCard: View {
                     value: model.cost * 10,
                     color: costColor
                 )
+
+                ModelCapabilityBadges(
+                    supportsSpeakerDiarization: model.supportsSpeakerDiarization,
+                    supportsNativeTranslation: model.supportsNativeTranslation
+                )
             }
 
             // Description

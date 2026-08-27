@@ -66,11 +66,51 @@ struct ModelMetricRow: View {
     }
 }
 
+/// Capability ticks shown under a model's metric rows. Only the capabilities the
+/// model actually has are drawn, so a model without either shows nothing.
+struct ModelCapabilityBadges: View {
+    let supportsSpeakerDiarization: Bool
+    let supportsNativeTranslation: Bool
+
+    var body: some View {
+        if supportsSpeakerDiarization || supportsNativeTranslation {
+            HStack(spacing: 16) {
+                if supportsSpeakerDiarization {
+                    ModelCapabilityBadge(title: "Speaker Labels")
+                }
+                if supportsNativeTranslation {
+                    ModelCapabilityBadge(title: "Native Translation")
+                }
+            }
+        }
+    }
+}
+
+struct ModelCapabilityBadge: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.green)
+
+            Text(title)
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Supports \(title)")
+    }
+}
+
 #Preview {
-    VStack(spacing: 12) {
+    VStack(alignment: .leading, spacing: 12) {
         ModelMetricRow(label: "Speed", value: 9.5, color: .green)
         ModelMetricRow(label: "Accuracy", value: 6.3, color: .orange)
         ModelMetricRow(label: "Cost", value: 2.7, color: .red)
+        ModelCapabilityBadges(supportsSpeakerDiarization: true, supportsNativeTranslation: true)
+        ModelCapabilityBadges(supportsSpeakerDiarization: true, supportsNativeTranslation: false)
     }
     .padding()
 }
