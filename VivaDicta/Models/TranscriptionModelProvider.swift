@@ -118,6 +118,24 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Deepgram's batch model, used when a Flux selection falls back to upload.
     nonisolated static let deepgramBatchModel = "nova-3"
 
+    /// Deepgram's Nova models that also serve `/v1/listen` over a socket. Unlike
+    /// Flux the slug is the same on both transports, so a fallback to upload
+    /// needs no substitution.
+    /// `nonisolated` so the realtime session - an actor - can read them.
+    nonisolated static let deepgramNovaRealtimeModels: Set<String> = ["nova-3", "nova-3-medical"]
+
+    /// ElevenLabs Scribe. The socket wants `scribe_v2_realtime` while the upload
+    /// path wants `scribe_v2`; the realtime session substitutes internally, so
+    /// only the batch slug is ever stored in a mode.
+    nonisolated static let elevenLabsRealtimeModel = "scribe_v2"
+
+    /// Mistral's Voxtral Realtime. Realtime-only - the batch endpoint rejects
+    /// the slug, so an upload falls back to `voxtral-mini-latest`.
+    nonisolated static let mistralRealtimeModel = "voxtral-mini-transcribe-realtime-2602"
+
+    /// Mistral's batch model, used when a Voxtral Realtime selection uploads.
+    nonisolated static let mistralBatchModel = "voxtral-mini-latest"
+
     nonisolated static func isDeepgramFluxModel(_ modelName: String) -> Bool {
         modelName == deepgramFluxEnglishModel || modelName == deepgramFluxMultilingualModel
     }
@@ -126,7 +144,11 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// than uploading the finished file. These need the engine-backed capture
     /// path - `AVAudioRecorder` hands out no buffers to stream.
     static func isStreamingModel(_ modelName: String) -> Bool {
-        modelName == sonioxRealtimeModel || isDeepgramFluxModel(modelName)
+        modelName == sonioxRealtimeModel
+            || isDeepgramFluxModel(modelName)
+            || deepgramNovaRealtimeModels.contains(modelName)
+            || modelName == elevenLabsRealtimeModel
+            || modelName == mistralRealtimeModel
     }
 
     /// The model to send to a batch/upload endpoint for a given selection.
@@ -136,6 +158,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// socket. Everything else passes through untouched.
     static func asyncEquivalent(of modelName: String) -> String {
         if isDeepgramFluxModel(modelName) { return deepgramBatchModel }
+        if modelName == mistralRealtimeModel { return mistralBatchModel }
         return modelName == sonioxRealtimeModel ? sonioxAsyncModel : modelName
     }
     
@@ -378,6 +401,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 speed: 0.95,
                 accuracy: 0.95,
                 cost: 0.45,  // $0.003/min - New signups get $500 free credits (~166,666 mins)
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+
+            CloudModel(
+                name: "voxtral-mini-transcribe-realtime-2602",
+                displayName: "Voxtral Realtime",
+                description: "Mistral's streaming model - transcribes while you speak, so there is nothing to wait for when you stop. Realtime only.",
+                provider: .mistral,
+                speed: 0.99,
+                accuracy: 0.97,
+                cost: 0.45,
                 supportManyLanguages: true,
                 supportedLanguages: allLanguages
             ),

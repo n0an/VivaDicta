@@ -105,14 +105,30 @@ final class RealtimeDictationCoordinator {
         if TranscriptionModelProvider.isDeepgramFluxModel(modelName) {
             return DeepgramFluxRealtimeSession(modelName: modelName)
         }
+        if TranscriptionModelProvider.deepgramNovaRealtimeModels.contains(modelName) {
+            return DeepgramNovaRealtimeSession(modelName: modelName)
+        }
+        if modelName == TranscriptionModelProvider.elevenLabsRealtimeModel {
+            return ElevenLabsRealtimeSession()
+        }
+        if modelName == TranscriptionModelProvider.mistralRealtimeModel {
+            return MistralRealtimeSession()
+        }
         return SonioxRealtimeDictationSession()
     }
 
-    /// Realtime models come from two providers with two keys, so the key is
-    /// resolved from the model rather than assumed to be Soniox's.
+    /// Realtime models come from several providers with separate keys, so the key
+    /// is resolved from the model rather than assumed to be Soniox's.
     private static func apiKey(for modelName: String, keychain: any KeychainService) -> String? {
-        if TranscriptionModelProvider.isDeepgramFluxModel(modelName) {
+        if TranscriptionModelProvider.isDeepgramFluxModel(modelName)
+            || TranscriptionModelProvider.deepgramNovaRealtimeModels.contains(modelName) {
             return AIProvider.deepgram.apiKey
+        }
+        if modelName == TranscriptionModelProvider.elevenLabsRealtimeModel {
+            return AIProvider.elevenLabs.apiKey
+        }
+        if modelName == TranscriptionModelProvider.mistralRealtimeModel {
+            return AIProvider.mistral.apiKey
         }
         return keychain.getString(forKey: "sonioxAPIKey")
     }

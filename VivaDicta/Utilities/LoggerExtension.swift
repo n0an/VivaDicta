@@ -43,6 +43,9 @@ public enum LogCategory: String {
     case customTranscriptionService = "CustomTranscriptionService"
     case sonioxRealtimeDictation = "SonioxRealtimeDictation"
     case deepgramFluxRealtimeDictation = "DeepgramFluxRealtimeDictation"
+    case deepgramNovaRealtimeDictation = "DeepgramNovaRealtimeDictation"
+    case elevenLabsRealtimeDictation = "ElevenLabsRealtimeDictation"
+    case mistralRealtimeDictation = "MistralRealtimeDictation"
     case streamingAudioCapture = "StreamingAudioCapture"
 
     // MARK: - Services - Live Translation
