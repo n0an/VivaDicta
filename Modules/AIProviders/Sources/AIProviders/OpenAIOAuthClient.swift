@@ -16,18 +16,34 @@ public enum OpenAIOAuthClient {
     /// Originator header required by the Codex endpoint.
     private static let originator = "codex_cli_rs"
 
-    /// Default model for OpenAI OAuth requests. Matches the API-key default so
-    /// the picker agrees across auth modes, and follows the catalog when it is
-    /// bumped.
-    public static let defaultModel = AIProvider.openAI.defaultModel
-
-    /// Models offered for OpenAI OAuth. Mirrors the API-key catalog so signing
-    /// in never shrinks the picker.
+    /// Default model for OpenAI OAuth requests.
     ///
-    /// Retired ids stay out of the catalog: `AIProvider.retiredModelReplacements`
-    /// rewrites them before the request is built, so listing one only offers the
-    /// user a picker entry that silently resolves elsewhere.
-    public static let supportedModels: [String] = AIProvider.openAI.availableModels
+    /// Named explicitly rather than taken from `AIProvider.openAI.defaultModel`:
+    /// the Codex endpoint serves a much narrower set than the API-key catalog,
+    /// so a catalog bump could silently point OAuth at a model it cannot use.
+    public static let defaultModel = "gpt-5.6-luna"
+
+    /// Models the Codex endpoint actually serves, verified against it on
+    /// 2026-08-27.
+    ///
+    /// This is deliberately *not* derived from `AIProvider.openAI.availableModels`.
+    /// Codex serves the 5.4 generation upward and nothing else: gpt-5.4-nano,
+    /// gpt-5-nano, gpt-4.1, gpt-4.1-mini, gpt-4o and gpt-4o-mini are all in the
+    /// API-key catalog and all rejected here. So is gpt-5.3-codex-spark, despite
+    /// being a Codex-only coding tier.
+    ///
+    /// An unsupported selection falls back to `defaultModel`, so listing an id
+    /// Codex does not serve only offers the user a picker entry that silently
+    /// resolves elsewhere - which is exactly what happened while this list
+    /// mirrored the catalog.
+    public static let supportedModels: [String] = [
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+        "gpt-5.5",
+        "gpt-5.4",
+        "gpt-5.4-mini"
+    ]
 
     /// Returns the model to use for the Codex endpoint.
     /// Falls back to default if the requested model isn't supported.
