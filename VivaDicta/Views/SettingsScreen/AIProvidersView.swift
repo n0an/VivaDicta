@@ -108,6 +108,10 @@ struct AIProviders: View {
                 .background(Color(.systemGroupedBackground))
             } else {
                 List {
+            // Measured ranking, above the provider list so it reads as guidance
+            // before the user starts picking.
+            topModelsSection
+
             // Cloud Section
             Section {
                 ForEach(AIProvider.cloudProviders) { provider in
@@ -336,6 +340,50 @@ struct AIProviders: View {
                     aiService: appState.aiService,
                     onSave: { _ in }
                 )
+            }
+        }
+    }
+
+    // MARK: - Top Models
+
+    /// The best models for cleaning up dictation, from the benchmark in the
+    /// macOS repo's `scripts/ai-provider-eval`. Only the top few ship here - the
+    /// full table, and how it was measured, live on the website.
+    private var topModelsSection: some View {
+        Section {
+            ForEach(AIModelBenchmarkCatalog.top) { entry in
+                HStack(spacing: 10) {
+                    Text("\(entry.rank)")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 18, alignment: .trailing)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(entry.model)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Text(entry.provider)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Text(entry.quality.formatted(.number.precision(.fractionLength(1))))
+                        .font(.subheadline.monospacedDigit())
+                    Text("\(entry.seconds.formatted(.number.precision(.fractionLength(1))))s")
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 42, alignment: .trailing)
+                }
+            }
+        } header: {
+            Text("Top Models for AI Processing")
+        } footer: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Scored on how well each model cleans up dictation, and how long it takes. Measured \(AIModelBenchmarkCatalog.measuredAt); scores within 0.3 are ties.")
+                Link("See all measured models", destination: AIModelBenchmarkCatalog.fullTableURL)
             }
         }
     }
