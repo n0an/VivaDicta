@@ -156,6 +156,13 @@ class TranscriptionManager: Transcriber {
         }
 
         let startTime = Date()
+        // Before building the request: a vendor's size cap otherwise surfaces as
+        // a raw HTTP 400 that names neither the cause nor a way forward.
+        try CloudTranscriptionLimits.check(
+            audioURL: audioURL,
+            providerDisplayName: model.provider.displayName
+        )
+
         let provider = try makeProvider(for: model)
         let transcriptionResult = try await engine.transcribe(
             audioURL: audioURL,

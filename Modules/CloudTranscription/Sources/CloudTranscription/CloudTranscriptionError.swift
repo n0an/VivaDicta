@@ -11,6 +11,7 @@ public enum CloudTranscriptionError: LocalizedError {
     case networkError(any Error)
     case noTranscriptionReturned
     case dataEncodingError
+    case audioTooLong(provider: String, limit: Duration, actual: Duration, alternatives: [String])
 
     public var errorDescription: String? {
         switch self {
@@ -30,6 +31,8 @@ public enum CloudTranscriptionError: LocalizedError {
             return "Empty response from API"
         case .dataEncodingError:
             return "Failed to encode request"
+        case .audioTooLong:
+            return "Recording too long for this provider"
         }
     }
 
@@ -41,6 +44,10 @@ public enum CloudTranscriptionError: LocalizedError {
             return "API key for this service is not configured. Go to Settings and add your API key for the selected provider."
         case .invalidAPIKey:
             return "The API key you provided is invalid or has expired. Please check your API key in Settings and ensure it's correct."
+        case .audioTooLong(let provider, let limit, let actual, let alternatives):
+            let format = Duration.UnitsFormatStyle(allowedUnits: [.minutes], width: .wide)
+            return "This recording is \(actual.formatted(format)) long, but \(provider) accepts about \(limit.formatted(format)). "
+                + "Try a local model, or \(ListFormatStyle<StringStyle, [String]>.list(type: .or).format(alternatives)), which have no length limit."
         case .audioFileNotFound:
             return "The audio file could not be located on disk. It may have been deleted or moved. Please try recording again."
         case .apiRequestFailed(let statusCode, let message):
