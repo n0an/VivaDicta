@@ -155,14 +155,6 @@ class KeyboardViewController: KeyboardInputViewController {
     private func startResolvingHostApplicationBundleId(timeout: TimeInterval = 2) {
         hostApplicationBundleIdTask = Task { [weak self] in
             guard let self else { return nil }
-            let bundleId: String?
-            do {
-                bundleId = try await resolveHostApplicationBundleId(timeout: timeout)
-            } catch {
-                logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
-                return nil
-            }
-
             // KeyboardKit persists `hostApplicationBundleId` to the App Group
             // and, per its Host article, "will not sync the bundle ID to the
             // KeyboardContext unless absolutely necessary". Nothing here reads
@@ -170,7 +162,19 @@ class KeyboardViewController: KeyboardInputViewController {
             // writing it would only seed the *next* keyboard session with this
             // session's host. Clear it, so neither this session nor a value
             // left behind by an earlier build can outlive the keyboard.
+            //
+            // Cleared before resolving, so that a resolution which throws does
+            // not leave an older value in place - the case where a stale host
+            // is least wanted.
             state.keyboardContext.hostApplicationBundleId = nil
+
+            let bundleId: String?
+            do {
+                bundleId = try await resolveHostApplicationBundleId(timeout: timeout)
+            } catch {
+                logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
+                return nil
+            }
 
             // `.notice` rather than `.info`: info-level entries are memory
             // backed and die with the extension process, so a wrong host was
