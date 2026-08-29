@@ -118,6 +118,6 @@ If the user explicitly says `merge`, do not wait for CI to finish.
 ## Post-Merge: Update What's New
 
 After the PR is merged, update the running What's New file in the Obsidian vault:
-- **File**: `Projects/VivaDicta/what's new/whats-new-running.md` in the vault at `/Users/antonnovoselov/Library/Mobile Documents/iCloud~md~obsidian/Documents/Second Brain Vault/`
+- **File**: `Projects/VivaDicta/what's new/whats-new-running.md` in the vault at `/Users/antonnovoselov/Documents/Vault/`
 - **Skip** if the PR is a one-liner simple fix, bug fix, refactor, or minor cleanup that users wouldn't notice.
 - **Add** a concise, user-facing bullet point when the PR introduces a new feature or notable improvement. Write it from the user's perspective (what they can now do), not technical details. This file feeds into App Store Connect "What's New" release notes.

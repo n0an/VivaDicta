@@ -23,7 +23,7 @@ Projects/VivaDicta/ASO/
 
 Vault path:
 ```
-/Users/antonnovoselov/Library/Mobile Documents/iCloud~md~obsidian/Documents/Second Brain Vault/Projects/VivaDicta/ASO/
+/Users/antonnovoselov/Documents/Vault/Projects/VivaDicta/ASO/
 ```
 
 ## Steps
