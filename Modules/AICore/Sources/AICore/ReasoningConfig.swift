@@ -14,6 +14,13 @@ public struct ReasoningConfig {
         "gemini-2.5-flash-lite"
     ]
 
+    // "low" is the floor for these: they reject "minimal" outright with a
+    // validation error, so the usual minimal-effort default would 400 every
+    // enhancement call.
+    static let geminiLowReasoningModels: Set<String> = [
+        "gemini-3.7-flash"
+    ]
+
     // These can't fully disable thinking - "minimal" is as low as they go
     static let geminiMinimalReasoningModels: Set<String> = [
         "gemini-2.5-pro",
@@ -132,6 +139,7 @@ public struct ReasoningConfig {
 
     public static func getReasoningParameter(for modelName: String) -> String? {
         if geminiNoneReasoningModels.contains(modelName) { return "none" }
+        else if geminiLowReasoningModels.contains(modelName) { return "low" }
         else if geminiMinimalReasoningModels.contains(modelName) { return "minimal" }
         else if openAINoneReasoningModels.contains(modelName) { return "none" }
         else if openAIMinimalReasoningModels.contains(modelName) { return "minimal" }

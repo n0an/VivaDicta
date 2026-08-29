@@ -59,12 +59,38 @@ struct GeminiTranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "gemini-test-key",
-        modelName: String = "gemini-2.0-flash"
+        modelName: String = "gemini-2.0-flash",
+        thinkingLevel: GeminiTranscriptionService.ThinkingLevel = .low,
+        prompt: String = GeminiTranscriptionService.defaultTranscriptionPrompt
     ) -> GeminiTranscriptionService {
         GeminiTranscriptionService(
-            config: .init(apiKey: apiKey, modelName: modelName),
+            config: .init(
+                apiKey: apiKey,
+                modelName: modelName,
+                thinkingLevel: thinkingLevel,
+                prompt: prompt
+            ),
             networkService: networkService
         )
+    }
+
+    /// Pulls `generationConfig.thinkingConfig.thinkingLevel` out of the encoded
+    /// body, going through real JSON so the coding keys are exercised rather
+    /// than assumed.
+    private func thinkingLevel(in request: URLRequest) throws -> String {
+        let body = try #require(request.httpBody)
+        let object = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let generationConfig = try #require(object["generationConfig"] as? [String: Any])
+        let thinkingConfig = try #require(generationConfig["thinkingConfig"] as? [String: Any])
+        return try #require(thinkingConfig["thinkingLevel"] as? String)
+    }
+
+    private func textParts(in request: URLRequest) throws -> [String] {
+        let body = try #require(request.httpBody)
+        let object = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        let contents = try #require(object["contents"] as? [[String: Any]])
+        let parts = try #require(contents.first?["parts"] as? [[String: Any]])
+        return parts.compactMap { $0["text"] as? String }
     }
 
     // MARK: - Success path
@@ -173,6 +199,111 @@ struct GeminiTranscriptionServiceTests {
         )
         #expect((inlineData["data"] as? String) == Data([0x52, 0x49, 0x46, 0x46]).base64EncodedString())
         #expect((inlineData["mimeType"] as? String)?.isEmpty == false)
+    }
+
+    // MARK: - Thinking level
+
+    // Every dictation used to buy a reasoning pass it had no use for; "low" is
+    // the default so it does not come back by accident.
+    @Test func thinkingLevelDefaultsToLow() async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = GeminiTranscriptionService(
+            config: .init(apiKey: "gemini-test-key", modelName: "gemini-3.7-flash"),
+            networkService: networkService
+        )
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        #expect(try thinkingLevel(in: try #require(networkService.capturedRequest)) == "low")
+    }
+
+    @Test(arguments: GeminiTranscriptionService.ThinkingLevel.allCases)
+    func configuredThinkingLevelReachesTheRequest(level: GeminiTranscriptionService.ThinkingLevel) async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, thinkingLevel: level)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        #expect(try thinkingLevel(in: try #require(networkService.capturedRequest)) == level.rawValue)
+    }
+
+    // gemini-3.7-flash answers "minimal" with a validation error, so the menu
+    // stops at "low" - a case added later would 400 on the newest model.
+    @Test func thinkingLevelsOfferedAreLowMediumHigh() {
+        #expect(GeminiTranscriptionService.ThinkingLevel.allCases.map(\.rawValue) == ["low", "medium", "high"])
+    }
+
+    // MARK: - Custom prompt
+
+    @Test func customPromptReplacesTheBuiltInInstruction() async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, prompt: "Transcribe verbatim, keep every filler word.")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let texts = try textParts(in: try #require(networkService.capturedRequest))
+        #expect(texts.contains("Transcribe verbatim, keep every filler word."))
+        #expect(texts.contains(GeminiTranscriptionService.defaultTranscriptionPrompt) == false)
+    }
+
+    // An empty prompt is how the settings screen stores "use the built-in one",
+    // so it must not send the audio with no instruction at all.
+    @Test(arguments: ["", "   ", "\n\t "])
+    func blankPromptFallsBackToTheDefault(prompt: String) async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, prompt: prompt)
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let texts = try textParts(in: try #require(networkService.capturedRequest))
+        #expect(texts.contains(GeminiTranscriptionService.defaultTranscriptionPrompt))
+    }
+
+    @Test func customPromptIsTrimmed() async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, prompt: "  Transcribe in Spanish.  ")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let texts = try textParts(in: try #require(networkService.capturedRequest))
+        #expect(texts.contains("Transcribe in Spanish."))
+    }
+
+    // The dedicated transcription models reject `thinkingConfig` ("Thinking
+    // level is not supported for this model") and a developer instruction, so
+    // neither setting may leak into their request even when the user has set
+    // both. Only the request is asserted here - the mock cannot produce the
+    // private `InteractionsResponse`, so the call throws after capturing it.
+    @Test func dedicatedTranscribeModelSendsNeitherThinkingLevelNorPrompt() async throws {
+        let networkService = MockNetworkService()
+        try stubSuccess(on: networkService, text: "unused")
+        let audio = try makeAudioFile()
+        let sut = makeService(
+            networkService: networkService,
+            modelName: "gemini-3.5-transcribe",
+            thinkingLevel: .high,
+            prompt: "Summarize instead."
+        )
+
+        _ = try? await sut.transcribe(audioURL: audio)
+
+        let req = try #require(networkService.capturedRequest)
+        #expect(req.url?.path == "/v1beta/interactions")
+        let body = try #require(req.httpBody)
+        let json = try #require(String(data: body, encoding: .utf8))
+        #expect(json.contains("thinkingLevel") == false)
+        #expect(json.contains("thinking_level") == false)
+        #expect(json.contains("Summarize instead.") == false)
     }
 
     // MARK: - Validation / short-circuit

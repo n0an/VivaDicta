@@ -353,12 +353,19 @@ class TranscriptionManager: Transcriber {
             // Language, vocabulary and diarization only reach the dedicated
             // transcription models - the general-purpose Gemini models are
             // prompted instead, and their request shape has nowhere to put them.
+            // The thinking level and prompt go the other way: only the prompted
+            // models accept them, and `gemini-3.5-transcribe` rejects both.
+            let coordinator = AppGroupCoordinator.shared
             return .gemini(.init(
                 apiKey: try requireAPIKey(model),
                 modelName: model.name,
                 language: selectedLanguage,
                 vocabulary: CustomVocabulary.getTerms(maxTerms: 1000),
-                isSpeakerDiarizationEnabled: diarizationEnabled
+                isSpeakerDiarizationEnabled: diarizationEnabled,
+                thinkingLevel: GeminiTranscriptionService.ThinkingLevel(
+                    rawValue: coordinator.geminiTranscriptionThinkingLevel
+                ) ?? .low,
+                prompt: coordinator.geminiTranscriptionPrompt
             ))
 
         case .mistral:

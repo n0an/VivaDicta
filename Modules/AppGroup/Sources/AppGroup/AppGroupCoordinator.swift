@@ -63,6 +63,8 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     public static let kKeepTranscriptInClipboard = "keepTranscriptInClipboard"
     public static let kIsVADEnabled = "IsVADEnabled"
     public static let kIsSpeakerDiarizationEnabled = "isSpeakerDiarizationEnabled"
+    public static let kGeminiTranscriptionThinkingLevel = "geminiTranscriptionThinkingLevel"
+    public static let kGeminiTranscriptionPrompt = "geminiTranscriptionPrompt"
     public static let kIsKeyboardHapticFeedbackEnabled = "isKeyboardHapticFeedbackEnabled"
     public static let kIsKeyboardSoundFeedbackEnabled = "isKeyboardSoundFeedbackEnabled"
     public static let kEnabledKeyboardLanguages = "enabledKeyboardLanguages"
@@ -616,6 +618,36 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         }
         set {
             sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kIsSpeakerDiarizationEnabled)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// How much Gemini's general-purpose models may reason before answering a
+    /// transcription request - "low", "medium" or "high".
+    ///
+    /// Stored as a raw string rather than an enum so the AppGroup module stays
+    /// free of a CloudTranscription dependency; the transcription layer maps it
+    /// onto `GeminiTranscriptionService.ThinkingLevel` and falls back to "low"
+    /// on anything it does not recognise. Not read by the dedicated
+    /// `gemini-3.5-transcribe` model, which rejects the field.
+    public var geminiTranscriptionThinkingLevel: String {
+        get {
+            sharedDefaults?.string(forKey: AppGroupCoordinator.kGeminiTranscriptionThinkingLevel) ?? "low"
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kGeminiTranscriptionThinkingLevel)
+            sharedDefaults?.synchronize()
+        }
+    }
+
+    /// A user-written instruction sent alongside the audio to Gemini's
+    /// general-purpose models. Empty means the built-in instruction is used.
+    public var geminiTranscriptionPrompt: String {
+        get {
+            sharedDefaults?.string(forKey: AppGroupCoordinator.kGeminiTranscriptionPrompt) ?? ""
+        }
+        set {
+            sharedDefaults?.set(newValue, forKey: AppGroupCoordinator.kGeminiTranscriptionPrompt)
             sharedDefaults?.synchronize()
         }
     }

@@ -11,6 +11,8 @@ struct ReasoningConfigTests {
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-2.5-flash") == "none")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-2.5-pro") == "minimal")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.6-flash") == "minimal")
+        // 3.7 Flash rejects "minimal" with a validation error - "low" is its floor.
+        #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.7-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.5-flash-lite") == "minimal")
         // OpenAI GPT-5 series
         #expect(ReasoningConfig.getReasoningParameter(for: "gpt-5.5") == "none")

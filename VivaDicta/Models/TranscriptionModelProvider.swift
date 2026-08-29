@@ -236,7 +236,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         switch self {
         case .groq: "whisper-large-v3-turbo"
         case .mistral: "voxtral-mini-latest"
-        case .gemini: "gemini-3.6-flash"
+        case .gemini: "gemini-3.7-flash"
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-transcribe"
@@ -587,9 +587,20 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             CloudModel(
+                name: "gemini-3.7-flash",
+                displayName: "Gemini 3.7 Flash",
+                description: "Google's latest and most capable Flash model, successor to 3.6 Flash.",
+                provider: .gemini,
+                speed: 0.94,
+                accuracy: 0.94,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3.6-flash",
                 displayName: "Gemini 3.6 Flash",
-                description: "Google's latest fast multimodal model, successor to 3.5 Flash with better quality at lower cost.",
+                description: "Google's previous-generation fast multimodal model, superseded by Gemini 3.7 Flash.",
                 provider: .gemini,
                 speed: 0.93,
                 accuracy: 0.93,
@@ -600,7 +611,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-3.5-flash",
                 displayName: "Gemini 3.5 Flash",
-                description: "Google's previous-generation fast multimodal model, superseded by Gemini 3.6 Flash.",
+                description: "Google's earlier fast multimodal model, superseded by Gemini 3.6 Flash.",
                 provider: .gemini,
                 speed: 0.92,
                 accuracy: 0.92,

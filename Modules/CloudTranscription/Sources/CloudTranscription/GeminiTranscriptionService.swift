@@ -29,6 +29,28 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
     /// The subset that can attribute speech to speakers.
     public static let diarizingModels: Set<String> = ["gemini-3.5-transcribe"]
 
+    /// The instruction sent alongside the audio on the `generateContent` path,
+    /// used whenever the user has not written their own.
+    public static let defaultTranscriptionPrompt = "Please transcribe this audio file. Provide only the transcribed text."
+
+    /// How much the general-purpose models are allowed to reason before
+    /// answering.
+    ///
+    /// Gemini 3.x Flash defaults to thinking on at medium, so every dictation
+    /// bought a reasoning pass it had no use for. Measured 2026-08-27 on a
+    /// 2m12s clip: 5.2s and 683 thought tokens by default, 2.8s and zero at
+    /// "low" - which is why "low" stays the default.
+    ///
+    /// "minimal" is deliberately absent even though the 3.5/3.6 generation
+    /// accepts it. `gemini-3.7-flash` answers it with a validation error, and
+    /// this is one setting shared by every Gemini model, so an option that
+    /// fails outright on the newest one is not worth offering.
+    public enum ThinkingLevel: String, CaseIterable, Sendable, Codable {
+        case low
+        case medium
+        case high
+    }
+
     public struct Config: Sendable {
         public let apiKey: String
         public let modelName: String
@@ -37,19 +59,38 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
         /// Only the Interactions API models accept it; capped at 1,000 terms.
         public let vocabulary: [String]
         public let isSpeakerDiarizationEnabled: Bool
+        /// Only the `generateContent` models accept it - the dedicated
+        /// transcription models reject `thinkingConfig` outright.
+        public let thinkingLevel: ThinkingLevel
+        /// The instruction sent with the audio. Only the `generateContent`
+        /// models are prompted at all; blank falls back to
+        /// ``defaultTranscriptionPrompt``.
+        public let prompt: String
 
         public init(
             apiKey: String,
             modelName: String,
             language: String = "auto",
             vocabulary: [String] = [],
-            isSpeakerDiarizationEnabled: Bool = false
+            isSpeakerDiarizationEnabled: Bool = false,
+            thinkingLevel: ThinkingLevel = .low,
+            prompt: String = GeminiTranscriptionService.defaultTranscriptionPrompt
         ) {
             self.apiKey = apiKey
             self.modelName = modelName
             self.language = language
             self.vocabulary = vocabulary
             self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
+            self.thinkingLevel = thinkingLevel
+            self.prompt = prompt
+        }
+
+        /// The instruction actually sent, with a blank or whitespace-only
+        /// custom prompt falling back to the default rather than asking the
+        /// model to transcribe with no instruction at all.
+        var resolvedPrompt: String {
+            let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? GeminiTranscriptionService.defaultTranscriptionPrompt : trimmed
         }
     }
 
@@ -280,7 +321,7 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
             throw CloudTranscriptionError.dataEncodingError
         }
 
-        logger.logNotice("Starting Gemini transcription with model: \(config.modelName)")
+        logger.logNotice("Starting Gemini transcription with model: \(config.modelName), thinking level: \(config.thinkingLevel.rawValue)")
 
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
@@ -300,7 +341,7 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
             contents: [
                 GeminiContent(
                     parts: [
-                        .text(GeminiTextPart(text: "Please transcribe this audio file. Provide only the transcribed text.")),
+                        .text(GeminiTextPart(text: config.resolvedPrompt)),
                         .audio(GeminiAudioPart(
                             inlineData: GeminiInlineData(
                                 mimeType: audioURL.audioMIMEType,
@@ -311,7 +352,7 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
                 )
             ],
             generationConfig: GeminiGenerationConfig(
-                thinkingConfig: GeminiThinkingConfig(thinkingLevel: "low")
+                thinkingConfig: GeminiThinkingConfig(thinkingLevel: config.thinkingLevel.rawValue)
             )
         )
 
@@ -343,9 +384,8 @@ public struct GeminiTranscriptionService: TranscriptionService, Sendable {
         let generationConfig: GeminiGenerationConfig
     }
 
-    /// Gemini 3.x Flash defaults to thinking on at medium, so every dictation
-    /// bought a reasoning pass it had no use for. Measured 2026-08-27 on a 2m12s
-    /// clip: 5.2s and 683 thought tokens by default, 2.8s and zero at "low".
+    /// Carries the thinking level, which defaults to `.low` - see
+    /// ``ThinkingLevel`` for why, and why "minimal" is not on the menu.
     private struct GeminiGenerationConfig: Codable {
         let thinkingConfig: GeminiThinkingConfig
     }

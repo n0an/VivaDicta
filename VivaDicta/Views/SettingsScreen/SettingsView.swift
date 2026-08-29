@@ -12,6 +12,7 @@ import TipKit
 import MessageUI
 import Presets
 import AICore
+import CloudTranscription
 
 struct SettingsView: View {
     @Environment(AppState.self) var appState
@@ -24,6 +25,8 @@ struct SettingsView: View {
     private var isVADEnabled = true
     @AppStorage(AppGroupCoordinator.kIsSpeakerDiarizationEnabled, store: UserDefaultsStorage.shared)
     private var isSpeakerDiarizationEnabled = false
+    @AppStorage(AppGroupCoordinator.kGeminiTranscriptionThinkingLevel, store: UserDefaultsStorage.shared)
+    private var geminiThinkingLevel: GeminiTranscriptionService.ThinkingLevel = .low
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
@@ -182,6 +185,33 @@ struct SettingsView: View {
                     }
                     .onChange(of: isSpeakerDiarizationEnabled) { _, _ in
                         HapticManager.selectionChanged()
+                    }
+
+                    Picker(selection: $geminiThinkingLevel) {
+                        Text("Low").tag(GeminiTranscriptionService.ThinkingLevel.low)
+                        Text("Medium").tag(GeminiTranscriptionService.ThinkingLevel.medium)
+                        Text("High").tag(GeminiTranscriptionService.ThinkingLevel.high)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Gemini Thinking Level")
+                                .font(.body)
+                            Text("How much Gemini reasons before answering. Low is fastest and cheapest")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: geminiThinkingLevel) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    NavigationLink(value: SettingsDestination.geminiTranscriptionPrompt) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Gemini Transcription Prompt")
+                                .font(.body)
+                            Text("Customize the instruction sent with the audio")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     Toggle(isOn: $isAutoCopyAfterRecordingEnabled) {
@@ -648,6 +678,8 @@ struct SettingsView: View {
                     ExportSettingsView()
                 case .advanced:
                     AdvancedSettingsView()
+                case .geminiTranscriptionPrompt:
+                    GeminiTranscriptionPromptView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in
