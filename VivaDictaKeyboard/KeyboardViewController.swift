@@ -86,8 +86,10 @@ class KeyboardViewController: KeyboardInputViewController {
         // Configure sound feedback based on user preference
         state.feedbackContext.settings.isAudioFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
 
-        // Start resolving the host app now so the answer is already cached by
-        // the time the user taps a button that hands off to the main app.
+        // Start resolving the host app now. A handoff deliberately resolves
+        // again rather than reusing this answer, but starting here activates
+        // KeyboardKit's resolver early, so that later call reads a warm one and
+        // returns without stalling the button.
         startResolvingHostApplicationBundleId()
     }
 
@@ -101,51 +103,96 @@ class KeyboardViewController: KeyboardInputViewController {
     /// that has to be activated and then polled, so the bundle ID is no longer
     /// available as an instant property read.
     ///
-    /// The task is deliberately *not* backed by the persisted
-    /// `KeyboardContext.hostApplicationBundleId`: a controller is created fresh
-    /// per keyboard session, so a plain property can never hand back the bundle
-    /// ID of the app the keyboard was in last time - which would teleport the
-    /// user into the wrong app.
+    /// The task is deliberately *not* backed by
+    /// `KeyboardContext.hostApplicationBundleId`. That property is persisted to
+    /// the App Group and therefore outlives both this controller and the
+    /// extension process, so reading it can hand back the bundle ID of the app
+    /// the keyboard was in *last* time - which teleports the user into the
+    /// wrong app.
     private var hostApplicationBundleIdTask: Task<String?, Never>?
 
-    /// The host app's bundle ID, waiting up to `timeout` for a resolution that
-    /// is still in flight.
+    /// The host app's bundle ID for a handoff to the main app, resolved afresh.
     ///
-    /// Resolution starts in `viewDidLoad`, so in practice this returns
-    /// immediately. The bound only matters when the user taps within the first
-    /// moments of the keyboard appearing, where stalling the button would feel
-    /// worse than falling back to the main app's manual return prompt.
-    func hostApplicationBundleId(waitingUpTo timeout: Duration = .seconds(1)) async -> String? {
-        guard let task = hostApplicationBundleIdTask else { return nil }
-        return await withTaskGroup(of: String?.self) { group in
-            group.addTask { await task.value }
-            group.addTask {
-                try? await Task.sleep(for: timeout)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first
+    /// KeyboardKit's resolver lags a change of host app. In a device capture it
+    /// returned a bundle ID for an app that had been terminated for three
+    /// seconds and was never the current host, 1.3s after the keyboard moved
+    /// into a different app - and the main app duly relaunched that app. Every
+    /// resolution in the same capture that was taken 8s or more after its host
+    /// appeared was correct.
+    ///
+    /// The value resolved at `viewDidLoad` is therefore the one most likely to
+    /// be wrong, since it is taken the instant the keyboard reaches a new host,
+    /// so a handoff asks again rather than reusing it. Until iOS 26.4 this was
+    /// a synchronous property read taken at exactly this moment; re-resolving
+    /// restores that timing on top of the async resolver.
+    ///
+    /// There is deliberately no fallback to the earlier answer when the fresh
+    /// one does not land in time. That answer is the least trustworthy value
+    /// the keyboard holds, and it is wrong in precisely the case this method
+    /// exists to handle. An unresolved host costs the automatic teleport and
+    /// leaves the user with the main app's manual return prompt, recording
+    /// already running - far cheaper than opening the wrong app, which also
+    /// relaunches an app they had closed.
+    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: TimeInterval = 2) async -> String? {
+        let task = startResolvingHostApplicationBundleId(timeout: timeout)
+
+        guard let bundleId = await task.value else {
+            logger.logNotice("🏠 Host unresolved; handing off without one")
+            return nil
         }
+        return bundleId
     }
 
-    private func startResolvingHostApplicationBundleId() {
-        hostApplicationBundleIdTask = Task { [weak self] in
+    /// Starts a host resolution, bounded by KeyboardKit's own `timeout`, and
+    /// returns the task running it.
+    ///
+    /// The bound belongs to the resolver rather than to a race here on purpose.
+    /// Racing an unstructured `Task` against a sleep does not bound anything:
+    /// a task group awaits every child before it returns, and cancelling the
+    /// losing child does not cancel the resolution it is awaiting, so a slow
+    /// resolver would hold the handoff open well past the deadline and leave
+    /// the user's tap looking inert.
+    ///
+    /// Any resolution still in flight is cancelled first. The resolver polls on
+    /// the main actor, so letting a superseded one run would leave two polling
+    /// loops competing for the actor that also draws the keyboard and handles
+    /// its touches.
+    @discardableResult
+    private func startResolvingHostApplicationBundleId(timeout: TimeInterval = 2) -> Task<String?, Never> {
+        hostApplicationBundleIdTask?.cancel()
+
+        let task = Task<String?, Never> { [weak self] in
             guard let self else { return nil }
+            // KeyboardKit persists `hostApplicationBundleId` to the App Group
+            // and, per its Host article, "will not sync the bundle ID to the
+            // KeyboardContext unless absolutely necessary". Nothing here reads
+            // it back - the handoff URL carries this task's value instead - so
+            // writing it would only seed the *next* keyboard session with this
+            // session's host. Clear it, so neither this session nor a value
+            // left behind by an earlier build can outlive the keyboard.
+            //
+            // Cleared before resolving, so that a resolution which throws does
+            // not leave an older value in place - the case where a stale host
+            // is least wanted.
+            state.keyboardContext.hostApplicationBundleId = nil
+
             let bundleId: String?
             do {
-                bundleId = try await resolveHostApplicationBundleId()
-                logger.logInfo("🏠 Resolved host app: \(bundleId ?? "nil")")
+                bundleId = try await resolveHostApplicationBundleId(timeout: timeout)
             } catch {
                 logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
-                bundleId = nil
+                return nil
             }
-            // Mirror into the context KeyboardKit itself reads, including when
-            // resolution failed - leaving a previous session's value in place
-            // is worse than having none.
-            state.keyboardContext.hostApplicationBundleId = bundleId
+
+            // `.notice` rather than `.info`: info-level entries are memory
+            // backed and die with the extension process, so a wrong host was
+            // invisible in any log captured after the fact.
+            logger.logNotice("🏠 Resolved host app: \(bundleId ?? "nil")")
             return bundleId
         }
+
+        hostApplicationBundleIdTask = task
+        return task
     }
     
     override func viewWillSetupKeyboardView() {
@@ -351,15 +398,17 @@ struct VivaDictaKeyboardToolbarView: View {
     private func openMainAppForHotMic() {
         // The host app ID rides along as a query parameter so the main app can
         // hand the user straight back once the mic is warm. Resolving it is
-        // async since KeyboardKit 10.9, but has normally already finished here.
+        // async since KeyboardKit 10.9, and deliberately re-runs here rather
+        // than reusing the answer from `viewDidLoad`, which is taken before the
+        // resolver has settled on the current host.
         // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article
         Task {
-            let hostId = await controller?.hostApplicationBundleId()
+            let hostId = await controller?.hostApplicationBundleIdForHandoff()
             guard let url = URL.keyboardHandoff(
                 "vivadicta://record-for-keyboard",
                 hostId: hostId
             ) else { return }
-            controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
+            controller?.logger.logNotice("📱 Opening main app with URL: \(url.absoluteString)")
             openURL(url)
         }
     }

@@ -300,11 +300,12 @@ struct KeyboardCustomView: View {
 
     /// Wakes the main app so it can service a text-processing request, tagging
     /// the deep link with the host app so the app can hand the user back.
-    /// Resolving the host is async since KeyboardKit 10.9, but has normally
-    /// already finished by the time this runs.
+    /// Resolving the host is async since KeyboardKit 10.9, and deliberately
+    /// re-runs here rather than reusing the answer from `viewDidLoad`, which is
+    /// taken before the resolver has settled on the current host.
     private func openMainApp() {
         Task {
-            let hostId = await keyboardVC?.hostApplicationBundleId()
+            let hostId = await keyboardVC?.hostApplicationBundleIdForHandoff()
             guard let url = URL.keyboardHandoff(
                 "vivadicta://activate-for-keyboard",
                 hostId: hostId
