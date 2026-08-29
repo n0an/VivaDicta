@@ -309,11 +309,14 @@ struct VivaDictaApp: App {
         // 2. If we CANNOT return: Start recording → Show return prompt → User manually switches
         //    User sees recording already happening when they arrive
         
-        logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
-        logger.logInfo("🔄 Attempting to return to host: \(hostId)")
-        
+        // `.notice` rather than `.info` throughout this path: info-level
+        // entries are memory backed, so they are gone by the time a device log
+        // is collected - and the app is usually terminated moments after a
+        // handoff, which is exactly when a wrong host needs explaining.
+        logger.logNotice("🔄 Attempting to return to host: \(hostId)")
+
         if let url = returnURL(forHostId: hostId) {
-            logger.logInfo("🚀 Found return URL, attempting to open: \(url.absoluteString)")
+            logger.logNotice("🚀 Found return URL, attempting to open: \(url.absoluteString)")
 
             Task {
                 // Check if we have a transcription model selected
@@ -342,14 +345,14 @@ struct VivaDictaApp: App {
 
                 // Now return to the host app
                 if await UIApplication.shared.open(url) {
-                    logger.logInfo("✅ Successfully opened host app: \(hostId) with recording started")
+                    logger.logNotice("✅ Successfully opened host app: \(hostId) with recording started")
                 } else {
                     logger.logError("❌ Failed to open host app: \(hostId)")
                     appState.showKeyboardReturnPrompt = true
                 }
             }
         } else {
-            logger.logInfo("❌ No URL scheme available for host: \(hostId)")
+            logger.logNotice("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - start recording and show keyboard return prompt
             // so user can switch back manually and find recording already in progress
             Task {
@@ -563,17 +566,17 @@ struct VivaDictaApp: App {
     /// Returns to the host app without starting recording.
     /// Used by the text processing keyboard flow.
     private func returnToHost(hostId: String) {
-        logger.logInfo("🔄 Returning to host app (no recording): \(hostId)")
+        logger.logNotice("🔄 Returning to host app (no recording): \(hostId)")
 
         guard let url = returnURL(forHostId: hostId) else {
-            logger.logInfo("❌ No return URL for host: \(hostId)")
+            logger.logNotice("❌ No return URL for host: \(hostId)")
             appState.showKeyboardReturnPrompt = true
             return
         }
 
         Task {
             if await UIApplication.shared.open(url) {
-                logger.logInfo("✅ Returned to host app: \(hostId)")
+                logger.logNotice("✅ Returned to host app: \(hostId)")
             } else {
                 logger.logError("❌ Failed to open host app: \(hostId)")
                 appState.showKeyboardReturnPrompt = true

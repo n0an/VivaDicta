@@ -101,11 +101,12 @@ class KeyboardViewController: KeyboardInputViewController {
     /// that has to be activated and then polled, so the bundle ID is no longer
     /// available as an instant property read.
     ///
-    /// The task is deliberately *not* backed by the persisted
-    /// `KeyboardContext.hostApplicationBundleId`: a controller is created fresh
-    /// per keyboard session, so a plain property can never hand back the bundle
-    /// ID of the app the keyboard was in last time - which would teleport the
-    /// user into the wrong app.
+    /// The task is deliberately *not* backed by
+    /// `KeyboardContext.hostApplicationBundleId`. That property is persisted to
+    /// the App Group and therefore outlives both this controller and the
+    /// extension process, so reading it can hand back the bundle ID of the app
+    /// the keyboard was in *last* time - which teleports the user into the
+    /// wrong app.
     private var hostApplicationBundleIdTask: Task<String?, Never>?
 
     /// The host app's bundle ID, waiting up to `timeout` for a resolution that
@@ -130,22 +131,48 @@ class KeyboardViewController: KeyboardInputViewController {
     }
 
     private func startResolvingHostApplicationBundleId() {
+        let resolutionStart = Date.now
         hostApplicationBundleIdTask = Task { [weak self] in
             guard let self else { return nil }
             let bundleId: String?
             do {
                 bundleId = try await resolveHostApplicationBundleId()
-                logger.logInfo("🏠 Resolved host app: \(bundleId ?? "nil")")
             } catch {
                 logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
-                bundleId = nil
+                return nil
             }
-            // Mirror into the context KeyboardKit itself reads, including when
-            // resolution failed - leaving a previous session's value in place
-            // is worse than having none.
-            state.keyboardContext.hostApplicationBundleId = bundleId
+
+            // KeyboardKit persists `hostApplicationBundleId` to the App Group
+            // and, per its Host article, "will not sync the bundle ID to the
+            // KeyboardContext unless absolutely necessary". Nothing here reads
+            // it back - the handoff URL carries this task's value instead - so
+            // writing it would only seed the *next* keyboard session with this
+            // session's host. Clear it, so neither this session nor a value
+            // left behind by an earlier build can outlive the keyboard.
+            let syncDate = state.keyboardContext.hostApplicationBundleIdSyncDate
+            state.keyboardContext.hostApplicationBundleId = nil
+
+            // `.notice` rather than `.info`: info-level entries are memory
+            // backed and die with the extension process, so a mis-teleport was
+            // invisible in any log captured after the fact. The sync date says
+            // whether the resolved ID predates this resolution, which is what
+            // distinguishes a stale host from a correctly resolved one.
+            logger.logNotice(
+                "🏠 Resolved host app: \(bundleId ?? "nil") (context last synced \(Self.syncAgeDescription(syncDate, relativeTo: resolutionStart)))"
+            )
             return bundleId
         }
+    }
+
+    /// How long before `reference` the keyboard context's host bundle ID was
+    /// last written, for the resolution log.
+    ///
+    /// A positive age means the persisted value predates this resolution, and
+    /// so belongs to an earlier keyboard session.
+    private static func syncAgeDescription(_ syncDate: Date?, relativeTo reference: Date) -> String {
+        guard let syncDate else { return "never" }
+        let age = reference.timeIntervalSince(syncDate)
+        return "\(age.formatted(.number.precision(.fractionLength(1))))s before this resolution"
     }
     
     override func viewWillSetupKeyboardView() {
