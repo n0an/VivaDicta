@@ -18,6 +18,8 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
     public let quality: Double
     /// Median seconds for one enhancement.
     public let seconds: Double
+    /// True when the provider serves this model without a paid plan.
+    public let freeTier: Bool
 
     public var id: String { "\(provider)/\(model)" }
 }
@@ -41,70 +43,80 @@ public enum AIModelBenchmarkCatalog {
             provider: "OpenAI",
             model: "gpt-5.5",
             quality: 9.8,
-            seconds: 1.0
+            seconds: 1.0,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 2,
             provider: "OpenAI",
             model: "gpt-5.4-nano",
             quality: 9.7,
-            seconds: 0.7
+            seconds: 0.7,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 3,
             provider: "Grok (xAI)",
             model: "grok-4.20-non-reasoning",
             quality: 9.7,
-            seconds: 0.7
+            seconds: 0.7,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 4,
             provider: "Cerebras",
             model: "gemma-4-31b",
             quality: 9.6,
-            seconds: 0.29
+            seconds: 0.29,
+            freeTier: true
         ),
         AIModelBenchmark(
             rank: 5,
             provider: "OpenAI",
             model: "gpt-5.4-mini",
             quality: 9.6,
-            seconds: 0.8
+            seconds: 0.8,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 6,
             provider: "OpenAI",
             model: "gpt-5.6-luna",
             quality: 9.5,
-            seconds: 0.9
+            seconds: 0.9,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 7,
             provider: "Anthropic",
             model: "claude-haiku-4-5",
             quality: 9.6,
-            seconds: 0.9
+            seconds: 0.9,
+            freeTier: false
         ),
         AIModelBenchmark(
             rank: 8,
             provider: "Mistral",
             model: "mistral-medium-latest",
             quality: 9.4,
-            seconds: 0.4
+            seconds: 0.4,
+            freeTier: true
         ),
         AIModelBenchmark(
             rank: 9,
             provider: "Ollama Cloud",
             model: "gemma4:31b",
             quality: 9.4,
-            seconds: 0.6
+            seconds: 0.6,
+            freeTier: true
         ),
         AIModelBenchmark(
             rank: 10,
             provider: "Gemini",
             model: "gemini-3.1-flash-lite",
             quality: 9.4,
-            seconds: 0.7
+            seconds: 0.7,
+            freeTier: false
         )
     ]
 }

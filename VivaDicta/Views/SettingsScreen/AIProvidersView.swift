@@ -26,6 +26,10 @@ struct AIProviders: View {
     @State private var mlxModel = LocalMLXModelViewModel()
     @State private var coreMLQwenModel = CoreMLQwenModelViewModel()
 
+    /// The measured ranking is guidance, not the point of the screen - it stays
+    /// collapsed so the provider list is what a returning user lands on.
+    @State private var isTopModelsExpanded = false
+
     /// One model downloads at a time - lock every card's download button while
     /// any is in progress (concurrent downloads aren't supported).
     private var anyDownloadInProgress: Bool {
@@ -351,41 +355,78 @@ struct AIProviders: View {
     /// full table, and how it was measured, live on the website.
     private var topModelsSection: some View {
         Section {
-            ForEach(AIModelBenchmarkCatalog.top) { entry in
-                HStack(spacing: 10) {
-                    Text("\(entry.rank)")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 18, alignment: .trailing)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(entry.model)
-                            .font(.subheadline)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Text(entry.provider)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 8)
-
-                    Text(entry.quality.formatted(.number.precision(.fractionLength(1))))
-                        .font(.subheadline.monospacedDigit())
-                    Text("\(entry.seconds.formatted(.number.precision(.fractionLength(1))))s")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .frame(width: 42, alignment: .trailing)
+            DisclosureGroup(isExpanded: $isTopModelsExpanded) {
+                ForEach(AIModelBenchmarkCatalog.top) { entry in
+                    TopModelRow(entry: entry)
+                }
+            } label: {
+                Text("Top Models for AI Processing")
+            }
+        } footer: {
+            if isTopModelsExpanded {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Scored on how well each model cleans up dictation, and how long it takes. Measured \(AIModelBenchmarkCatalog.measuredAt); scores within 0.3 are ties.")
+                    Text("Free tier marks models you can run without paying, though the terms differ - some are free forever with rate limits, others give a monthly allowance or a starting credit.")
+                    Link("See all measured models", destination: AIModelBenchmarkCatalog.fullTableURL)
                 }
             }
-        } header: {
-            Text("Top Models for AI Processing")
-        } footer: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Scored on how well each model cleans up dictation, and how long it takes. Measured \(AIModelBenchmarkCatalog.measuredAt); scores within 0.3 are ties.")
-                Link("See all measured models", destination: AIModelBenchmarkCatalog.fullTableURL)
-            }
         }
+    }
+}
+
+// MARK: - Top Model Row
+
+/// One line of the measured ranking: rank, model, provider, quality, speed.
+private struct TopModelRow: View {
+    let entry: AIModelBenchmark
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(entry.rank)")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 18, alignment: .trailing)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(entry.model)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                HStack(spacing: 6) {
+                    Text(entry.provider)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if entry.freeTier {
+                        FreeTierBadge()
+                    }
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Text(entry.quality.formatted(.number.precision(.fractionLength(1))))
+                .font(.subheadline.monospacedDigit())
+            Text("\(entry.seconds.formatted(.number.precision(.fractionLength(1))))s")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 42, alignment: .trailing)
+        }
+    }
+}
+
+/// Matches the "Free tier" pill on the website's ranking table: usable on the
+/// provider's free tier, no paid plan needed.
+private struct FreeTierBadge: View {
+    var body: some View {
+        Text("Free tier")
+            .font(.caption2)
+            .foregroundStyle(.tint)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.tint.opacity(0.12), in: .rect(cornerRadius: 4))
+            .accessibilityLabel("Usable on the provider's free tier")
     }
 }
 
