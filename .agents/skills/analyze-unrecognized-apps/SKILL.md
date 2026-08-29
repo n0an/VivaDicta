@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Analyze Unrecognized Host Apps
 
-**Last run:** 2026-03-29 — added 7 URL scheme mappings (ShellFish, Termius, Teams, Reddit, iA Writer, Gemini, Yandex Translate) and 12 knownNoSchemeHosts entries
+**Last run:** 2026-08-29 - added 15 return-URL mappings (Swiftgram, Open Minis, WeChat, Spotify team-ID variant, Reminders, Letterboxd, Eudic, Notion, Meituan, nPlayer, plus 5 universal-link fallbacks) and 5 knownNoSchemeHosts entries. Also removed the `canOpenURL` gate and the dead `LSApplicationQueriesSchemes` array, which had exceeded Apple's 50-entry cap and was silently killing the most recent mappings. Note: this sample predates the iOS 26.4 host-resolution fix, so it under-reports - re-run once 3.9.0 has been out a few weeks.
 
 You are given the following context:
 $ARGUMENTS

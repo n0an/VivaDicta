@@ -312,47 +312,39 @@ struct VivaDictaApp: App {
         logger.logInfo("🔄 attemptReturnToHost called with hostId: \(hostId)")
         logger.logInfo("🔄 Attempting to return to host: \(hostId)")
         
-        if let urlScheme = getURLSchemeForBundleId(hostId),
-           let url = URL(string: urlScheme) {
-            logger.logInfo("🚀 Found URL scheme, attempting to open: \(urlScheme)")
+        if let url = returnURL(forHostId: hostId) {
+            logger.logInfo("🚀 Found return URL, attempting to open: \(url.absoluteString)")
 
-            // Check if we can open the URL before starting recording
             Task {
-                if UIApplication.shared.canOpenURL(url) {
-                    // We can return to host - start actual recording first
-                    logger.logInfo("🎙️ Starting recording before returning to host app")
-                    
-                    // Check if we have a transcription model selected
-                    guard let vm = appState.recordViewModel else {
-                        logger.logError("❌ RecordViewModel not available")
-                        appState.showKeyboardReturnPrompt = true
-                        return
-                    }
-                    
-                    if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
-                        logger.logWarning("⚠️ No transcription model selected - showing keyboard return prompt")
-                        appState.showKeyboardReturnPrompt = true
-                        return
-                    }
-                    
-                    // Start the actual recording
-                    vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
-                    
-                    // Small delay to ensure recording is fully started
-                    try? await Task.sleep(for: .milliseconds(200))
-                    
-                    // Now return to the host app
-                    UIApplication.shared.open(url, options: [:]) { success in
-                        if success {
-                            self.logger.logInfo("✅ Successfully opened host app: \(hostId) with recording started")
-                        } else {
-                            self.logger.logError("❌ Failed to open host app: \(hostId)")
-                            // Failed to open - recording is already started, user can continue
-                        }
-                    }
+                // Check if we have a transcription model selected
+                guard let vm = appState.recordViewModel else {
+                    logger.logError("❌ RecordViewModel not available")
+                    appState.showKeyboardReturnPrompt = true
+                    return
+                }
+
+                if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+                    logger.logWarning("⚠️ No transcription model selected - showing keyboard return prompt")
+                    appState.showKeyboardReturnPrompt = true
+                    return
+                }
+
+                // Recording starts before the open is known to have succeeded.
+                // `open` only reports failure once it has already tried, and the
+                // user arrives in the host app expecting to be recording
+                // already, so waiting for the answer would cost the head of the
+                // recording. A failure falls back to the prompt below.
+                logger.logInfo("🎙️ Starting recording before returning to host app")
+                vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
+
+                // Small delay to ensure recording is fully started
+                try? await Task.sleep(for: .milliseconds(200))
+
+                // Now return to the host app
+                if await UIApplication.shared.open(url) {
+                    logger.logInfo("✅ Successfully opened host app: \(hostId) with recording started")
                 } else {
-                    logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    // Can't open URL - don't start recording, show keyboard return prompt
+                    logger.logError("❌ Failed to open host app: \(hostId)")
                     appState.showKeyboardReturnPrompt = true
                 }
             }
@@ -389,7 +381,12 @@ struct VivaDictaApp: App {
                 "com.weichart.Zettel",          // Zettel Notes - no known URL scheme
                 "h3p.Neon-Vision-Editor",       // Neon Vision Editor - no known URL scheme
                 "mystxtalk",                    // Unknown messaging app
-                "ru.ozon.sellerApp"             // Ozon Seller - no known URL scheme
+                "ru.ozon.sellerApp",            // Ozon Seller - no known URL scheme
+                "kz.origon.empapp",             // KZ telemedicine app - no known URL scheme
+                "com.cloud-compiler",           // CodeSnack IDE - no known URL scheme
+                "com.corp.messenger.syncer",    // Syncer corporate messenger - no known URL scheme
+                "com.yottaram.eMoods",          // eMoods tracker - no known URL scheme
+                "com.anton"                     // Not a shipping App Store app - a dev build
             ]
 
             if !knownNoSchemeHosts.contains(hostId) {
@@ -568,32 +565,37 @@ struct VivaDictaApp: App {
     private func returnToHost(hostId: String) {
         logger.logInfo("🔄 Returning to host app (no recording): \(hostId)")
 
-        if let urlScheme = getURLSchemeForBundleId(hostId),
-           let url = URL(string: urlScheme) {
-            Task {
-                if UIApplication.shared.canOpenURL(url) {
-                    UIApplication.shared.open(url, options: [:]) { success in
-                        if success {
-                            self.logger.logInfo("✅ Returned to host app: \(hostId)")
-                        } else {
-                            self.logger.logError("❌ Failed to open host app: \(hostId)")
-                        }
-                    }
-                } else {
-                    logger.logInfo("❌ Cannot open URL scheme: \(urlScheme)")
-                    appState.showKeyboardReturnPrompt = true
-                }
-            }
-        } else {
-            logger.logInfo("❌ No URL scheme for host: \(hostId)")
+        guard let url = returnURL(forHostId: hostId) else {
+            logger.logInfo("❌ No return URL for host: \(hostId)")
             appState.showKeyboardReturnPrompt = true
+            return
+        }
+
+        Task {
+            if await UIApplication.shared.open(url) {
+                logger.logInfo("✅ Returned to host app: \(hostId)")
+            } else {
+                logger.logError("❌ Failed to open host app: \(hostId)")
+                appState.showKeyboardReturnPrompt = true
+            }
         }
     }
 
-    private func getURLSchemeForBundleId(_ bundleId: String) -> String? {
-        // Map of common apps and their URL schemes
-        // Note: This is not comprehensive and many apps don't have public URL schemes
-        let knownSchemes: [String: String] = [
+    /// The URL that sends the user back to `bundleId`, or nil when there is no
+    /// known way back.
+    ///
+    /// Most entries are custom schemes. A few apps register none but do claim a
+    /// universal link in their `apple-app-site-association`, which works here
+    /// because the host app is installed by definition - it is the app the
+    /// keyboard was just typing into. The trade-off is that a user who has told
+    /// iOS to open that domain in Safari lands on the web page instead of
+    /// getting the manual return prompt.
+    ///
+    /// Not comprehensive: plenty of apps publish no way back at all. Those are
+    /// listed in `knownNoSchemeHosts` so they stop being reported as
+    /// unrecognized.
+    private func returnURL(forHostId bundleId: String) -> URL? {
+        let knownURLs: [String: String] = [
             "com.apple.mobilenotes": "mobilenotes://",
             "com.apple.MobileSMS": "sms://",
             "com.apple.mobilemail": "message://",
@@ -644,10 +646,33 @@ struct VivaDictaApp: App {
             "com.reddit.Reddit": "reddit://",
             "pro.writer": "ia-writer://",
             "com.google.gemini": "gemini-app://",
-            "ru.yandex.mobile.translate": "yandextranslate://"
+            "ru.yandex.mobile.translate": "yandextranslate://",
+
+            // Verified against the app's own Info.plist, official docs, or the
+            // shipping binary.
+            "app.swiftgram.ios": "sg://",            // NOT tg:// - shared with official Telegram
+            "com.openminis.app": "minis://",
+            "com.tencent.xin": "weixin://",
+            "com.spotify.client.L32G8C83V9": "spotify://",  // team-ID-suffixed Spotify build
+            "com.apple.reminders": "x-apple-reminderkit://", // NOT x-apple-reminder://, unregistered
+            "com.letterboxd.LetterboxdApp": "letterboxd://",
+            "eusoft.eudic.ip": "eudic://",
+
+            // Corroborated across independent sources but not read from the
+            // shipping app, so a miss is possible - it degrades to the prompt.
+            "notion.id": "notion://",
+            "com.meituan.imeituan": "imeituan://",
+            "com.newin.nplayer.basic": "nplayer-http://",
+
+            // No custom scheme; universal link confirmed in the app's AASA file.
+            "com.google.ios.ytcreator": "https://studio.youtube.com/",
+            "com.amazon.AmazonDE": "https://www.amazon.de/",
+            "ru.ivi": "https://www.ivi.ru/",
+            "ru.oneme.app": "https://max.ru/",
+            "ru.ozon.OzonStore": "https://www.ozon.ru/"
         ]
-        
-        return knownSchemes[bundleId]
+
+        return knownURLs[bundleId].flatMap(URL.init(string:))
     }
     
     func updateShortcutItems() {
