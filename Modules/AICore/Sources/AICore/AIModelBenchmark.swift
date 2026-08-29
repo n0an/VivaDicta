@@ -27,7 +27,7 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 /// The best models for cleaning up dictation, measured rather than guessed.
 ///
 /// Only the top 10 ship in the app; the full table of
-/// 46 models is on the website, which is also where the
+/// 48 models is on the website, which is also where the
 /// method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
@@ -35,7 +35,7 @@ public enum AIModelBenchmarkCatalog {
 
     /// ISO date the measurements were taken. Shown so a stale table is visibly
     /// stale rather than quietly wrong.
-    public static let measuredAt = "2026-08-27"
+    public static let measuredAt = "2026-08-29"
 
     public static let top: [AIModelBenchmark] = [
         AIModelBenchmark(
