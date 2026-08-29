@@ -134,9 +134,8 @@ class KeyboardViewController: KeyboardInputViewController {
     /// already running - far cheaper than opening the wrong app, which also
     /// relaunches an app they had closed.
     func hostApplicationBundleIdForHandoff(waitingUpTo timeout: TimeInterval = 2) async -> String? {
-        startResolvingHostApplicationBundleId(timeout: timeout)
+        let task = startResolvingHostApplicationBundleId(timeout: timeout)
 
-        guard let task = hostApplicationBundleIdTask else { return nil }
         guard let bundleId = await task.value else {
             logger.logNotice("🏠 Host unresolved; handing off without one")
             return nil
@@ -144,7 +143,8 @@ class KeyboardViewController: KeyboardInputViewController {
         return bundleId
     }
 
-    /// Starts a host resolution, bounded by KeyboardKit's own `timeout`.
+    /// Starts a host resolution, bounded by KeyboardKit's own `timeout`, and
+    /// returns the task running it.
     ///
     /// The bound belongs to the resolver rather than to a race here on purpose.
     /// Racing an unstructured `Task` against a sleep does not bound anything:
@@ -152,8 +152,16 @@ class KeyboardViewController: KeyboardInputViewController {
     /// losing child does not cancel the resolution it is awaiting, so a slow
     /// resolver would hold the handoff open well past the deadline and leave
     /// the user's tap looking inert.
-    private func startResolvingHostApplicationBundleId(timeout: TimeInterval = 2) {
-        hostApplicationBundleIdTask = Task { [weak self] in
+    ///
+    /// Any resolution still in flight is cancelled first. The resolver polls on
+    /// the main actor, so letting a superseded one run would leave two polling
+    /// loops competing for the actor that also draws the keyboard and handles
+    /// its touches.
+    @discardableResult
+    private func startResolvingHostApplicationBundleId(timeout: TimeInterval = 2) -> Task<String?, Never> {
+        hostApplicationBundleIdTask?.cancel()
+
+        let task = Task<String?, Never> { [weak self] in
             guard let self else { return nil }
             // KeyboardKit persists `hostApplicationBundleId` to the App Group
             // and, per its Host article, "will not sync the bundle ID to the
@@ -182,6 +190,9 @@ class KeyboardViewController: KeyboardInputViewController {
             logger.logNotice("🏠 Resolved host app: \(bundleId ?? "nil")")
             return bundleId
         }
+
+        hostApplicationBundleIdTask = task
+        return task
     }
     
     override func viewWillSetupKeyboardView() {
@@ -387,7 +398,9 @@ struct VivaDictaKeyboardToolbarView: View {
     private func openMainAppForHotMic() {
         // The host app ID rides along as a query parameter so the main app can
         // hand the user straight back once the mic is warm. Resolving it is
-        // async since KeyboardKit 10.9, but has normally already finished here.
+        // async since KeyboardKit 10.9, and deliberately re-runs here rather
+        // than reusing the answer from `viewDidLoad`, which is taken before the
+        // resolver has settled on the current host.
         // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article
         Task {
             let hostId = await controller?.hostApplicationBundleIdForHandoff()
@@ -395,7 +408,7 @@ struct VivaDictaKeyboardToolbarView: View {
                 "vivadicta://record-for-keyboard",
                 hostId: hostId
             ) else { return }
-            controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
+            controller?.logger.logNotice("📱 Opening main app with URL: \(url.absoluteString)")
             openURL(url)
         }
     }
