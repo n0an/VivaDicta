@@ -336,13 +336,13 @@ public struct OpenAICompatibleService: Sendable {
     /// any future provider that falls through the `default:` branch
     /// (Gemini and Copilot also land here today via fall-through).
     ///
-    /// Callers should pass `maxTokens: 1` (or another small cap) to
-    /// avoid letting the verification probe generate a full default
-    /// response on heavy models (e.g. HuggingFace's
-    /// `openai/gpt-oss-120b`, Grok's frontier model) - uncapped probes
-    /// can be slow enough to risk false-negative timeouts. The cap is
-    /// sent as `max_completion_tokens` for GPT-5 models, which reject
-    /// `max_tokens`, and as `max_tokens` everywhere else.
+    /// `maxTokens` is optional and no production caller passes it today -
+    /// `AIService` probes uncapped, matching the macOS app, because a cap
+    /// saved ~1s against a 60s timeout while breaking OpenAI outright. It
+    /// stays on the signature for a caller that needs to bound a genuinely
+    /// slow model, and picks the right field when used: reasoning models
+    /// reject `max_tokens` and take `max_completion_tokens`, floored so the
+    /// budget is not swallowed by reasoning tokens.
     ///
     /// Never throws. `providerName` is used only for log lines.
     public func verifyChatCompletionsAPIKey(
@@ -366,9 +366,9 @@ public struct OpenAICompatibleService: Sendable {
         ]
         if let maxTokens {
             if ReasoningConfig.usesMaxCompletionTokens(for: defaultModel) {
-                // GPT-5 models reject `max_tokens` outright, and their cap
-                // covers reasoning tokens, so a 1-token cap is below the
-                // accepted minimum. Raise it to the floor.
+                // GPT-5 models reject `max_tokens` outright, and their cap has
+                // to cover reasoning tokens before any content - a 1-token cap
+                // 400s. Raise it to a floor that leaves thinking room.
                 testBody["max_completion_tokens"] = max(maxTokens, ReasoningConfig.minimumReasoningOutputTokens)
             } else {
                 testBody["max_tokens"] = maxTokens

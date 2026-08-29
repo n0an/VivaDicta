@@ -1942,17 +1942,28 @@ class AIService {
     }
     
     private func verifyOpenAICompatibleAPIKey(_ key: String, provider: AIProvider) async -> Bool {
-        // Cap probe output at 1 token. Critical for heavy default models like
-        // HuggingFace's 120B-param Gpt-OSS or Grok's frontier - uncapped probes
-        // can be slow enough to risk false-negative timeouts. Free for cheaper
-        // providers (OpenAI, Groq, OpenRouter, Z.AI, Kimi).
+        // Deliberately uncapped, matching the macOS app.
+        //
+        // This used to send `max_tokens: 1` to keep the probe cheap on heavy
+        // default models. That cost more than it bought: GPT-5 rejects
+        // `max_tokens` outright, so every OpenAI key check 400'd once the
+        // default model moved to that family, and a cap tight enough to be
+        // worth sending is tight enough for a reasoning model to spend on
+        // thinking and 400 with "could not finish the message" - both read as
+        // an invalid key. Every new reasoning family would need a rule here to
+        // stay correct.
+        //
+        // Measured 2026-08-29 across all nine providers on this path: the cap
+        // saved ~1s against a 60s timeout (worst uncapped probe 4.1s, heaviest
+        // model 0.37s), and OpenCode Zen ignored it entirely. The probe always
+        // runs against `provider.defaultModel`, which is curated for speed, so
+        // there is no slow-model case to defend against.
         let service = OpenAICompatibleService(networkService: networkService, logger: logger)
         return await service.verifyChatCompletionsAPIKey(
             key,
             baseURL: provider.baseURL,
             defaultModel: provider.defaultModel,
-            providerName: provider.rawValue,
-            maxTokens: 1
+            providerName: provider.rawValue
         )
     }
     

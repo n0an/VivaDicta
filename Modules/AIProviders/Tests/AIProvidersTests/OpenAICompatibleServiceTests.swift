@@ -435,7 +435,7 @@ struct OpenAICompatibleServiceTests {
         let body = try #require(networkService.capturedRequest?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["max_tokens"] == nil)
-        #expect(json["max_completion_tokens"] as? Int == 16)
+        #expect(json["max_completion_tokens"] as? Int == ReasoningConfig.minimumReasoningOutputTokens)
     }
 
     @Test func verifyChatCompletionsAPIKeySendsMaxCompletionTokensForGatewayPrefixedGPT5() async throws {
@@ -454,7 +454,7 @@ struct OpenAICompatibleServiceTests {
         let body = try #require(networkService.capturedRequest?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["max_tokens"] == nil)
-        #expect(json["max_completion_tokens"] as? Int == 16)
+        #expect(json["max_completion_tokens"] as? Int == ReasoningConfig.minimumReasoningOutputTokens)
     }
 
     // MARK: - verifyGETEndpoint

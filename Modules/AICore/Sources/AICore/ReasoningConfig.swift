@@ -110,9 +110,17 @@ public struct ReasoningConfig {
         bareModelID(modelName).hasPrefix("gpt-5")
     }
 
-    /// Smallest output cap a reasoning model accepts. The cap covers reasoning
-    /// tokens as well as visible output, and OpenAI rejects anything lower.
-    public static let minimumReasoningOutputTokens = 16
+    /// Floor for an output cap sent to a reasoning model.
+    ///
+    /// The cap covers reasoning tokens as well as visible output, and a model
+    /// that spends the whole budget thinking answers 400 `Could not finish the
+    /// message because max_tokens or model output limit was reached` - which a
+    /// key check would misread as a bad key. Measured against gpt-5.6-terra on
+    /// 2026-08-29: a 1-token cap fails outright, and reasoning spend on the
+    /// same prompt varied between 0 and 6 tokens run to run, so the floor buys
+    /// headroom rather than sitting just above the observed spend. Still small
+    /// enough to cap a runaway probe on a heavy model.
+    public static let minimumReasoningOutputTokens = 256
 
     /// Strips a gateway's vendor prefix ("openai/gpt-5.6-terra" -> "gpt-5.6-terra")
     /// and lowercases, so model-family checks work whichever route serves the model.
