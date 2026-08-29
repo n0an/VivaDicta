@@ -340,7 +340,9 @@ public struct OpenAICompatibleService: Sendable {
     /// avoid letting the verification probe generate a full default
     /// response on heavy models (e.g. HuggingFace's
     /// `openai/gpt-oss-120b`, Grok's frontier model) - uncapped probes
-    /// can be slow enough to risk false-negative timeouts.
+    /// can be slow enough to risk false-negative timeouts. The cap is
+    /// sent as `max_completion_tokens` for GPT-5 models, which reject
+    /// `max_tokens`, and as `max_tokens` everywhere else.
     ///
     /// Never throws. `providerName` is used only for log lines.
     public func verifyChatCompletionsAPIKey(
@@ -363,7 +365,14 @@ public struct OpenAICompatibleService: Sendable {
             ]
         ]
         if let maxTokens {
-            testBody["max_tokens"] = maxTokens
+            if ReasoningConfig.usesMaxCompletionTokens(for: defaultModel) {
+                // GPT-5 models reject `max_tokens` outright, and their cap
+                // covers reasoning tokens, so a 1-token cap is below the
+                // accepted minimum. Raise it to the floor.
+                testBody["max_completion_tokens"] = max(maxTokens, ReasoningConfig.minimumReasoningOutputTokens)
+            } else {
+                testBody["max_tokens"] = maxTokens
+            }
         }
         request.httpBody = try? JSONSerialization.data(withJSONObject: testBody)
 

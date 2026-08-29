@@ -98,6 +98,30 @@ public struct ReasoningConfig {
         return !fixedTemperatureModelIDs.contains(where: id.contains)
     }
 
+    /// Whether this model's output cap belongs in `max_completion_tokens`
+    /// rather than `max_tokens`.
+    ///
+    /// The GPT-5 reasoning family rejects the older field outright:
+    /// `Unsupported parameter: 'max_tokens' is not supported with this model.
+    /// Use 'max_completion_tokens' instead.` Matched on the bare model id, so
+    /// gateway-prefixed ids ("openai/gpt-5.6-terra" on OpenRouter or Vercel)
+    /// are covered too.
+    public static func usesMaxCompletionTokens(for modelName: String) -> Bool {
+        bareModelID(modelName).hasPrefix("gpt-5")
+    }
+
+    /// Smallest output cap a reasoning model accepts. The cap covers reasoning
+    /// tokens as well as visible output, and OpenAI rejects anything lower.
+    public static let minimumReasoningOutputTokens = 16
+
+    /// Strips a gateway's vendor prefix ("openai/gpt-5.6-terra" -> "gpt-5.6-terra")
+    /// and lowercases, so model-family checks work whichever route serves the model.
+    private static func bareModelID(_ modelName: String) -> String {
+        let id = modelName.lowercased()
+        guard let lastSlash = id.lastIndex(of: "/") else { return id }
+        return String(id[id.index(after: lastSlash)...])
+    }
+
     public static func getReasoningParameter(for modelName: String) -> String? {
         if geminiNoneReasoningModels.contains(modelName) { return "none" }
         else if geminiMinimalReasoningModels.contains(modelName) { return "minimal" }

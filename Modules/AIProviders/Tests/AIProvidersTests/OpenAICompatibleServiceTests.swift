@@ -414,6 +414,47 @@ struct OpenAICompatibleServiceTests {
         let body = try #require(networkService.capturedRequest?.httpBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["max_tokens"] as? Int == 1)
+        #expect(json["max_completion_tokens"] == nil)
+    }
+
+    @Test func verifyChatCompletionsAPIKeySendsMaxCompletionTokensForGPT5() async throws {
+        // GPT-5 answers `max_tokens` with a 400 telling us to use
+        // `max_completion_tokens`, which failed every OpenAI key check once
+        // the default model moved to the GPT-5 family. The cap also covers
+        // reasoning tokens, so 1 is below the accepted minimum.
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+
+        _ = await sut.verifyChatCompletionsAPIKey(
+            "sk-probe",
+            baseURL: endpointURL,
+            defaultModel: "gpt-5.6-terra",
+            providerName: "openai",
+            maxTokens: 1
+        )
+
+        let body = try #require(networkService.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["max_tokens"] == nil)
+        #expect(json["max_completion_tokens"] as? Int == 16)
+    }
+
+    @Test func verifyChatCompletionsAPIKeySendsMaxCompletionTokensForGatewayPrefixedGPT5() async throws {
+        // Gateways prefix the vendor ("openai/gpt-5.6-terra"); the same OpenAI
+        // backend rejects `max_tokens` behind them.
+        networkService.stubSendResponse = .success((Data(), makeHTTPResponse(200)))
+
+        _ = await sut.verifyChatCompletionsAPIKey(
+            "sk-probe",
+            baseURL: endpointURL,
+            defaultModel: "openai/gpt-5.6-terra",
+            providerName: "openrouter",
+            maxTokens: 1
+        )
+
+        let body = try #require(networkService.capturedRequest?.httpBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["max_tokens"] == nil)
+        #expect(json["max_completion_tokens"] as? Int == 16)
     }
 
     // MARK: - verifyGETEndpoint

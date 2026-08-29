@@ -23,6 +23,18 @@ struct ReasoningConfigTests {
         #expect(ReasoningConfig.getReasoningParameter(for: "some-unknown-model") == nil)
     }
 
+    @Test func gpt5FamilyUsesMaxCompletionTokens() {
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "gpt-5.6-terra"))
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "gpt-5-mini"))
+        // Gateways prefix the vendor; the OpenAI backend behind them is the same.
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "openai/gpt-5.6-terra"))
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "GPT-5.5"))
+        // Everything else keeps the classic field.
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "gpt-4-mini") == false)
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "openai/gpt-oss-120b") == false)
+        #expect(ReasoningConfig.usesMaxCompletionTokens(for: "claude-sonnet-5") == false)
+    }
+
     @Test func extraBodyParametersForDisableReasoningModels() {
         let zai = ReasoningConfig.getExtraBodyParameters(for: "zai-glm-4.7")
         #expect(zai?["disable_reasoning"] as? Bool == true)
