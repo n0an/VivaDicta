@@ -101,11 +101,12 @@ class KeyboardViewController: KeyboardInputViewController {
     /// that has to be activated and then polled, so the bundle ID is no longer
     /// available as an instant property read.
     ///
-    /// The task is deliberately *not* backed by the persisted
-    /// `KeyboardContext.hostApplicationBundleId`: a controller is created fresh
-    /// per keyboard session, so a plain property can never hand back the bundle
-    /// ID of the app the keyboard was in last time - which would teleport the
-    /// user into the wrong app.
+    /// The task is deliberately *not* backed by
+    /// `KeyboardContext.hostApplicationBundleId`. That property is persisted to
+    /// the App Group and therefore outlives both this controller and the
+    /// extension process, so reading it can hand back the bundle ID of the app
+    /// the keyboard was in *last* time - which teleports the user into the
+    /// wrong app.
     private var hostApplicationBundleIdTask: Task<String?, Never>?
 
     /// The host app's bundle ID, waiting up to `timeout` for a resolution that
@@ -129,21 +130,56 @@ class KeyboardViewController: KeyboardInputViewController {
         }
     }
 
+    /// The host app's bundle ID for a handoff to the main app, resolved afresh.
+    ///
+    /// KeyboardKit's resolver lags a change of host app. In a device capture it
+    /// returned a bundle ID for an app that had been terminated for three
+    /// seconds and was never the current host, 1.3s after the keyboard moved
+    /// into a different app - and the main app duly relaunched that app. Every
+    /// resolution in the same capture that was taken 8s or more after its host
+    /// appeared was correct.
+    ///
+    /// The value cached at `viewDidLoad` is therefore the one most likely to be
+    /// wrong, since it is taken the instant the keyboard reaches a new host. A
+    /// handoff re-resolves, and falls back to the cached answer only when the
+    /// fresh one cannot be had inside `timeout`.
+    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: Duration = .seconds(1)) async -> String? {
+        let cached = hostApplicationBundleIdTask
+        startResolvingHostApplicationBundleId()
+
+        if let fresh = await hostApplicationBundleId(waitingUpTo: timeout) {
+            return fresh
+        }
+
+        guard let cached else { return nil }
+        logger.logNotice("🏠 Fresh host resolution timed out; falling back to the cached one")
+        return await cached.value
+    }
+
     private func startResolvingHostApplicationBundleId() {
         hostApplicationBundleIdTask = Task { [weak self] in
             guard let self else { return nil }
             let bundleId: String?
             do {
                 bundleId = try await resolveHostApplicationBundleId()
-                logger.logInfo("🏠 Resolved host app: \(bundleId ?? "nil")")
             } catch {
                 logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
-                bundleId = nil
+                return nil
             }
-            // Mirror into the context KeyboardKit itself reads, including when
-            // resolution failed - leaving a previous session's value in place
-            // is worse than having none.
-            state.keyboardContext.hostApplicationBundleId = bundleId
+
+            // KeyboardKit persists `hostApplicationBundleId` to the App Group
+            // and, per its Host article, "will not sync the bundle ID to the
+            // KeyboardContext unless absolutely necessary". Nothing here reads
+            // it back - the handoff URL carries this task's value instead - so
+            // writing it would only seed the *next* keyboard session with this
+            // session's host. Clear it, so neither this session nor a value
+            // left behind by an earlier build can outlive the keyboard.
+            state.keyboardContext.hostApplicationBundleId = nil
+
+            // `.notice` rather than `.info`: info-level entries are memory
+            // backed and die with the extension process, so a wrong host was
+            // invisible in any log captured after the fact.
+            logger.logNotice("🏠 Resolved host app: \(bundleId ?? "nil")")
             return bundleId
         }
     }
@@ -354,7 +390,7 @@ struct VivaDictaKeyboardToolbarView: View {
         // async since KeyboardKit 10.9, but has normally already finished here.
         // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article
         Task {
-            let hostId = await controller?.hostApplicationBundleId()
+            let hostId = await controller?.hostApplicationBundleIdForHandoff()
             guard let url = URL.keyboardHandoff(
                 "vivadicta://record-for-keyboard",
                 hostId: hostId

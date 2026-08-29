@@ -304,7 +304,7 @@ struct KeyboardCustomView: View {
     /// already finished by the time this runs.
     private func openMainApp() {
         Task {
-            let hostId = await keyboardVC?.hostApplicationBundleId()
+            let hostId = await keyboardVC?.hostApplicationBundleIdForHandoff()
             guard let url = URL.keyboardHandoff(
                 "vivadicta://activate-for-keyboard",
                 hostId: hostId
