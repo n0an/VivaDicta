@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.9": release_3_9,
         "3.8": release_3_8,
         "3.7": release_3_7,
         "3.6": release_3_6,
@@ -45,6 +46,27 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
+    // 2026-08-29
+    private static let release_3_9 = WhatsNewRelease(
+        id: "3.9",
+        headline: "What's New in VivaDicta 3.9.0",
+        features: [
+            WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.indigo, .purple],
+                title: "Straight Back to Your App",
+                description: "The keyboard knows where you were typing again, so hot mic returns you there instead of leaving you stranded in VivaDicta."
+            ),
+            WhatsNewFeature(
+                icon: "key.fill",
+                iconColors: [.teal, .green],
+                title: "OpenAI Keys Verify Again",
+                description: "Adding an OpenAI API key no longer fails its check. Valid keys are accepted again."
+            )
+        ],
+        tagline: "Dictate anywhere, and land right back where you started."
+    )
+
     // 2026-08-09
     private static let release_3_8 = WhatsNewRelease(
         id: "3.8",
