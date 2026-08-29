@@ -241,24 +241,24 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Cloud-based AI providers (require API key, network connection)
     /// Note: Ollama and customOpenAI are included here for UI purposes but don't require API key through standard flow
     public static let cloudProviders: [AIProvider] = [
-        .anthropic,
         .openAI,
+        .cerebras,
+        .ollamaCloud,
+        .mistral,
+        .grok,
+        .groq,
+        .anthropic,
         .gemini,
         .copilot,
-        .groq,
-        .mistral,
-        .cerebras,
-        .grok,
+        .huggingFace,
+        .opencodeGo,
+        .opencodeZen,
+        .openRouter,
+        .vercelAIGateway,
         .zai,
         .kimi,
         .minimax,
-        .openRouter,
-        .vercelAIGateway,
-        .opencodeZen,
-        .opencodeGo,
-        .huggingFace,
         .ollama,
-        .ollamaCloud,
         .customOpenAI]
 
     /// Cloud providers eligible to act as a reminder extractor.
