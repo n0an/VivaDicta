@@ -14,6 +14,7 @@ import LocalTranscription
 import SwiftUI
 import TranscriptionCore
 import TranscriptionKit
+import OAuth
 import os
 import AICore
 
@@ -38,13 +39,16 @@ class TranscriptionManager: Transcriber {
 
     private let engine: any TranscriptionEngine
     private let customTranscriptionSource: any CustomTranscriptionModelSource
+    private let oauthManager: any OAuthManager
 
     init(
         engine: any TranscriptionEngine = DefaultTranscriptionEngine(),
-        customTranscriptionSource: any CustomTranscriptionModelSource = CustomTranscriptionModelManager.shared
+        customTranscriptionSource: any CustomTranscriptionModelSource = CustomTranscriptionModelManager.shared,
+        oauthManager: any OAuthManager = DefaultOAuthManager.shared
     ) {
         self.engine = engine
         self.customTranscriptionSource = customTranscriptionSource
+        self.oauthManager = oauthManager
     }
 
     /// The currently active transcription mode determining which model to use.
@@ -64,7 +68,7 @@ class TranscriptionManager: Transcriber {
         let hasParakeetModels = !TranscriptionModelProvider.allParakeetModels.filter { $0.isDownloaded }.isEmpty
         let hasWhisperKitModels = !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
         let hasConfiguredCloudModels = TranscriptionModelProvider.allCloudModels.contains { model in
-            model.apiKey != nil
+            isConfigured(model)
         }
         let hasCustomModel = customTranscriptionSource.isConfigured
         return hasParakeetModels || hasWhisperKitModels || hasConfiguredCloudModels || hasCustomModel
@@ -138,7 +142,7 @@ class TranscriptionManager: Transcriber {
         } else if let whisperKitModel = model as? WhisperKitModel {
             return whisperKitModel.isDownloaded ? whisperKitModel : nil
         } else if let cloudModel = model as? CloudModel {
-            return cloudModel.apiKey != nil ? cloudModel : nil
+            return isConfigured(cloudModel) ? cloudModel : nil
         }
 
         return model
@@ -163,7 +167,7 @@ class TranscriptionManager: Transcriber {
             providerDisplayName: model.provider.displayName
         )
 
-        let provider = try makeProvider(for: model)
+        let provider = try await makeProvider(for: model)
         let transcriptionResult = try await engine.transcribe(
             audioURL: audioURL,
             using: provider,
@@ -264,7 +268,7 @@ class TranscriptionManager: Transcriber {
     /// toggles.
     private func makeProvider(
         for model: any TranscriptionModel
-    ) throws -> TranscriptionProvider {
+    ) async throws -> TranscriptionProvider {
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
         let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
@@ -440,8 +444,17 @@ class TranscriptionManager: Transcriber {
                     supportedCodes: Set(TranscriptionModelProvider.xaiLanguages.keys),
                     fallback: "en"
                 )
+            // Either credential alone is enough: the subscription token is a
+            // drop-in bearer for the console key, and the service falls back to
+            // the key when xAI turns the subscription down.
+            let apiKey = (model as? CloudModel)?.apiKey ?? ""
+            let subscriptionToken = await grokSubscriptionToken()
+            guard subscriptionToken != nil || !apiKey.isEmpty else {
+                throw CloudTranscriptionError.missingAPIKey
+            }
             return .xai(.init(
-                apiKey: try requireAPIKey(model),
+                apiKey: apiKey,
+                subscriptionToken: subscriptionToken,
                 language: language,
                 isSpeakerDiarizationEnabled: diarizationEnabled
             ))
@@ -457,6 +470,29 @@ class TranscriptionManager: Transcriber {
                 language: selectedLanguage,
                 requestFormat: customModel.requestFormat
             ))
+        }
+    }
+
+    /// Whether the model has a usable credential right now - its provider's API
+    /// key, or a Grok subscription for the providers that accept one.
+    private func isConfigured(_ model: CloudModel) -> Bool {
+        model.apiKey != nil || (model.provider.acceptsGrokSubscription && isGrokSignedIn)
+    }
+
+    private var isGrokSignedIn: Bool {
+        oauthManager.isSignedIn(provider: GrokOAuthProvider())
+    }
+
+    /// The Grok subscription access token, or nil when the user has not signed
+    /// in or the stored credential can no longer be refreshed. A refresh
+    /// failure is not fatal here - the API key path is still open.
+    private func grokSubscriptionToken() async -> String? {
+        guard isGrokSignedIn else { return nil }
+        do {
+            return try await oauthManager.validAccessToken(for: GrokOAuthProvider()).token
+        } catch {
+            logger.logWarning("Grok OAuth token unavailable for transcription: \(error.localizedDescription)")
+            return nil
         }
     }
 

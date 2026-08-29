@@ -261,8 +261,12 @@ class ModeEditViewModel {
             return !TranscriptionModelProvider.allWhisperKitModels.filter { $0.isDownloaded }.isEmpty
         case .customTranscription:
             return CustomTranscriptionModelManager.shared.isConfigured
-        default: // Cloud transcription models require an actual API key (OAuth/CLI won't work)
+        default:
+            // Cloud transcription needs an actual API key - a CLI or an OAuth
+            // sign-in doesn't reach these endpoints. xAI is the exception: its
+            // STT endpoint takes the Grok subscription bearer directly.
             guard let mappedAIProvider = provider.mappedAIProvider else { return false }
+            if provider.acceptsGrokSubscription, aiService.isGrokSignedIn { return true }
             return mappedAIProvider.apiKey != nil
         }
     }

@@ -54,6 +54,12 @@ public final class MockNetworkService: NetworkService, @unchecked Sendable {
     // MARK: - upload
 
     public var stubUploadResponse: Result<(Data, HTTPURLResponse), Error>?
+    /// Optional FIFO queue of `upload` responses, consumed one per call in the
+    /// order added. When non-empty it takes precedence over
+    /// ``stubUploadResponse`` - use it for multi-call flows (e.g. a credential
+    /// that is rejected and retried with another one) that need a different
+    /// response per call. Falls back to ``stubUploadResponse`` once exhausted.
+    public var stubUploadResponses: [Result<(Data, HTTPURLResponse), Error>] = []
     public var didUpload: (() -> Void)?
     public private(set) var uploadCallCount = 0
     public private(set) var capturedBody: Data?
@@ -126,7 +132,12 @@ public final class MockNetworkService: NetworkService, @unchecked Sendable {
         capturedRequests.append(request)
         capturedAcceptableStatusCodes = acceptableStatusCodes
         capturedBody = bodyData
-        let (data, response): (Data, HTTPURLResponse) = try stubUploadResponse.evaluate()
+        let (data, response): (Data, HTTPURLResponse)
+        if stubUploadResponses.isEmpty {
+            (data, response) = try stubUploadResponse.evaluate()
+        } else {
+            (data, response) = try stubUploadResponses.removeFirst().get()
+        }
         try validateStatus(response, body: data, acceptable: acceptableStatusCodes)
         return (data, response)
     }

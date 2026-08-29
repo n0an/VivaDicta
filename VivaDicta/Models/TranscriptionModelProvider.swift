@@ -42,6 +42,15 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         }
     }
 
+    /// Whether a signed-in Grok subscription stands in for this provider's API
+    /// key.
+    ///
+    /// xAI Speech-to-Text takes the SuperGrok / X Premium bearer that Grok chat
+    /// signs in with - same host, same `Authorization` header - so the
+    /// subscription works in place of a `console.x.ai` key. No other cloud
+    /// transcription provider has an OAuth path.
+    var acceptsGrokSubscription: Bool { self == .xai }
+
     /// Whether this provider can translate inline, during transcription, without
     /// a separate AI pass.
     var supportsNativeTranslation: Bool {
@@ -531,7 +540,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "grok-stt",
                 displayName: "xAI Speech-to-Text",
-                description: "xAI's hosted speech-to-text endpoint with natural formatting and multilingual support. Uses the same xAI API key as Grok chat. No auto-detect - pick a language.",
+                description: "xAI's hosted speech-to-text endpoint with natural formatting and multilingual support. Works with a SuperGrok or X Premium sign-in, or the same xAI API key as Grok chat.",
                 provider: .xai,
                 recommended: true,
                 speed: 0.9,

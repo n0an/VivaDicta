@@ -417,6 +417,13 @@ private struct GrokFallbackNote: View {
             Text("If xAI refuses the subscription itself, that is reported rather than switched to the API key.")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+
+            // Transcription deliberately breaks that rule: the audio is already
+            // recorded, so losing it to a refused plan is worse than spending
+            // API credits on the retry.
+            Text("xAI Speech-to-Text uses the same credentials. There a refused subscription does retry with the API key, so a finished recording is not lost.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()

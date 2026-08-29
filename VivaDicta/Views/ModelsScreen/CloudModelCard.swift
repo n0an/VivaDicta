@@ -19,7 +19,16 @@ struct CloudModelCard: View {
     @State private var showDeleteAlert = false
 
     private var isAPIConfigured: Bool {
-        model.apiKey != nil
+        model.isConfigured
+    }
+
+    /// The card's key affordance is about an API key, so a subscription-only
+    /// setup needs a line saying why no key is being asked for.
+    private var subscriptionNote: String? {
+        guard model.provider.acceptsGrokSubscription else { return nil }
+        return model.hasGrokSubscription
+            ? "Using your Grok subscription. No API key needed."
+            : "A SuperGrok or X Premium sign-in under AI Providers works here too, in place of a key."
     }
 
     private var speedColor: Color {
@@ -154,33 +163,45 @@ struct CloudModelCard: View {
             }
 
             // Description
-            Text(model.description)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(model.description)
+                if let subscriptionNote {
+                    Text(subscriptionNote)
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
         .padding(20)
         .modelCardBackground()
         .contentShape(.rect)
         .onTapGesture {
-            guard !isAPIConfigured else { return }
+            guard model.apiKey == nil else { return }
             HapticManager.lightImpact()
             onConfigure(model)
         }
         .contextMenu {
-            if isAPIConfigured {
-                
+            if model.apiKey != nil {
+
                 Button {
                     HapticManager.lightImpact()
                     onConfigure(model)
                 } label: {
                     Label("Edit API Key", systemImage: "key.fill")
                 }
-                
+
                 Button(role: .destructive) {
                     HapticManager.warning()
                     showDeleteAlert = true
                 } label: {
                     Label("Delete API Key", systemImage: "key.slash")
+                }
+            } else {
+                Button {
+                    HapticManager.lightImpact()
+                    onConfigure(model)
+                } label: {
+                    Label("Add API Key", systemImage: "key.fill")
                 }
             }
         }

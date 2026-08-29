@@ -39,6 +39,7 @@ struct XaiTranscriptionServiceTests {
     private func makeService(
         networkService: MockNetworkService,
         apiKey: String = "xai-test-key",
+        subscriptionToken: String? = nil,
         language: String = "en",
         formatted: Bool = true,
         isSpeakerDiarizationEnabled: Bool = false
@@ -46,6 +47,7 @@ struct XaiTranscriptionServiceTests {
         XaiTranscriptionService(
             config: .init(
                 apiKey: apiKey,
+                subscriptionToken: subscriptionToken,
                 language: language,
                 formatted: formatted,
                 isSpeakerDiarizationEnabled: isSpeakerDiarizationEnabled
@@ -254,6 +256,115 @@ struct XaiTranscriptionServiceTests {
             _ = try await sut.transcribe(audioURL: audio)
         }
         #expect(networkService.uploadCallCount == 0, "no network call should be made when API key is empty")
+    }
+
+    // MARK: - Grok subscription credential
+
+    @Test func subscriptionTokenIsPreferredOverTheAPIKey() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "xai-key", subscriptionToken: "grok-token")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let req = try #require(networkService.capturedRequest)
+        #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer grok-token")
+        #expect(networkService.uploadCallCount == 1)
+    }
+
+    @Test func subscriptionTokenAloneIsEnoughWithNoAPIKey() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "subscribed")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "", subscriptionToken: "grok-token")
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.text == "subscribed")
+        let req = try #require(networkService.capturedRequest)
+        #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer grok-token")
+    }
+
+    @Test func emptySubscriptionTokenFallsBackToTheAPIKey() async throws {
+        let networkService = MockNetworkService()
+        stubSuccess(on: networkService, text: "ok")
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "xai-key", subscriptionToken: "")
+
+        _ = try await sut.transcribe(audioURL: audio)
+
+        let req = try #require(networkService.capturedRequest)
+        #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer xai-key")
+        #expect(networkService.uploadCallCount == 1)
+    }
+
+    @Test func neitherCredentialThrowsBeforeMakingRequest() async throws {
+        let networkService = MockNetworkService()
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "", subscriptionToken: nil)
+
+        await #expect(throws: CloudTranscriptionError.self) {
+            _ = try await sut.transcribe(audioURL: audio)
+        }
+        #expect(networkService.uploadCallCount == 0)
+    }
+
+    // xAI does not document which surfaces a subscription token reaches, so a
+    // tier-gated account can 403 on /v1/stt while the API key works.
+    @Test(arguments: [401, 403])
+    func rejectedSubscriptionRetriesWithTheAPIKey(statusCode: Int) async throws {
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponses = [
+            .success((Data(#"{"error":"not entitled"}"#.utf8), makeHTTPResponse(statusCode))),
+            .success((Data(#"{"text":"recovered"}"#.utf8), makeHTTPResponse(200)))
+        ]
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "xai-key", subscriptionToken: "grok-token")
+
+        let result = try await sut.transcribe(audioURL: audio)
+
+        #expect(result.text == "recovered")
+        #expect(networkService.uploadCallCount == 2)
+        let bearers = networkService.capturedRequests.map { $0.value(forHTTPHeaderField: "Authorization") }
+        #expect(bearers == ["Bearer grok-token", "Bearer xai-key"])
+    }
+
+    @Test func rejectedSubscriptionWithNoAPIKeySurfacesTheError() async throws {
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((
+            Data(#"{"error":"not entitled"}"#.utf8),
+            makeHTTPResponse(403)
+        ))
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "", subscriptionToken: "grok-token")
+
+        let error = try await #require(throws: CloudTranscriptionError.self) {
+            _ = try await sut.transcribe(audioURL: audio)
+        }
+        guard case let .apiRequestFailed(statusCode, _) = error else {
+            Issue.record("expected apiRequestFailed, got \(error)")
+            return
+        }
+        #expect(statusCode == 403)
+        #expect(networkService.uploadCallCount == 1, "there is no second credential to retry with")
+    }
+
+    // A 400 is xAI rejecting the request, not the credential - spending the
+    // user's API credits on a repeat of the same bad request helps nobody.
+    @Test func nonCredentialFailureDoesNotRetryWithTheAPIKey() async throws {
+        let networkService = MockNetworkService()
+        networkService.stubUploadResponse = .success((
+            Data(#"{"error":"bad request"}"#.utf8),
+            makeHTTPResponse(400)
+        ))
+        let audio = try makeAudioFile()
+        let sut = makeService(networkService: networkService, apiKey: "xai-key", subscriptionToken: "grok-token")
+
+        await #expect(throws: CloudTranscriptionError.self) {
+            _ = try await sut.transcribe(audioURL: audio)
+        }
+        #expect(networkService.uploadCallCount == 1)
     }
 
     @Test func missingAudioFileThrowsAudioFileNotFound() async {

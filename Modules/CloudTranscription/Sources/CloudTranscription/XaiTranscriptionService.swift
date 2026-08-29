@@ -10,11 +10,22 @@ import TranscriptionCore
 /// Endpoint: POST https://api.x.ai/v1/stt with multipart/form-data.
 /// The xAI STT API has no `model` field; the form fields are `format`,
 /// `language`, and `file` (file must be last per the docs).
+///
+/// Auth mirrors Grok chat: the OAuth token a SuperGrok / X Premium sign-in
+/// produces is a plain bearer for `api.x.ai`, so it goes in the same header a
+/// console key would. xAI does not document which surfaces a subscription
+/// token reaches, and tier-gated accounts are reported to 403 on some of them,
+/// so a rejected subscription retries with the API key when there is one
+/// rather than failing the recording.
 public struct XaiTranscriptionService: TranscriptionService, Sendable {
     private let logger = Logger(cloudTranscriptionCategory: "XaiTranscription")
 
     public struct Config: Sendable {
         public let apiKey: String
+        /// A SuperGrok / X Premium OAuth access token, when the user has signed
+        /// in to the Grok AI provider. Tried ahead of ``apiKey``; nil when there
+        /// is no subscription to spend.
+        public let subscriptionToken: String?
         /// One of xAI's 24 documented codes (e.g. "en", "fil"), or nil to let
         /// xAI detect the language. xAI rejects `format=true` without a concrete
         /// `language`, so nil drops both fields: losing Inverse Text
@@ -28,11 +39,13 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
 
         public init(
             apiKey: String,
+            subscriptionToken: String? = nil,
             language: String?,
             formatted: Bool = true,
             isSpeakerDiarizationEnabled: Bool = false
         ) {
             self.apiKey = apiKey
+            self.subscriptionToken = subscriptionToken
             self.language = language
             self.formatted = formatted
             self.isSpeakerDiarizationEnabled = isSpeakerDiarizationEnabled
@@ -51,22 +64,48 @@ public struct XaiTranscriptionService: TranscriptionService, Sendable {
     }
 
     public func transcribe(audioURL: URL) async throws -> TranscriptionServiceResult {
+        let subscriptionToken = config.subscriptionToken.flatMap { $0.isEmpty ? nil : $0 }
+
+        guard subscriptionToken != nil || !config.apiKey.isEmpty else {
+            throw CloudTranscriptionError.missingAPIKey
+        }
+
+        if let subscriptionToken {
+            do {
+                return try await send(audioURL: audioURL, bearer: subscriptionToken)
+            } catch let error as CloudTranscriptionError
+                where !config.apiKey.isEmpty && Self.isCredentialRejection(error) {
+                logger.logWarning("Grok subscription rejected for STT, falling back to the API key: \(error.localizedDescription)")
+            }
+        }
+
+        return try await send(audioURL: audioURL, bearer: config.apiKey)
+    }
+
+    private func send(audioURL: URL, bearer: String) async throws -> TranscriptionServiceResult {
         try await NetworkRetry.withRetry(logger: logger) {
-            try await makeTranscriptionRequest(audioURL: audioURL)
+            try await makeTranscriptionRequest(audioURL: audioURL, bearer: bearer)
         }
     }
 
-    private func makeTranscriptionRequest(audioURL: URL) async throws -> TranscriptionServiceResult {
-        guard !config.apiKey.isEmpty else {
-            throw CloudTranscriptionError.missingAPIKey
+    /// True when xAI turned the credential down, as opposed to rejecting the
+    /// request itself - only the former is worth retrying with the other one.
+    private static func isCredentialRejection(_ error: CloudTranscriptionError) -> Bool {
+        switch error {
+        case .invalidAPIKey: true
+        case .apiRequestFailed(let statusCode, _): statusCode == 401 || statusCode == 403
+        default: false
         }
+    }
+
+    private func makeTranscriptionRequest(audioURL: URL, bearer: String) async throws -> TranscriptionServiceResult {
         let apiURL = URL(string: "https://api.x.ai/v1/stt")!
 
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = NetworkRetry.defaultTimeout
 
         let body = try createRequestBody(audioURL: audioURL, boundary: boundary)
