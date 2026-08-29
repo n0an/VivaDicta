@@ -111,22 +111,6 @@ class KeyboardViewController: KeyboardInputViewController {
     /// wrong app.
     private var hostApplicationBundleIdTask: Task<String?, Never>?
 
-    /// The host app's bundle ID, waiting up to `timeout` for a resolution that
-    /// is still in flight, or nil if it does not land in time.
-    private func hostApplicationBundleId(waitingUpTo timeout: Duration) async -> String? {
-        guard let task = hostApplicationBundleIdTask else { return nil }
-        return await withTaskGroup(of: String?.self) { group in
-            group.addTask { await task.value }
-            group.addTask {
-                try? await Task.sleep(for: timeout)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first
-        }
-    }
-
     /// The host app's bundle ID for a handoff to the main app, resolved afresh.
     ///
     /// KeyboardKit's resolver lags a change of host app. In a device capture it
@@ -149,22 +133,31 @@ class KeyboardViewController: KeyboardInputViewController {
     /// leaves the user with the main app's manual return prompt, recording
     /// already running - far cheaper than opening the wrong app, which also
     /// relaunches an app they had closed.
-    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: Duration = .seconds(2)) async -> String? {
-        startResolvingHostApplicationBundleId()
+    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: TimeInterval = 2) async -> String? {
+        startResolvingHostApplicationBundleId(timeout: timeout)
 
-        guard let bundleId = await hostApplicationBundleId(waitingUpTo: timeout) else {
-            logger.logNotice("🏠 Host unresolved within \(timeout); handing off without one")
+        guard let task = hostApplicationBundleIdTask else { return nil }
+        guard let bundleId = await task.value else {
+            logger.logNotice("🏠 Host unresolved; handing off without one")
             return nil
         }
         return bundleId
     }
 
-    private func startResolvingHostApplicationBundleId() {
+    /// Starts a host resolution, bounded by KeyboardKit's own `timeout`.
+    ///
+    /// The bound belongs to the resolver rather than to a race here on purpose.
+    /// Racing an unstructured `Task` against a sleep does not bound anything:
+    /// a task group awaits every child before it returns, and cancelling the
+    /// losing child does not cancel the resolution it is awaiting, so a slow
+    /// resolver would hold the handoff open well past the deadline and leave
+    /// the user's tap looking inert.
+    private func startResolvingHostApplicationBundleId(timeout: TimeInterval = 2) {
         hostApplicationBundleIdTask = Task { [weak self] in
             guard let self else { return nil }
             let bundleId: String?
             do {
-                bundleId = try await resolveHostApplicationBundleId()
+                bundleId = try await resolveHostApplicationBundleId(timeout: timeout)
             } catch {
                 logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
                 return nil
