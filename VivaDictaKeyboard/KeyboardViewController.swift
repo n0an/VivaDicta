@@ -86,8 +86,10 @@ class KeyboardViewController: KeyboardInputViewController {
         // Configure sound feedback based on user preference
         state.feedbackContext.settings.isAudioFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
 
-        // Start resolving the host app now so the answer is already cached by
-        // the time the user taps a button that hands off to the main app.
+        // Start resolving the host app now. A handoff deliberately resolves
+        // again rather than reusing this answer, but starting here activates
+        // KeyboardKit's resolver early, so that later call reads a warm one and
+        // returns without stalling the button.
         startResolvingHostApplicationBundleId()
     }
 
@@ -110,13 +112,8 @@ class KeyboardViewController: KeyboardInputViewController {
     private var hostApplicationBundleIdTask: Task<String?, Never>?
 
     /// The host app's bundle ID, waiting up to `timeout` for a resolution that
-    /// is still in flight.
-    ///
-    /// Resolution starts in `viewDidLoad`, so in practice this returns
-    /// immediately. The bound only matters when the user taps within the first
-    /// moments of the keyboard appearing, where stalling the button would feel
-    /// worse than falling back to the main app's manual return prompt.
-    func hostApplicationBundleId(waitingUpTo timeout: Duration = .seconds(1)) async -> String? {
+    /// is still in flight, or nil if it does not land in time.
+    private func hostApplicationBundleId(waitingUpTo timeout: Duration) async -> String? {
         guard let task = hostApplicationBundleIdTask else { return nil }
         return await withTaskGroup(of: String?.self) { group in
             group.addTask { await task.value }
@@ -139,21 +136,27 @@ class KeyboardViewController: KeyboardInputViewController {
     /// resolution in the same capture that was taken 8s or more after its host
     /// appeared was correct.
     ///
-    /// The value cached at `viewDidLoad` is therefore the one most likely to be
-    /// wrong, since it is taken the instant the keyboard reaches a new host. A
-    /// handoff re-resolves, and falls back to the cached answer only when the
-    /// fresh one cannot be had inside `timeout`.
-    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: Duration = .seconds(1)) async -> String? {
-        let cached = hostApplicationBundleIdTask
+    /// The value resolved at `viewDidLoad` is therefore the one most likely to
+    /// be wrong, since it is taken the instant the keyboard reaches a new host,
+    /// so a handoff asks again rather than reusing it. Until iOS 26.4 this was
+    /// a synchronous property read taken at exactly this moment; re-resolving
+    /// restores that timing on top of the async resolver.
+    ///
+    /// There is deliberately no fallback to the earlier answer when the fresh
+    /// one does not land in time. That answer is the least trustworthy value
+    /// the keyboard holds, and it is wrong in precisely the case this method
+    /// exists to handle. An unresolved host costs the automatic teleport and
+    /// leaves the user with the main app's manual return prompt, recording
+    /// already running - far cheaper than opening the wrong app, which also
+    /// relaunches an app they had closed.
+    func hostApplicationBundleIdForHandoff(waitingUpTo timeout: Duration = .seconds(2)) async -> String? {
         startResolvingHostApplicationBundleId()
 
-        if let fresh = await hostApplicationBundleId(waitingUpTo: timeout) {
-            return fresh
+        guard let bundleId = await hostApplicationBundleId(waitingUpTo: timeout) else {
+            logger.logNotice("🏠 Host unresolved within \(timeout); handing off without one")
+            return nil
         }
-
-        guard let cached else { return nil }
-        logger.logNotice("🏠 Fresh host resolution timed out; falling back to the cached one")
-        return await cached.value
+        return bundleId
     }
 
     private func startResolvingHostApplicationBundleId() {

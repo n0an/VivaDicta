@@ -454,7 +454,7 @@ struct VivaDictaApp: App {
                         // return prompt so the user can switch back by hand.
                         if let vm = appState.recordViewModel,
                            vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
-                            logger.logInfo("🎙️ Starting recording before showing manual switch prompt (no hostId)")
+                            logger.logNotice("🎙️ Starting recording before showing manual switch prompt (no hostId)")
                             vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
                         }
                         appState.showKeyboardReturnPrompt = true
