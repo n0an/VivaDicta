@@ -364,39 +364,7 @@ struct VivaDictaApp: App {
                 appState.showKeyboardReturnPrompt = true
             }
 
-            // Known system services that have no URL scheme - don't log as unrecognized
-            let knownNoSchemeHosts: Set<String> = [
-                "com.apple.SafariViewService",  // SFSafariViewController in-app browser
-                "com.apple.springboard",        // iOS home screen
-                "com.apple.Spotlight",          // Spotlight search
-                "com.apple.journal",            // Apple Journal
-                "com.apple.AppleMediaServicesUI.ComposeReviewExtension", // App Store review
-                "com.antonnovoselov.VivaDicta", // Own app
-                "com.dmitrii.medvedev.gptalk",  // GPChat/Xenova AI - no known URL scheme
-                "com.saner.ai",                 // Saner AI - no known URL scheme
-                "dk.FirstForm.SnappyNotesiOS",  // Snappy Notes - no known URL scheme
-                "com.ai.venice",                // Venice AI - no known URL scheme
-                "com.replay.Echo",              // Echo by Replay - no known URL scheme
-                "com.avast.ios.security",       // Avast Security - no known URL scheme
-                "com.elaborapp.NoteBox",        // NoteBox - no known URL scheme
-                "com.ios.aquaMagic062516.cn",   // Unknown app
-                "com.lixkit.diary",             // Diary app - no known URL scheme
-                "com.weichart.Zettel",          // Zettel Notes - no known URL scheme
-                "h3p.Neon-Vision-Editor",       // Neon Vision Editor - no known URL scheme
-                "mystxtalk",                    // Unknown messaging app
-                "ru.ozon.sellerApp",            // Ozon Seller - no known URL scheme
-                "kz.origon.empapp",             // KZ telemedicine app - no known URL scheme
-                "com.cloud-compiler",           // CodeSnack IDE - no known URL scheme
-                "com.corp.messenger.syncer",    // Syncer corporate messenger - no known URL scheme
-                "com.yottaram.eMoods",          // eMoods tracker - no known URL scheme
-                "com.anton"                     // Not a shipping App Store app - a dev build
-            ]
-
-            if !knownNoSchemeHosts.contains(hostId) {
-                // Log unrecognized host app to Firebase Analytics
-                // This helps track which apps users are trying to use but we don't have URL schemes for yet
-                DefaultAnalyticsService.live.track(.unrecognizedHostApp(bundleId: hostId))
-            }
+            trackUnrecognizedHostIfNeeded(hostId)
         }
     }
     
@@ -496,6 +464,12 @@ struct VivaDictaApp: App {
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
 
+                    // Same event as the dictation handoff: a keyboard session is
+                    // a keyboard session whichever button opened it, and this is
+                    // where the unresolved-host rate for text actions shows up
+                    // (`host_bundle_id` is "unknown" when the resolver timed out).
+                    DefaultAnalyticsService.live.track(.keyboardSessionStarted(hostBundleId: hostId))
+
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
                     AppGroupCoordinator.shared.activateKeyboardSession(
                         timeoutSeconds: timeoutSeconds
@@ -570,6 +544,7 @@ struct VivaDictaApp: App {
 
         guard let url = returnURL(forHostId: hostId) else {
             logger.logNotice("❌ No return URL for host: \(hostId)")
+            trackUnrecognizedHostIfNeeded(hostId)
             appState.showKeyboardReturnPrompt = true
             return
         }
@@ -582,6 +557,51 @@ struct VivaDictaApp: App {
                 appState.showKeyboardReturnPrompt = true
             }
         }
+    }
+
+    /// Host apps that are known to have no way back, so their bundle IDs are
+    /// not worth reporting as unrecognized.
+    ///
+    /// Two kinds of entry: system services that are not really "apps" the user
+    /// came from, and shipping apps already checked by hand and found to
+    /// register neither a URL scheme nor a usable universal link.
+    private static let knownNoSchemeHosts: Set<String> = [
+        "com.apple.SafariViewService",  // SFSafariViewController in-app browser
+        "com.apple.springboard",        // iOS home screen
+        "com.apple.Spotlight",          // Spotlight search
+        "com.apple.journal",            // Apple Journal
+        "com.apple.AppleMediaServicesUI.ComposeReviewExtension", // App Store review
+        "com.antonnovoselov.VivaDicta", // Own app
+        "com.dmitrii.medvedev.gptalk",  // GPChat/Xenova AI - no known URL scheme
+        "com.saner.ai",                 // Saner AI - no known URL scheme
+        "dk.FirstForm.SnappyNotesiOS",  // Snappy Notes - no known URL scheme
+        "com.ai.venice",                // Venice AI - no known URL scheme
+        "com.replay.Echo",              // Echo by Replay - no known URL scheme
+        "com.avast.ios.security",       // Avast Security - no known URL scheme
+        "com.elaborapp.NoteBox",        // NoteBox - no known URL scheme
+        "com.ios.aquaMagic062516.cn",   // Unknown app
+        "com.lixkit.diary",             // Diary app - no known URL scheme
+        "com.weichart.Zettel",          // Zettel Notes - no known URL scheme
+        "h3p.Neon-Vision-Editor",       // Neon Vision Editor - no known URL scheme
+        "mystxtalk",                    // Unknown messaging app
+        "ru.ozon.sellerApp",            // Ozon Seller - no known URL scheme
+        "kz.origon.empapp",             // KZ telemedicine app - no known URL scheme
+        "com.cloud-compiler",           // CodeSnack IDE - no known URL scheme
+        "com.corp.messenger.syncer",    // Syncer corporate messenger - no known URL scheme
+        "com.yottaram.eMoods",          // eMoods tracker - no known URL scheme
+        "com.anton"                     // Not a shipping App Store app - a dev build
+    ]
+
+    /// Reports a host app we could not return to, so its URL scheme can be
+    /// looked up and added to `returnURL(forHostId:)` later.
+    ///
+    /// Called from both keyboard handoffs - dictation and text processing.
+    /// Apps used only for text actions would otherwise never be reported, and
+    /// their users would keep losing the teleport back with nothing to show for
+    /// it in the analytics.
+    private func trackUnrecognizedHostIfNeeded(_ hostId: String) {
+        guard !Self.knownNoSchemeHosts.contains(hostId) else { return }
+        DefaultAnalyticsService.live.track(.unrecognizedHostApp(bundleId: hostId))
     }
 
     /// The URL that sends the user back to `bundleId`, or nil when there is no
