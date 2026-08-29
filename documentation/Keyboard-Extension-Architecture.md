@@ -300,19 +300,31 @@ The session has a 180-second timeout managed by `PrewarmManager`. If no recordin
 
 When the keyboard is in `.notReady` state (no active main app session) and the user taps the mic, the extension cannot start recording directly. Instead, it deep-links into the main app to initiate a "hot-mic" flow — the main app opens, begins recording immediately (bypassing the normal recording screen), and the text flows back to the original text field when done.
 
-The URL scheme is `vivadicta://record-for-keyboard`. KeyboardKit's `hostApplicationBundleId` property (available on `KeyboardInputViewController`) identifies the app currently hosting the keyboard.
+The URL scheme is `vivadicta://record-for-keyboard`. The app hosting the keyboard is identified by `KeyboardViewController.hostApplicationBundleIdForHandoff()`.
 
 ```swift
 // From VivaDictaKeyboardToolbarView
-var urlString = "vivadicta://record-for-keyboard"
-if let hostId = controller?.hostApplicationBundleId {
-    if let encodedHostId = hostId.addingPercentEncoding(
-        withAllowedCharacters: .urlQueryAllowed) {
-        urlString += "?hostId=\(encodedHostId)"
-    }
+Task {
+    let hostId = await controller?.hostApplicationBundleIdForHandoff()
+    guard let url = URL.keyboardHandoff(
+        "vivadicta://record-for-keyboard",
+        hostId: hostId
+    ) else { return }
+    openURL(url)
 }
-openURL(URL(string: urlString)!)
 ```
+
+### Why the host is resolved at the tap
+
+Until iOS 26.4 this was a synchronous property read, `KeyboardInputViewController.hostApplicationBundleId`, taken inline at the tap. Apple removed the API behind it, so KeyboardKit 10.9 replaced it with an async resolver that must be activated and then polled.
+
+That resolver lags a change of host app. A device capture recorded it returning a bundle ID for an app that had been terminated for three seconds and was never the current host, 1.3s after the keyboard moved into a different app - and the main app duly relaunched that app. Every resolution in the same capture taken 8s or more after its host appeared was correct.
+
+So the answer available when the keyboard first appears is the one most likely to be wrong, and a handoff resolves again rather than reusing it. That restores the timing of the old synchronous read on top of the async API. A resolution is still started in `viewDidLoad`, but only to activate the resolver early so the call at the tap reads a warm one instead of starting cold; its value is not used.
+
+There is deliberately no fallback to the earlier answer. It is the least trustworthy value the keyboard holds, and it is wrong in precisely the case the re-resolve exists to handle. An unresolved host omits the `hostId`, and the main app starts recording and shows its manual return prompt - much cheaper than opening the wrong app, which also relaunches an app the user had closed.
+
+The deadline is passed to `resolveHostApplicationBundleId(timeout:)` rather than enforced by racing the resolution against a sleep. Racing does not bound anything here: a task group awaits every child before it returns, and cancelling the losing child does not cancel the unstructured `Task` it is awaiting, so a slow resolver would hold the handoff open past the deadline and leave the tap looking inert.
 
 The `hostId` query parameter carries the bundle identifier of the calling app (e.g., `com.apple.mobilenotes`, `com.apple.MobileSMS`). The main app receives this via its `onOpenURL` handler in the scene delegate, passes `hostId` to `RecordViewModel`, and after transcription completes, constructs a return URL to bring the user back to the originating app:
 

@@ -77,7 +77,9 @@ When the keyboard's mic button is tapped and the Hot Mic session is not yet acti
 vivadicta://record-for-keyboard?hostId=<percent-encoded bundle ID>
 ```
 
-The `hostId` is obtained from `KeyboardInputViewController.hostApplicationBundleId` (provided by KeyboardKit). It identifies which app the keyboard is currently serving so the main app can return the user there after starting recording.
+The `hostId` is resolved at the moment of the tap by `KeyboardViewController.hostApplicationBundleIdForHandoff()`, which wraps KeyboardKit's async `resolveHostApplicationBundleId(timeout:)`. It identifies which app the keyboard is currently serving so the main app can return the user there after starting recording.
+
+Resolving at the tap rather than reusing an earlier answer is deliberate. KeyboardKit's resolver lags a change of host app, so the value available when the keyboard first appears can still name the previous app; asking again at the tap gives it time to settle. When it cannot answer, the `hostId` is omitted and the main app falls back to asking the user to switch back by hand. See `Keyboard-Extension-Architecture.md` for the full rationale.
 
 ### Phase 2: VivaDicta prepares and returns to host
 
