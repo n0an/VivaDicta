@@ -298,14 +298,17 @@ struct KeyboardCustomView: View {
         }
     }
 
+    /// Wakes the main app so it can service a text-processing request, tagging
+    /// the deep link with the host app so the app can hand the user back.
+    /// Resolving the host is async since KeyboardKit 10.9, but has normally
+    /// already finished by the time this runs.
     private func openMainApp() {
-        var urlString = "vivadicta://activate-for-keyboard"
-        if let hostId = keyboardVC?.hostApplicationBundleId {
-            if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                urlString += "?hostId=\(encodedHostId)"
-            }
-        }
-        if let url = URL(string: urlString) {
+        Task {
+            let hostId = await keyboardVC?.hostApplicationBundleId()
+            guard let url = URL.keyboardHandoff(
+                "vivadicta://activate-for-keyboard",
+                hostId: hostId
+            ) else { return }
             openURL(url)
         }
     }

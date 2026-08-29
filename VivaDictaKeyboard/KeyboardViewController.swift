@@ -71,13 +71,13 @@ class KeyboardViewController: KeyboardInputViewController {
         )
 
         // Setup the keyboard
-        setup(for: keyboardApp) { [weak self] result in
+        setupKeyboardKit(for: keyboardApp) { [weak self] result in
             self?.logger.logInfo("Keyboard setup result: \(String(describing: result))")
         }
 
         // Replace the standard action handler with our subclass that intercepts
-        // the EN/RU language toggle key. Must run after `setup(for:)`, since
-        // `setup` is what installs the default services.
+        // the EN/RU language toggle key. Must run after `setupKeyboardKit(for:)`,
+        // since that is what installs the default services.
         services.actionHandler = VivaDictaActionHandler(controller: self)
 
         // Configure haptic feedback based on user preference
@@ -85,6 +85,67 @@ class KeyboardViewController: KeyboardInputViewController {
 
         // Configure sound feedback based on user preference
         state.feedbackContext.settings.isAudioFeedbackEnabled = AppGroupCoordinator.shared.isKeyboardSoundFeedbackEnabled
+
+        // Start resolving the host app now so the answer is already cached by
+        // the time the user taps a button that hands off to the main app.
+        startResolvingHostApplicationBundleId()
+    }
+
+    // MARK: - Host Application
+
+    /// The in-flight (or finished) host app resolution for this keyboard session.
+    ///
+    /// KeyboardKit's synchronous `hostApplicationBundleId` returns `nil` from
+    /// iOS 26.4 on - Apple removed the API behind it - and it is gone entirely
+    /// in KeyboardKit 11. KeyboardKit 10.9 replaced it with an async resolver
+    /// that has to be activated and then polled, so the bundle ID is no longer
+    /// available as an instant property read.
+    ///
+    /// The task is deliberately *not* backed by the persisted
+    /// `KeyboardContext.hostApplicationBundleId`: a controller is created fresh
+    /// per keyboard session, so a plain property can never hand back the bundle
+    /// ID of the app the keyboard was in last time - which would teleport the
+    /// user into the wrong app.
+    private var hostApplicationBundleIdTask: Task<String?, Never>?
+
+    /// The host app's bundle ID, waiting up to `timeout` for a resolution that
+    /// is still in flight.
+    ///
+    /// Resolution starts in `viewDidLoad`, so in practice this returns
+    /// immediately. The bound only matters when the user taps within the first
+    /// moments of the keyboard appearing, where stalling the button would feel
+    /// worse than falling back to the main app's manual return prompt.
+    func hostApplicationBundleId(waitingUpTo timeout: Duration = .seconds(1)) async -> String? {
+        guard let task = hostApplicationBundleIdTask else { return nil }
+        return await withTaskGroup(of: String?.self) { group in
+            group.addTask { await task.value }
+            group.addTask {
+                try? await Task.sleep(for: timeout)
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
+    }
+
+    private func startResolvingHostApplicationBundleId() {
+        hostApplicationBundleIdTask = Task { [weak self] in
+            guard let self else { return nil }
+            let bundleId: String?
+            do {
+                bundleId = try await resolveHostApplicationBundleId()
+                logger.logInfo("🏠 Resolved host app: \(bundleId ?? "nil")")
+            } catch {
+                logger.logError("🏠 Failed to resolve host app: \(error.localizedDescription)")
+                bundleId = nil
+            }
+            // Mirror into the context KeyboardKit itself reads, including when
+            // resolution failed - leaving a previous session's value in place
+            // is worse than having none.
+            state.keyboardContext.hostApplicationBundleId = bundleId
+            return bundleId
+        }
     }
     
     override func viewWillSetupKeyboardView() {
@@ -288,17 +349,16 @@ struct VivaDictaKeyboardToolbarView: View {
     }
 
     private func openMainAppForHotMic() {
-        // Build URL with hostId as query parameter
-        var urlString = "vivadicta://record-for-keyboard"
-        if let hostId = controller?.hostApplicationBundleId {
-            // URL encode the hostId to handle special characters
-            // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article#Host-Application-Bundle-Identifier
-            if let encodedHostId = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-                urlString += "?hostId=\(encodedHostId)"
-            }
-        }
-
-        if let url = URL(string: urlString) {
+        // The host app ID rides along as a query parameter so the main app can
+        // hand the user straight back once the mic is warm. Resolving it is
+        // async since KeyboardKit 10.9, but has normally already finished here.
+        // Doc - https://docs.keyboardkit.com/documentation/keyboardkit/host-article
+        Task {
+            let hostId = await controller?.hostApplicationBundleId()
+            guard let url = URL.keyboardHandoff(
+                "vivadicta://record-for-keyboard",
+                hostId: hostId
+            ) else { return }
             controller?.logger.logInfo("📱 Opening main app with URL: \(url.absoluteString)")
             openURL(url)
         }
@@ -490,4 +550,22 @@ private func keyboardSinInRange(_ range: ClosedRange<Float>, offset: Float, time
     let amplitude = (range.upperBound - range.lowerBound) / 2
     let midPoint = (range.upperBound + range.lowerBound) / 2
     return midPoint + amplitude * sin(timeScale * t + offset)
+}
+
+// MARK: - Keyboard Hand-off URLs
+
+extension URL {
+    /// Builds a `vivadicta://` deep link that hands the keyboard's work over to
+    /// the main app, tagging it with the host app's bundle ID when one is known.
+    ///
+    /// The main app reads `hostId` to teleport the user straight back to where
+    /// they were typing. Without it, it falls back to asking them to switch
+    /// back by hand, so an unresolved host degrades the flow rather than
+    /// breaking it.
+    static func keyboardHandoff(_ base: String, hostId: String?) -> URL? {
+        guard let hostId,
+              let encoded = hostId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+        else { return URL(string: base) }
+        return URL(string: "\(base)?hostId=\(encoded)")
+    }
 }

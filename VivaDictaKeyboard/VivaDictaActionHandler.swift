@@ -30,37 +30,22 @@ extension Notification.Name {
 /// language in canonical order. All other actions (character input, shift,
 /// backspace, globe, etc.) fall through to the stock implementation.
 ///
-/// `nonisolated` matches the base class's actor isolation. KeyboardKit's
-/// `StandardActionHandler` overrides need to keep the same isolation, so
-/// any UI-side work (haptics, notification post observed by SwiftUI) is
-/// dispatched onto the main actor explicitly.
-final class VivaDictaActionHandler: KeyboardAction.StandardActionHandler {
+/// The class is `nonisolated` to match the base class. The target builds with
+/// `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, so without it every member -
+/// including the inherited initializers - would be `@MainActor` and clash with
+/// the nonisolated declarations they override. Any UI-side work (haptics,
+/// notification post observed by SwiftUI) is dispatched onto the main actor
+/// explicitly.
+///
+/// The class deliberately declares no initializers. It adds no stored
+/// properties, so it inherits every designated and convenience initializer
+/// from `StandardKeyboardActionHandler` - including the `init(controller:)` used at
+/// the call site. Re-declaring the designated initializer only to forward it
+/// verbatim would re-break on every KeyboardKit release that adds a
+/// dependency to it (10.4 added `keyboardAppContext`).
+nonisolated final class VivaDictaActionHandler: StandardKeyboardActionHandler {
 
-    nonisolated override init(
-        controller: (any KeyboardController)?,
-        keyboardContext: KeyboardContext,
-        keyboardBehavior: any KeyboardBehavior,
-        autocompleteContext: AutocompleteContext,
-        autocompleteService: any AutocompleteService,
-        emojiContext: EmojiContext,
-        feedbackContext: FeedbackContext,
-        feedbackService: any FeedbackService,
-        spacebarDragGestureHandler: Gestures.SpacebarDragGestureHandler
-    ) {
-        super.init(
-            controller: controller,
-            keyboardContext: keyboardContext,
-            keyboardBehavior: keyboardBehavior,
-            autocompleteContext: autocompleteContext,
-            autocompleteService: autocompleteService,
-            emojiContext: emojiContext,
-            feedbackContext: feedbackContext,
-            feedbackService: feedbackService,
-            spacebarDragGestureHandler: spacebarDragGestureHandler
-        )
-    }
-
-    nonisolated override func handle(
+    override func handle(
         _ gesture: Keyboard.Gesture,
         on action: KeyboardAction
     ) {
@@ -77,7 +62,7 @@ final class VivaDictaActionHandler: KeyboardAction.StandardActionHandler {
     /// `KeyboardLanguage.allCases` order. No-op when fewer than 2 languages
     /// are enabled (the toggle key shouldn't even be visible in that case,
     /// but guard anyway).
-    private nonisolated func cycleToNextLanguage() {
+    private func cycleToNextLanguage() {
         Task { @MainActor in
             let coordinator = AppGroupCoordinator.shared
             let order = KeyboardLanguage.allCases.filter {

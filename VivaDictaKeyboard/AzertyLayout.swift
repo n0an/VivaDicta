@@ -59,7 +59,7 @@ enum AzertyLayout {
         return result
     }
 
-    private static func rowHasCharacters(_ row: [KeyboardLayout.Item]) -> Bool {
+    private static func rowHasCharacters(_ row: [KeyboardLayoutItem]) -> Bool {
         row.contains { item in
             if case .character = item.action { return true }
             return false
@@ -75,9 +75,9 @@ enum AzertyLayout {
     /// based on `KeyboardContext.keyboardCase`; if we always emitted lowercase,
     /// shifted AZERTY buttons would display and insert lowercase letters.
     private static func rewriteLetters(
-        in row: [KeyboardLayout.Item],
+        in row: [KeyboardLayoutItem],
         to chars: [String]
-    ) -> [KeyboardLayout.Item] {
+    ) -> [KeyboardLayoutItem] {
         var charIndices: [Int] = []
         var isUppercaseInRow = false
         for (index, item) in row.enumerated() {
@@ -98,7 +98,7 @@ enum AzertyLayout {
 
         for (offset, char) in chars.enumerated() {
             let cased = isUppercaseInRow ? char.uppercased() : char
-            let item = KeyboardLayout.Item(
+            let item = KeyboardLayoutItem(
                 action: .character(cased),
                 size: template.size,
                 alignment: template.alignment,
@@ -123,7 +123,7 @@ enum AzertyCallouts {
 
     /// A callout builder that returns French alternates for known letters
     /// and falls back to KeyboardKit's standard actions for everything else.
-    static let actionsBuilder: Callouts.ActionsBuilder = { params in
+    static let actionsBuilder: KeyboardCalloutActions.Builder = { params in
         guard case .character(let char) = params.action else {
             return params.standardActions()
         }

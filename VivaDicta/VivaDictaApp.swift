@@ -449,8 +449,9 @@ struct VivaDictaApp: App {
                     if let hostId = hostId {
                         attemptReturnToHost(hostId: hostId)
                     } else {
-                        // No host ID available (e.g. iOS 26.4 broke hostApplicationBundleId)
-                        // Start recording and show return prompt so user can manually switch back
+                        // The keyboard couldn't resolve its host app, so there is
+                        // nowhere to teleport back to. Start recording and show the
+                        // return prompt so the user can switch back by hand.
                         if let vm = appState.recordViewModel,
                            vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
                             logger.logInfo("🎙️ Starting recording before showing manual switch prompt (no hostId)")

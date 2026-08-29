@@ -45,7 +45,7 @@ enum GermanLayout {
         return result
     }
 
-    private static func rowHasCharacters(_ row: [KeyboardLayout.Item]) -> Bool {
+    private static func rowHasCharacters(_ row: [KeyboardLayoutItem]) -> Bool {
         row.contains { item in
             if case .character = item.action { return true }
             return false
@@ -53,9 +53,9 @@ enum GermanLayout {
     }
 
     private static func rewriteLetters(
-        in row: [KeyboardLayout.Item],
+        in row: [KeyboardLayoutItem],
         to chars: [String]
-    ) -> [KeyboardLayout.Item] {
+    ) -> [KeyboardLayoutItem] {
         var charIndices: [Int] = []
         var isUppercaseInRow = false
         for (index, item) in row.enumerated() {
@@ -76,7 +76,7 @@ enum GermanLayout {
 
         for (offset, char) in chars.enumerated() {
             let cased = isUppercaseInRow ? char.uppercased() : char
-            let item = KeyboardLayout.Item(
+            let item = KeyboardLayoutItem(
                 action: .character(cased),
                 size: template.size,
                 alignment: template.alignment,
@@ -97,7 +97,7 @@ enum GermanLayout {
 /// already have dedicated keys on the QWERTZ rows.
 enum GermanCallouts {
 
-    static let actionsBuilder: Callouts.ActionsBuilder = { params in
+    static let actionsBuilder: KeyboardCalloutActions.Builder = { params in
         guard case .character(let char) = params.action else {
             return params.standardActions()
         }

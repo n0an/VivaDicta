@@ -2465,7 +2465,7 @@
 			repositoryURL = "https://github.com/KeyboardKit/KeyboardKit.git";
 			requirement = {
 				kind = exactVersion;
-				version = 10.3.1;
+				version = 10.9.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

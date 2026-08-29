@@ -75,9 +75,9 @@ enum RussianLayout {
     /// Returns `row` with any shift or backspace items resized to `width`,
     /// preserving alignment and edge insets.
     private static func resizingShiftAndBackspace(
-        in row: [KeyboardLayout.Item],
-        width: KeyboardLayout.ItemWidth
-    ) -> [KeyboardLayout.Item] {
+        in row: [KeyboardLayoutItem],
+        width: KeyboardLayoutItem.Width
+    ) -> [KeyboardLayoutItem] {
         row.map { item in
             switch item.action {
             case .shift, .backspace:
@@ -90,7 +90,7 @@ enum RussianLayout {
         }
     }
 
-    private static func rowHasCharacters(_ row: [KeyboardLayout.Item]) -> Bool {
+    private static func rowHasCharacters(_ row: [KeyboardLayoutItem]) -> Bool {
         row.contains { item in
             if case .character = item.action { return true }
             return false
@@ -100,9 +100,9 @@ enum RussianLayout {
     /// Replaces the character items in `row` with new character items for `chars`.
     /// Mirrors the case of the existing items so shift state survives the swap.
     private static func rewriteLetters(
-        in row: [KeyboardLayout.Item],
+        in row: [KeyboardLayoutItem],
         to chars: [String]
-    ) -> [KeyboardLayout.Item] {
+    ) -> [KeyboardLayoutItem] {
         var charIndices: [Int] = []
         var isUppercaseInRow = false
         for (index, item) in row.enumerated() {
@@ -123,7 +123,7 @@ enum RussianLayout {
 
         for (offset, char) in chars.enumerated() {
             let cased = isUppercaseInRow ? char.uppercased() : char
-            let item = KeyboardLayout.Item(
+            let item = KeyboardLayoutItem(
                 action: .character(cased),
                 size: template.size,
                 alignment: template.alignment,
@@ -144,7 +144,7 @@ enum RussianCallouts {
 
     /// A callout builder that returns Russian alternates for known letters
     /// and falls back to KeyboardKit's standard actions for everything else.
-    static let actionsBuilder: Callouts.ActionsBuilder = { params in
+    static let actionsBuilder: KeyboardCalloutActions.Builder = { params in
         guard case .character(let char) = params.action else {
             return params.standardActions()
         }
