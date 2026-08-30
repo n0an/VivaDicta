@@ -92,7 +92,14 @@ final class NoteCleanupService: MaintenanceService {
                 transcription.timestamp < cutoffDate
             }
             let descriptor = FetchDescriptor<Transcription>(predicate: predicate)
-            let transcriptions = try modelContext.fetch(descriptor)
+            let candidates = try modelContext.fetch(descriptor)
+
+            let exemptions = AutoDeleteExemptions(modelContext: modelContext, logger: logger)
+            let (transcriptions, exempt) = exemptions.partition(candidates)
+
+            if !exempt.isEmpty {
+                logger.logInfo("Note cleanup: Keeping \(exempt.count) old notes with protected tags")
+            }
 
             guard !transcriptions.isEmpty else {
                 logger.logInfo("Note cleanup: No old notes to clean up")

@@ -91,13 +91,20 @@ final class AudioCleanupService: MaintenanceService {
                 transcription.timestamp < cutoffDate && transcription.audioFileName != nil
             }
             let descriptor = FetchDescriptor<Transcription>(predicate: predicate)
-            let transcriptions = try modelContext.fetch(descriptor)
-            
+            let candidates = try modelContext.fetch(descriptor)
+
+            let exemptions = AutoDeleteExemptions(modelContext: modelContext, logger: logger)
+            let (transcriptions, exempt) = exemptions.partition(candidates)
+
+            if !exempt.isEmpty {
+                logger.logInfo("Audio cleanup: Keeping audio for \(exempt.count) notes with protected tags")
+            }
+
             guard !transcriptions.isEmpty else {
                 logger.logInfo("Audio cleanup: No old audio files to clean up")
                 return
             }
-            
+
             logger.logInfo("Audio cleanup: Found \(transcriptions.count) transcriptions with old audio files")
 
             var deletedCount = 0

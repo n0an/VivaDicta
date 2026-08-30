@@ -72,12 +72,18 @@ struct TagPickerSheet: View {
                 }
             }
             .sheet(isPresented: $showCreateTag) {
-                TagEditorSheet(mode: .create) { name, colorHex, icon in
-                    let tag = TranscriptionTag(name: name, colorHex: colorHex, icon: icon, sortOrder: allTags.count)
+                TagEditorSheet(mode: .create) { draft in
+                    let tag = TranscriptionTag(
+                        name: draft.name,
+                        colorHex: draft.colorHex,
+                        icon: draft.icon,
+                        sortOrder: allTags.count,
+                        isExcludedFromAutoDelete: draft.isExcludedFromAutoDelete
+                    )
                     modelContext.insert(tag)
                     try? modelContext.save()
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
         }
     }

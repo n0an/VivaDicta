@@ -69,6 +69,7 @@ User-created tag with visual customization. Syncs via CloudKit.
 | `icon` | `String` | `"tag"` | SF Symbol name |
 | `sortOrder` | `Int` | `0` | Display ordering |
 | `createdAt` | `Date` | `Date()` | Creation timestamp |
+| `isExcludedFromAutoDelete` | `Bool` | `false` | Notes with this tag are skipped by automatic note and audio cleanup |
 
 ### TranscriptionTagAssignment (SwiftData junction model)
 
@@ -135,7 +136,8 @@ Tapping "All" clears all active filters, returning to the unfiltered view.
 ### Tag Management (Settings > Organization > Tags)
 
 - **TagManagementView** — list of user tags with swipe-to-delete, tap to edit
-- **TagEditorSheet** — create/edit with name, 10-color preset palette + native ColorPicker, 25 SF Symbol icon picker, live preview
+- **TagEditorSheet** — create/edit with name, 10-color preset palette + native ColorPicker, 25 SF Symbol icon picker, "Keep From Auto-delete" toggle, live preview
+- **AutoDeleteExemptTagsView** (Settings > Storage > Never Auto-delete) — the same flag as a per-tag toggle list, surfaced next to the auto-delete settings; `AutoDeleteExemptTagsLink` is the settings row that summarizes the current picks
 
 ### Tag Assignment (Transcription Detail View)
 
@@ -153,6 +155,16 @@ Tapping "All" clears all active filters, returning to the unfiltered view.
 - **TagFilterBar** — horizontal scrollable chips above the list: "All" + source tags + user tags
 - Shows only when tags or source tags exist
 - Multi-select toggle (tap to activate/deactivate)
+
+## Auto-delete Exemption
+
+Auto-delete is aimed at short-lived, situational notes. A tag with `isExcludedFromAutoDelete` set turns into an opt-out for the notes carrying it, so a long-form note survives without disabling the feature.
+
+- **`AutoDeleteExemptions`** (`Services/AutoDeleteExemptions.swift`) resolves the protected tag ids once per sweep, then partitions the fetched notes into deletable and exempt.
+- Consumed by **`NoteCleanupService`** (skips deleting the note entirely) and **`AudioCleanupService`** (skips reclaiming the note's audio).
+- Matching happens in memory: `#Predicate` cannot walk the `TranscriptionTagAssignment` junction into `TranscriptionTag`, and the tag table is small enough that one up-front fetch is cheaper than any predicate workaround.
+- A failed tag fetch resolves to "nothing is protected" rather than throwing, so a broken read cannot silently disable cleanup.
+- macOS mirrors this in `TranscriptionAutoCleanupService` (both the timed sweep and the delete-immediately-after-transcription path) and `AudioCleanupManager`.
 
 ## CloudKit Sync
 
@@ -175,6 +187,8 @@ All tag models sync via the `iCloud.com.antonnovoselov.VivaDicta` private CloudK
 | `Utilities/ColorHex.swift` | `Color(hex:)` and `.hexString` extensions |
 | `Views/SettingsScreen/Tags/TagManagementView.swift` | Tag list in Settings |
 | `Views/SettingsScreen/Tags/TagEditorSheet.swift` | Create/edit tag form |
+| `Views/SettingsScreen/Tags/AutoDeleteExemptTagsView.swift` | Per-tag auto-delete exemption toggles + Settings row |
+| `Services/AutoDeleteExemptions.swift` | Resolves which notes the cleanup sweeps must keep |
 | `Views/SettingsScreen/Tags/TagPickerSheet.swift` | Assign tags to transcription |
 | `Views/SettingsScreen/Tags/TranscriptionTagChipsView.swift` | Tag chips in detail view |
 | `Views/SettingsScreen/Tags/TagFilterBar.swift` | Filter bar in main list |

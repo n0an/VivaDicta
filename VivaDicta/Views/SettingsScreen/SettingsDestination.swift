@@ -22,6 +22,7 @@ enum SettingsDestination: Hashable {
 
     // Organization
     case tags
+    case autoDeleteExemptTags
 
     // Smart Search
     case smartSearch

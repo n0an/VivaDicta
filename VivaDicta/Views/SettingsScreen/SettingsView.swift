@@ -494,6 +494,11 @@ struct SettingsView: View {
                         }
                     }
 
+                    if isAutoNoteCleanupEnabled || isAutoAudioCleanupEnabled {
+                        AutoDeleteExemptTagsLink()
+                            .padding(.leading)
+                    }
+
                     Toggle(isOn: $isAutoChatCleanupEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Auto-delete Chats")
@@ -682,6 +687,8 @@ struct SettingsView: View {
                     AIProviders()
                 case .tags:
                     TagManagementView()
+                case .autoDeleteExemptTags:
+                    AutoDeleteExemptTagsView()
                 case .chatTools:
                     ChatToolsSettingsView()
                 case .smartSearch:
