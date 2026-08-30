@@ -310,6 +310,9 @@ struct MainView: View {
                 cleanupSharedZipIfNeeded()
             }
         }
+        .sheet(item: autoShareBinding) { request in
+            ActivityShareSheet(activityItems: [request.text], completion: nil)
+        }
         .navigationDestination(for: Transcription.self) { transcription in
             TranscriptionDetailView(transcription: transcription)
         }
@@ -347,6 +350,16 @@ struct MainView: View {
     private var deleteAlertTitle: String {
         let count = selectedTranscriptionIDs.count
         return "Delete \(count) \(count == 1 ? "Note" : "Notes")?"
+    }
+
+    /// Drives the "Auto Share Note" sheet the record flow queues once a note
+    /// finishes transcribing. Read-only in practice - the setter only clears the
+    /// request when the sheet is dismissed.
+    private var autoShareBinding: Binding<AutoShareRequest?> {
+        Binding(
+            get: { appState.recordViewModel?.pendingAutoShare },
+            set: { if $0 == nil { appState.recordViewModel?.pendingAutoShare = nil } }
+        )
     }
 
     private var aiGuardrailAlertBinding: Binding<Bool> {

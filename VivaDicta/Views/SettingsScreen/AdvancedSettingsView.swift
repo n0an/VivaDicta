@@ -34,6 +34,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isLiveTranslationEnabled)
     private var isLiveTranslationEnabled: Bool = true
 
+    @AppStorage(UserDefaultsStorage.Keys.isAutoShareAfterRecordingEnabled)
+    private var isAutoShareAfterRecordingEnabled: Bool = false
+
     @AppStorage(UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled)
     private var isStripTrailingPeriodEnabled: Bool = false
 
@@ -134,6 +137,16 @@ struct AdvancedSettingsView: View {
                             HapticManager.selectionChanged()
                         }
                     Text("Show the Live Translation button in the main screen toolbar. Disable to hide it if you don't use live translation.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Auto Share Note", isOn: $isAutoShareAfterRecordingEnabled)
+                        .onChange(of: isAutoShareAfterRecordingEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Open the share sheet automatically with the note's text as soon as it finishes transcribing in the app. Notes captured from the keyboard, Watch, or extensions are unaffected.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

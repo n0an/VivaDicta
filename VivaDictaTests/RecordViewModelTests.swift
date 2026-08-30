@@ -228,4 +228,63 @@ struct RecordViewModelTests {
         #expect(sut.recordingState == .idle)
         #expect(appGroup.transcriptionStatuses.contains(.idle))
     }
+
+    // MARK: - Auto Share Note
+
+    /// All three "Auto Share Note" cases share one SUT (and so one `AppState`)
+    /// on purpose: standing up a second real `AppState` mid-suite tears down the
+    /// first one's CloudKit-backed store ("Stores Changed"), which faults any
+    /// model instance the previous case left alive and kills the whole process.
+    ///
+    /// `autoShareIfEnabled` defers the request so it doesn't race the recording
+    /// sheet's dismissal, hence the polling helper rather than a bare read.
+    @MainActor
+    @Test func autoShare_queuesOnlyForInAppRecordings_andOnlyWhenEnabled() async throws {
+        let key = UserDefaultsStorage.Keys.isAutoShareAfterRecordingEnabled
+        let previous = UserDefaultsStorage.appPrivate.object(forKey: key)
+        defer { UserDefaultsStorage.appPrivate.set(previous, forKey: key) }
+
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "shared note")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = false
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai)
+
+        // Off: nothing is queued.
+        UserDefaultsStorage.appPrivate.set(false, forKey: key)
+        await sut.transcribeSpeechTask(
+            recordURL: try makeDummyAudioFile(),
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.app
+        ).value
+        #expect(await pendingAutoShare(of: sut) == nil)
+
+        // On, but the recording came from the keyboard - the main app is in the
+        // background there, so the sheet must not be queued.
+        UserDefaultsStorage.appPrivate.set(true, forKey: key)
+        await sut.transcribeSpeechTask(
+            recordURL: try makeDummyAudioFile(),
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard
+        ).value
+        #expect(await pendingAutoShare(of: sut) == nil)
+
+        // On, recorded in the app: the transcript is queued for the share sheet.
+        await sut.transcribeSpeechTask(
+            recordURL: try makeDummyAudioFile(),
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.app
+        ).value
+        #expect(await pendingAutoShare(of: sut)?.text == "shared note")
+    }
+
+    /// Polls past `autoShareIfEnabled`'s deferral. Returns nil if nothing was
+    /// queued within the window, which is what the negative cases assert.
+    @MainActor
+    private func pendingAutoShare(of sut: RecordViewModel) async -> AutoShareRequest? {
+        for _ in 0..<20 {
+            if let pending = sut.pendingAutoShare { return pending }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return sut.pendingAutoShare
+    }
 }

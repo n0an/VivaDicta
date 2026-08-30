@@ -267,6 +267,7 @@ Triggered when detected sample rate > 16kHz (keyboard recordings are typically 4
 - **AIService**: Receives transcribed text, returns enhanced text
 - **HapticManager**: Feedback at recording start (medium), enhancement start (light), completion (heartbeat), error
 - **ClipboardManager**: Auto-copy if `isAutoCopyAfterRecordingEnabled`
+- **Auto Share Note**: Queues `RecordViewModel.pendingAutoShare` if `isAutoShareAfterRecordingEnabled` and the note came from an in-app recording (`SourceTag.app`); `MainView` presents the system share sheet from it
 - **RateAppManager**: Request review after successful transcription
 - **Spotlight**: Index new transcription via `CSSearchableItem`
 - **Siri**: Donate user activity for predictions
