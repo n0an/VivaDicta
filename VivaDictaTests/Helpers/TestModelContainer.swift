@@ -20,6 +20,7 @@ enum TestModelContainer {
         return try ModelContainer(
             for: Transcription.self, VocabularyWord.self, WordReplacement.self,
             TranscriptionVariation.self, ExtractedReminderDraft.self,
+            ExtractedCalendarEventDraft.self,
             CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self,
             TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self,
             MultiNoteConversation.self, SmartSearchConversation.self,

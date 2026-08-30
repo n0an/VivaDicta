@@ -43,6 +43,9 @@ struct ModelGraphCascadeIntegrationTests {
         let reminder = ExtractedReminderDraft(title: "buy milk")
         reminder.transcription = transcription
 
+        let calendarEvent = ExtractedCalendarEventDraft(title: "dinner with friends")
+        calendarEvent.transcription = transcription
+
         let multiNote = MultiNoteConversation()
         multiNote.transcriptions = [transcription]
 
@@ -52,6 +55,7 @@ struct ModelGraphCascadeIntegrationTests {
         writeContext.insert(message)
         writeContext.insert(assignment)
         writeContext.insert(reminder)
+        writeContext.insert(calendarEvent)
         writeContext.insert(multiNote)
         try writeContext.save()
 
@@ -62,6 +66,7 @@ struct ModelGraphCascadeIntegrationTests {
         #expect(try writeContext.fetch(FetchDescriptor<ChatMessage>()).count == 1)
         #expect(try writeContext.fetch(FetchDescriptor<TranscriptionTagAssignment>()).count == 1)
         #expect(try writeContext.fetch(FetchDescriptor<ExtractedReminderDraft>()).count == 1)
+        #expect(try writeContext.fetch(FetchDescriptor<ExtractedCalendarEventDraft>()).count == 1)
 
         writeContext.delete(transcription)
         try writeContext.save()
@@ -73,6 +78,7 @@ struct ModelGraphCascadeIntegrationTests {
         #expect(try read.fetch(FetchDescriptor<ChatMessage>()).isEmpty)                  // two-level cascade
         #expect(try read.fetch(FetchDescriptor<TranscriptionTagAssignment>()).isEmpty)   // .cascade
         #expect(try read.fetch(FetchDescriptor<ExtractedReminderDraft>()).isEmpty)       // .cascade
+        #expect(try read.fetch(FetchDescriptor<ExtractedCalendarEventDraft>()).isEmpty)  // .cascade
 
         // .nullify: the multi-note conversation survives, just loses the link.
         let survivor = try #require(try read.fetch(FetchDescriptor<MultiNoteConversation>()).first)

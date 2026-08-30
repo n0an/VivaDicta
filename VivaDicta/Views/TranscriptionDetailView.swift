@@ -128,7 +128,7 @@ struct TranscriptionDetailView: View {
     }
 
     private var pendingReminderDraftCount: Int {
-        transcription.pendingExtractedReminderDraftCount
+        transcription.pendingExtractedSuggestionCount
     }
 
     private var canExtractReminderSuggestions: Bool {
@@ -408,6 +408,7 @@ struct TranscriptionDetailView: View {
 
                     ReminderSuggestionsFloatingControl(
                         pendingReminderDraftCount: pendingReminderDraftCount,
+                        includesCalendarEvents: transcription.pendingExtractedCalendarEventDraftCount > 0,
                         onReviewReminderSuggestions: {
                             HapticManager.lightImpact()
                             showExtractedRemindersSheet = true
@@ -1712,6 +1713,12 @@ private struct PresetPickerSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Whether the calendar half of extraction is on, which changes what the
+    /// Smart Actions rows promise.
+    private var extractsCalendarEvents: Bool {
+        ReminderExtractionService.isCalendarExtractionEnabled
+    }
+
     private var presetList: some View {
         List {
             if filter == .system, let onExtractTasks {
@@ -1726,9 +1733,11 @@ private struct PresetPickerSheet: View {
                                     .foregroundStyle(.secondary)
 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Review Reminder Suggestions")
+                                    Text(extractsCalendarEvents ? "Review Suggestions" : "Review Reminder Suggestions")
                                         .font(.body)
-                                    Text("Open the reminder suggestions already extracted from this note.")
+                                    Text(extractsCalendarEvents
+                                        ? "Open the reminders and calendar events already extracted from this note."
+                                        : "Open the reminder suggestions already extracted from this note.")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -1748,9 +1757,11 @@ private struct PresetPickerSheet: View {
                                 .foregroundStyle(.secondary)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Extract Tasks to Reminders")
+                                Text(extractsCalendarEvents ? "Extract Reminders & Events" : "Extract Tasks to Reminders")
                                     .font(.body)
-                                Text("Find reminder suggestions in this note and review them before importing to Apple Reminders.")
+                                Text(extractsCalendarEvents
+                                    ? "Find reminders and calendar events in this note and review them before adding anything to Apple Reminders or Calendar."
+                                    : "Find reminder suggestions in this note and review them before importing to Apple Reminders.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

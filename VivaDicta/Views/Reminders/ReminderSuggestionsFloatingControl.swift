@@ -10,10 +10,18 @@ import DesignSystem
 
 struct ReminderSuggestionsFloatingControl: View {
     let pendingReminderDraftCount: Int
+    /// Set when calendar events share the badge, so the label stops promising
+    /// reminders only.
+    var includesCalendarEvents: Bool = false
     let onReviewReminderSuggestions: () -> Void
 
     private var labelText: String {
-        pendingReminderDraftCount == 1
+        if includesCalendarEvents {
+            return pendingReminderDraftCount == 1
+                ? "Review Suggestion"
+                : "Review Suggestions (\(pendingReminderDraftCount))"
+        }
+        return pendingReminderDraftCount == 1
             ? "Review Reminder"
             : "Review Reminders (\(pendingReminderDraftCount))"
     }

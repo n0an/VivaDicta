@@ -70,6 +70,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>VivaDicta needs Calendar access to add the events you approve from your notes.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>VivaDicta needs access to create reminders from reminder suggestions that you choose to import.</string>
 	<key>NSRemindersUsageDescription</key>

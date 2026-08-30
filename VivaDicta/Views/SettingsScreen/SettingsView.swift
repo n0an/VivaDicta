@@ -31,6 +31,8 @@ struct SettingsView: View {
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
     private var isAutoReminderExtractionEnabled = false
+    @AppStorage(UserDefaultsStorage.Keys.isCalendarEventExtractionEnabled, store: UserDefaultsStorage.appPrivate)
+    private var isCalendarEventExtractionEnabled = false
     @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
     @AppStorage(UserDefaultsStorage.Keys.preferredMicrophone, store: UserDefaultsStorage.shared)
     private var preferredMicrophone: PreferredMicrophone = .default
@@ -261,6 +263,18 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isAutoReminderExtractionEnabled) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+                    Toggle(isOn: $isCalendarEventExtractionEnabled) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Extract Calendar Events Too")
+                                .font(.body)
+                            Text("Also look for things that happen at a set time - a dinner, a meeting, an appointment - and offer them as calendar events.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .onChange(of: isCalendarEventExtractionEnabled) { _, _ in
                         HapticManager.selectionChanged()
                     }
                     if ChineseScriptPreferenceStore.shouldShowSetting(modes: appState.aiService.modes) {

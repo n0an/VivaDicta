@@ -10,6 +10,7 @@ import NaturalLanguage
 import SwiftData
 import os
 import AICore
+import AppGroup
 import AIProviders
 
 enum ReminderExtractionError: LocalizedError {
@@ -58,15 +59,32 @@ final class ReminderExtractionService {
         self.aiService = aiService
     }
 
+    /// Whether extraction also looks for calendar events. Off by default -
+    /// asking for events costs tokens and only some notes contain any.
+    static var isCalendarExtractionEnabled: Bool {
+        UserDefaultsStorage.appPrivate.bool(
+            forKey: UserDefaultsStorage.Keys.isCalendarEventExtractionEnabled
+        )
+    }
+
     func canExtractReminders(using mode: VivaMode? = nil) -> Bool {
         resolvedBackend(for: mode ?? aiService.selectedMode) != nil
     }
 
+    /// What one extraction pass produced, so callers can report both halves.
+    struct ExtractionResult {
+        var reminders: [ExtractedReminderDraft]
+        var events: [ExtractedCalendarEventDraft]
+
+        var total: Int { reminders.count + events.count }
+    }
+
+    @discardableResult
     func extractAndPersist(
         for transcription: Transcription,
         modelContext: ModelContext,
         mode: VivaMode? = nil
-    ) async throws -> [ExtractedReminderDraft] {
+    ) async throws -> ExtractionResult {
         let activeMode = mode ?? aiService.selectedMode
         guard let backend = resolvedBackend(for: activeMode) else {
             throw ReminderExtractionError.noExtractorAvailable
@@ -75,6 +93,7 @@ final class ReminderExtractionService {
         let now = Date()
         let timeZone = TimeZone.current
         let language = detectLanguageHint(from: transcription.text)
+        let includeEvents = Self.isCalendarExtractionEnabled
 
         logger.logInfo(
             "Reminder extraction - Start noteId=\(transcription.id.uuidString) backend=\(backendDescription(backend)) language=\(language ?? "unknown") text='\(preview(transcription.text))'"
@@ -91,7 +110,8 @@ final class ReminderExtractionService {
                 noteText: transcription.text,
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         case .cloud(let provider, let model):
             response = try await CloudReminderExtractionProvider(aiService: aiService).extract(
@@ -100,7 +120,8 @@ final class ReminderExtractionService {
                 model: model,
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         }
 
@@ -113,9 +134,18 @@ final class ReminderExtractionService {
             timeZone: timeZone
         )
 
+        let persistedEvents = includeEvents
+            ? persistEvents(
+                response.events,
+                on: transcription,
+                backend: backend,
+                modelContext: modelContext
+            )
+            : []
+
         try modelContext.save()
-        logger.logNotice("Reminder extraction - Persisted \(persistedDrafts.count) draft(s) for note \(transcription.id.uuidString)")
-        return persistedDrafts
+        logger.logNotice("Reminder extraction - Persisted \(persistedDrafts.count) reminder(s) and \(persistedEvents.count) event(s) for note \(transcription.id.uuidString)")
+        return ExtractionResult(reminders: persistedDrafts, events: persistedEvents)
     }
 
     private func resolvedBackend(for mode: VivaMode) -> ReminderExtractionBackend? {
@@ -229,6 +259,62 @@ final class ReminderExtractionService {
         for transcription: Transcription
     ) -> [ExtractedReminderDraft] {
         transcription.sortedExtractedReminderDrafts
+    }
+
+    /// Same replace-pending-keep-imported contract as reminders, deduped on
+    /// title plus start so a re-run never offers the same event twice.
+    private func persistEvents(
+        _ drafts: [CalendarEventDraft],
+        on transcription: Transcription,
+        backend: ReminderExtractionBackend,
+        modelContext: ModelContext
+    ) -> [ExtractedCalendarEventDraft] {
+        let existing = transcription.sortedExtractedCalendarEventDrafts
+        let imported = existing.filter { $0.status == .imported }
+
+        existing
+            .filter { $0.status != .imported }
+            .forEach { modelContext.delete($0) }
+
+        let providerName: String?
+        let modelName: String?
+        switch backend {
+        case .apple:
+            providerName = AIProvider.apple.displayName
+            modelName = AIProvider.apple.defaultModel
+        case .cloud(let provider, let model):
+            providerName = provider.displayName
+            modelName = model
+        }
+
+        var seenKeys = Set<String>()
+        var persisted: [ExtractedCalendarEventDraft] = []
+
+        for draft in drafts {
+            let normalizedEventTitle = normalizedTitle(for: draft.title)
+            guard !normalizedEventTitle.isEmpty else { continue }
+            guard !likelyTimingOnlyTitle(draft.title) else { continue }
+
+            let key = draftKey(title: normalizedEventTitle, dueDateString: draft.startDateString)
+            guard !seenKeys.contains(key) else { continue }
+            seenKeys.insert(key)
+
+            let alreadyImported = imported.contains {
+                draftKey(
+                    title: normalizedTitle(for: $0.title),
+                    dueDateString: $0.startDateString
+                ) == key
+            }
+            guard !alreadyImported else { continue }
+
+            let stored = ExtractedCalendarEventDraft()
+            stored.update(from: draft, providerName: providerName, modelName: modelName)
+            stored.transcription = transcription
+            modelContext.insert(stored)
+            persisted.append(stored)
+        }
+
+        return persisted
     }
 
     private func sanitizeDrafts(
