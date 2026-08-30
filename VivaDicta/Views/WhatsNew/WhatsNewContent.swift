@@ -46,25 +46,55 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
-    // 2026-08-29
+    // 2026-08-30
     private static let release_3_9 = WhatsNewRelease(
         id: "3.9",
         headline: "What's New in VivaDicta 3.9.0",
         features: [
             WhatsNewFeature(
+                icon: "bolt.fill",
+                iconColors: [.yellow, .orange],
+                title: "Real-Time Dictation in the Keyboard",
+                description: "Streaming models now transcribe while you talk in the keyboard too, not just in the app, so your text is ready almost the moment you stop."
+            ),
+            WhatsNewFeature(
+                icon: "text.bubble.fill",
+                iconColors: [.pink, .purple],
+                title: "Speak to Edit",
+                description: "The keyboard's rewrite tab gains a microphone. Say \"make this more formal\" or \"shorten to two bullets\" and it is applied to your text."
+            ),
+            WhatsNewFeature(
                 icon: "arrow.uturn.backward.circle.fill",
                 iconColors: [.indigo, .purple],
                 title: "Straight Back to Your App",
-                description: "The keyboard knows where you were typing again, so hot mic returns you there instead of leaving you stranded in VivaDicta."
+                description: "The keyboard knows where you were typing again, so hot mic returns you there instead of leaving you stranded in VivaDicta. Now covering 15 more apps."
             ),
             WhatsNewFeature(
-                icon: "key.fill",
+                icon: "calendar.badge.plus",
+                iconColors: [.red, .orange],
+                title: "Your Notes Can Fill Your Calendar",
+                description: "A dinner, a meeting, an appointment - anything happening at a set time is offered as a calendar event, while to-dos keep going to Reminders."
+            ),
+            WhatsNewFeature(
+                icon: "waveform",
+                iconColors: [.green, .mint],
+                title: "More Real-Time Models",
+                description: "Streaming is no longer Soniox only. Deepgram Nova 3, Deepgram Flux, ElevenLabs Scribe, and Voxtral Realtime transcribe as you speak too."
+            ),
+            WhatsNewFeature(
+                icon: "person.badge.key.fill",
+                iconColors: [.blue, .cyan],
+                title: "Transcribe With Your Grok Subscription",
+                description: "A SuperGrok or X Premium sign-in now covers xAI Speech-to-Text as well as Grok chat, so you can transcribe without an API key."
+            ),
+            WhatsNewFeature(
+                icon: "square.and.arrow.up.fill",
                 iconColors: [.teal, .green],
-                title: "OpenAI Keys Verify Again",
-                description: "Adding an OpenAI API key no longer fails its check. Valid keys are accepted again."
+                title: "Share a Note the Moment It's Ready",
+                description: "Turn on Auto Share Note and the share sheet opens by itself once a recording finishes transcribing, so sending a dictated message takes one tap."
             )
         ],
-        tagline: "Dictate anywhere, and land right back where you started."
+        tagline: "Your words, ready the moment you stop talking - wherever you type."
     )
 
     // 2026-08-09
