@@ -1185,12 +1185,12 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             guard let self else { return }
 
             do {
-                let drafts = try await extractionService.extractAndPersist(
+                let result = try await extractionService.extractAndPersist(
                     for: transcription,
                     modelContext: modelContext,
                     mode: extractionMode
                 )
-                logger.logNotice("Reminder extraction - Auto extracted \(drafts.count) draft(s) for note \(transcription.id.uuidString)")
+                logger.logNotice("Reminder extraction - Auto extracted \(result.reminders.count) reminder(s) and \(result.events.count) event(s) for note \(transcription.id.uuidString)")
             } catch {
                 logger.logWarning("Reminder extraction - Auto extraction failed for note \(transcription.id.uuidString): \(error.localizedDescription)")
             }

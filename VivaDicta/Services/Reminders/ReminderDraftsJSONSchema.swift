@@ -8,10 +8,11 @@
 import Foundation
 
 enum ReminderDraftsJSONSchema {
-    static let object: [String: Any] = [
-        "type": "object",
-        "additionalProperties": false,
-        "properties": [
+    /// The response schema. `includeEvents` adds the calendar half - left out
+    /// entirely when calendar extraction is off, so the model is never asked
+    /// for something the user does not want.
+    static func object(includeEvents: Bool) -> [String: Any] {
+        var properties: [String: Any] = [
             "reminders": [
                 "type": "array",
                 "description": "Reminder drafts that should be shown to the user for review. Return an empty array when the note does not contain reminder-worthy actions.",
@@ -20,12 +21,25 @@ enum ReminderDraftsJSONSchema {
             "summary": nullableString(
                 description: "Optional short summary of the extraction result, such as 'Found 2 reminder suggestions'."
             )
-        ],
-        "required": [
-            "reminders",
-            "summary"
         ]
-    ]
+        var required = ["reminders", "summary"]
+
+        if includeEvents {
+            properties["events"] = [
+                "type": "array",
+                "description": "Calendar events found in the note - things that happen at a set time and that the user attends. Return an empty array when the note contains none.",
+                "items": calendarEventObject
+            ]
+            required.insert("events", at: 1)
+        }
+
+        return [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": properties,
+            "required": required
+        ]
+    }
 
     private static let reminderDraftObject: [String: Any] = [
         "type": "object",
@@ -60,6 +74,49 @@ enum ReminderDraftsJSONSchema {
             "rawDueDatePhrase",
             "notes",
             "priority"
+        ]
+    ]
+
+    private static let calendarEventObject: [String: Any] = [
+        "type": "object",
+        "additionalProperties": false,
+        "properties": [
+            "title": [
+                "type": "string",
+                "description": "A concise event title grounded in the note text, naming what the event actually is."
+            ],
+            "startDateString": nullableString(
+                description: "The event date in YYYY-MM-DD format. Use null when no date can be determined."
+            ),
+            "startTimeString": nullableString(
+                description: "The start time in HH:mm 24-hour format, such as 19:00. Use null for an all-day event or when no time is mentioned."
+            ),
+            "endTimeString": nullableString(
+                description: "The end time in HH:mm 24-hour format. Use null when the note does not say how long the event runs."
+            ),
+            "isAllDay": [
+                "type": "boolean",
+                "description": "True when the event has no specific time and occupies the whole day."
+            ],
+            "location": nullableString(
+                description: "Where the event takes place, when the note says. Use null otherwise."
+            ),
+            "rawDatePhrase": nullableString(
+                description: "The original scheduling phrase from the note, such as 'this Friday at 7'. Preserve it whenever one exists."
+            ),
+            "notes": nullableString(
+                description: "Optional supporting context for the event. Use null if unnecessary."
+            )
+        ],
+        "required": [
+            "title",
+            "startDateString",
+            "startTimeString",
+            "endTimeString",
+            "isAllDay",
+            "location",
+            "rawDatePhrase",
+            "notes"
         ]
     ]
 

@@ -76,14 +76,14 @@ struct VivaDictaApp: App {
                     : .none
             )
             modelContainer = try ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, ExtractedReminderDraft.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, ExtractedReminderDraft.self, ExtractedCalendarEventDraft.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
                 configurations: config
             )
         } catch {
             logger.logError("Error loading ModelContainer; switching to in-memory storage. \(error.localizedDescription)")
             let config = ModelConfiguration(isStoredInMemoryOnly: true)
             modelContainer = try! ModelContainer(
-                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, ExtractedReminderDraft.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
+                for: Transcription.self, VocabularyWord.self, WordReplacement.self, TranscriptionVariation.self, ExtractedReminderDraft.self, ExtractedCalendarEventDraft.self, CustomRewritePreset.self, RewritePreset.self, TranscriptionTag.self, TranscriptionTagAssignment.self, ChatMessage.self, ChatConversation.self, MultiNoteConversation.self, SmartSearchConversation.self,
                 configurations: config
             )
         }

@@ -73,6 +73,7 @@ public enum UserDefaultsStorage {
         // Auto-copy
         public static let isAutoCopyAfterRecordingEnabled = "isAutoCopyAfterRecordingEnabled"
         public static let isAutoReminderExtractionEnabled = "isAutoReminderExtractionEnabled"
+        public static let isCalendarEventExtractionEnabled = "isCalendarEventExtractionEnabled"
 
         // Custom OpenAI Provider Configuration
         public static let customOpenAIEndpointURL = "customOpenAIEndpointURL"

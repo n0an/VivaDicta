@@ -76,6 +76,7 @@ public enum LogCategory: String {
     case smartSearchChat = "SmartSearchChat"
     case reminderExtraction = "ReminderExtraction"
     case remindersImport = "RemindersImport"
+    case calendarImport = "CalendarImport"
 
     // MARK: - Watch Connectivity
     case watchConnectivity = "WatchConnectivity"

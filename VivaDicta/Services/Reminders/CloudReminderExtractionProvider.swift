@@ -59,13 +59,45 @@ private struct CloudReminderDraftPayload: Codable {
     }
 }
 
+private struct CloudCalendarEventPayload: Codable {
+    var title: String
+    var startDateString: String?
+    var startTimeString: String?
+    var endTimeString: String?
+    var isAllDay: Bool?
+    var location: String?
+    var rawDatePhrase: String?
+    var notes: String?
+
+    var calendarEventDraft: CalendarEventDraft {
+        let allDay = isAllDay ?? false
+        return CalendarEventDraft(
+            title: title,
+            startDateString: CalendarEventDraftFields.combined(
+                date: startDateString,
+                time: allDay ? nil : startTimeString
+            ),
+            endDateString: CalendarEventDraftFields.combined(
+                date: startDateString,
+                time: allDay ? nil : endTimeString
+            ),
+            isAllDay: allDay,
+            location: CalendarEventDraftFields.sanitized(location),
+            rawDatePhrase: CalendarEventDraftFields.sanitized(rawDatePhrase),
+            notes: CalendarEventDraftFields.sanitized(notes)
+        )
+    }
+}
+
 private struct CloudReminderDraftsPayload: Codable {
     var reminders: [CloudReminderDraftPayload]
+    var events: [CloudCalendarEventPayload]?
     var summary: String?
 
     var reminderDraftsResponse: ReminderDraftsResponse {
         ReminderDraftsResponse(
             reminders: reminders.map(\.reminderDraft),
+            events: (events ?? []).map(\.calendarEventDraft),
             summary: summary
         )
     }
@@ -110,7 +142,8 @@ final class CloudReminderExtractionProvider {
         model: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         let trimmedText = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedText.isEmpty else {
@@ -127,7 +160,8 @@ final class CloudReminderExtractionProvider {
                         provider: "anthropic",
                         now: now,
                         timeZone: timeZone,
-                        language: language
+                        language: language,
+                        includeEvents: includeEvents
                     )
                 } catch {
                     if provider.apiKey != nil {
@@ -144,7 +178,8 @@ final class CloudReminderExtractionProvider {
                 apiKey: try apiKey(for: provider),
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         case .openAI:
             if aiService.isOpenAISignedIn {
@@ -154,7 +189,8 @@ final class CloudReminderExtractionProvider {
                         model: model,
                         now: now,
                         timeZone: timeZone,
-                        language: language
+                        language: language,
+                        includeEvents: includeEvents
                     )
                 } catch {
                     if (VivAgentsClient.isEnabled && VivAgentsClient.isCodexCliActive) || provider.apiKey != nil {
@@ -173,7 +209,8 @@ final class CloudReminderExtractionProvider {
                         provider: "codex",
                         now: now,
                         timeZone: timeZone,
-                        language: language
+                        language: language,
+                        includeEvents: includeEvents
                     )
                 } catch {
                     if provider.apiKey != nil {
@@ -193,7 +230,8 @@ final class CloudReminderExtractionProvider {
                 headers: requestConfig.headers,
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         case .gemini:
             if aiService.isGeminiSignedIn {
@@ -203,7 +241,8 @@ final class CloudReminderExtractionProvider {
                         model: model,
                         now: now,
                         timeZone: timeZone,
-                        language: language
+                        language: language,
+                        includeEvents: includeEvents
                     )
                 } catch {
                     if (VivAgentsClient.isEnabled && VivAgentsClient.isGeminiCliActive) || provider.apiKey != nil {
@@ -222,7 +261,8 @@ final class CloudReminderExtractionProvider {
                         provider: "gemini",
                         now: now,
                         timeZone: timeZone,
-                        language: language
+                        language: language,
+                        includeEvents: includeEvents
                     )
                 } catch {
                     if provider.apiKey != nil {
@@ -242,7 +282,8 @@ final class CloudReminderExtractionProvider {
                 headers: requestConfig.headers,
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         case .copilot:
             throw ReminderExtractionError.providerUnavailable(
@@ -258,7 +299,8 @@ final class CloudReminderExtractionProvider {
                 headers: requestConfig.headers,
                 now: now,
                 timeZone: timeZone,
-                language: language
+                language: language,
+                includeEvents: includeEvents
             )
         }
     }
@@ -300,7 +342,8 @@ final class CloudReminderExtractionProvider {
         headers: [String: String],
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         logger.logNotice("Reminder extraction - Starting structured cloud request provider=\(provider.rawValue) model=\(model)")
 
@@ -318,7 +361,8 @@ final class CloudReminderExtractionProvider {
             noteText: noteText,
             now: now,
             timeZone: timeZone,
-            language: language
+            language: language,
+            includeEvents: includeEvents
         )
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
@@ -355,13 +399,25 @@ final class CloudReminderExtractionProvider {
         model: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         let provider = OpenAIOAuthProvider()
         let (token, accountId, _) = try await aiService.oauthManager.validAccessToken(for: provider)
         let responseText = try await OpenAIOAuthClient.enhance(
-            text: textTransportUserMessage(noteText: noteText, now: now, timeZone: timeZone, language: language),
-            systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
+            text: ReminderExtractionPrompts.textTransportUserMessage(
+                noteText: noteText,
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
+            systemPrompt: ReminderExtractionPrompts.systemMessage(
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
             model: model,
             accessToken: token,
             accountId: accountId
@@ -374,13 +430,25 @@ final class CloudReminderExtractionProvider {
         model: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         let provider = GeminiOAuthProvider()
         let (token, _, projectId) = try await aiService.oauthManager.validAccessToken(for: provider)
         let responseText = try await GeminiAPIClient.enhance(
-            text: textTransportUserMessage(noteText: noteText, now: now, timeZone: timeZone, language: language),
-            systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
+            text: ReminderExtractionPrompts.textTransportUserMessage(
+                noteText: noteText,
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
+            systemPrompt: ReminderExtractionPrompts.systemMessage(
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
             model: model,
             accessToken: token,
             projectId: projectId,
@@ -395,11 +463,23 @@ final class CloudReminderExtractionProvider {
         provider: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         let responseText = try await VivAgentsClient.enhance(
-            text: textTransportUserMessage(noteText: noteText, now: now, timeZone: timeZone, language: language),
-            systemPrompt: systemMessage(now: now, timeZone: timeZone, language: language),
+            text: ReminderExtractionPrompts.textTransportUserMessage(
+                noteText: noteText,
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
+            systemPrompt: ReminderExtractionPrompts.systemMessage(
+                now: now,
+                timeZone: timeZone,
+                language: language,
+                includeEvents: includeEvents
+            ),
             model: model,
             provider: provider
         )
@@ -412,7 +492,8 @@ final class CloudReminderExtractionProvider {
         apiKey: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) async throws -> ReminderDraftsResponse {
         logger.logNotice("Reminder extraction - Starting Anthropic structured request model=\(model)")
 
@@ -423,9 +504,20 @@ final class CloudReminderExtractionProvider {
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.timeoutInterval = 300
 
-        let schema = reminderSchemaObject()
-        let systemMessage = systemMessage(now: now, timeZone: timeZone, language: language)
-        let userMessage = userMessage(noteText: noteText, now: now, timeZone: timeZone, language: language)
+        let schema = ReminderDraftsJSONSchema.object(includeEvents: includeEvents)
+        let systemMessage = ReminderExtractionPrompts.systemMessage(
+            now: now,
+            timeZone: timeZone,
+            language: language,
+            includeEvents: includeEvents
+        )
+        let userMessage = ReminderExtractionPrompts.userMessage(
+            noteText: noteText,
+            now: now,
+            timeZone: timeZone,
+            language: language,
+            includeEvents: includeEvents
+        )
 
         let body: [String: Any] = [
             "model": model,
@@ -481,11 +573,29 @@ final class CloudReminderExtractionProvider {
         noteText: String,
         now: Date,
         timeZone: TimeZone,
-        language: String?
+        language: String?,
+        includeEvents: Bool
     ) throws -> [String: Any] {
         let messages: [[String: Any]] = [
-            ["role": "system", "content": systemMessage(now: now, timeZone: timeZone, language: language)],
-            ["role": "user", "content": userMessage(noteText: noteText, now: now, timeZone: timeZone, language: language)]
+            [
+                "role": "system",
+                "content": ReminderExtractionPrompts.systemMessage(
+                    now: now,
+                    timeZone: timeZone,
+                    language: language,
+                    includeEvents: includeEvents
+                )
+            ],
+            [
+                "role": "user",
+                "content": ReminderExtractionPrompts.userMessage(
+                    noteText: noteText,
+                    now: now,
+                    timeZone: timeZone,
+                    language: language,
+                    includeEvents: includeEvents
+                )
+            ]
         ]
 
         var requestBody: [String: Any] = [
@@ -497,7 +607,7 @@ final class CloudReminderExtractionProvider {
                 "json_schema": [
                     "name": "reminder_drafts_response",
                     "strict": true,
-                    "schema": reminderSchemaObject()
+                    "schema": ReminderDraftsJSONSchema.object(includeEvents: includeEvents)
                 ]
             ]
         ]
@@ -517,214 +627,6 @@ final class CloudReminderExtractionProvider {
         }
 
         return requestBody
-    }
-
-    private func textTransportUserMessage(
-        noteText: String,
-        now: Date,
-        timeZone: TimeZone,
-        language: String?
-    ) -> String {
-        """
-        \(userMessage(noteText: noteText, now: now, timeZone: timeZone, language: language))
-
-        Return only a valid JSON object.
-        Do not wrap the JSON in markdown fences.
-        Do not add explanations before or after the JSON.
-        Use exactly this top-level shape:
-        {
-          "reminders": [
-            {
-              "title": "string",
-              "dueDateString": "YYYY-MM-DD or null",
-              "dueTimeString": "HH:mm or null",
-              "rawDueDatePhrase": "string or null",
-              "notes": "string or null",
-              "priority": "none|low|medium|high"
-            }
-          ],
-          "summary": "string or null"
-        }
-        """
-    }
-
-    private func reminderSchemaObject() -> [String: Any] {
-        ReminderDraftsJSONSchema.object
-    }
-
-    private func systemMessage(now: Date, timeZone: TimeZone, language: String?) -> String {
-        let languageHint = language.map {
-            "\nSource note language: \($0). Write title, notes, and rawDueDatePhrase in this language."
-        } ?? ""
-        return """
-        You extract reminder suggestions from transcription notes.
-        Return structured reminder drafts for user review before importing to Apple Reminders.
-        Use only the current note as the source of truth.
-        Do not invent tasks or deadlines.
-        Always preserve the source-note language in the human-readable fields (title, notes, rawDueDatePhrase). Do not translate to another language. Field names and enum values stay in English.
-
-        Current absolute date and time: \(now.ISO8601Format())
-        Current time zone identifier: \(timeZone.identifier)\(languageHint)
-        """
-    }
-
-    private func userMessage(noteText: String, now: Date, timeZone: TimeZone, language: String?) -> String {
-        let languageHint = language.map {
-            "Source note language: \($0). Write title, notes, and rawDueDatePhrase in this language.\n\n"
-        } ?? ""
-        return """
-        Extract reminder suggestions from this note.
-
-        Current absolute date and time: \(now.ISO8601Format())
-        Current time zone: \(timeZone.identifier)
-
-        \(languageHint)Rules:
-        - Extract only genuine reminder-worthy actions, commitments, or follow-ups that belong in Apple Reminders.
-        - Use a concise, actionable title grounded in the note text.
-        - Always write `title`, `notes`, and `rawDueDatePhrase` in the same language as the Note. If the Note is in German, write them in German; if Russian, in Russian; if French, in French. Never translate to English or any other language. Field names and enum values (priority: none|low|medium|high) stay in English.
-        - Do not create a reminder whose title is only a date, time, weekday, or scheduling phrase.
-        - A due phrase belongs in dueDateString, dueTimeString, and rawDueDatePhrase, not in the title.
-        - If the note includes a resolvable day, date, or time such as 'tomorrow noon', 'Saturday at 10 a.m.', 'next Thursday at 14:00', or 'April 20 at 3 PM', calculate the exact due date and time using the current date and time zone.
-        - Set dueDateString in YYYY-MM-DD format when you can determine the date.
-        - Set dueTimeString in HH:mm 24-hour format only when a specific time is mentioned.
-        - When a value is missing, use null, not the words 'nil' or 'null'.
-        - Preserve the original due wording in rawDueDatePhrase whenever a due phrase exists.
-        - If the timing is ambiguous, leave dueDateString and dueTimeString empty and preserve the original wording in rawDueDatePhrase.
-        - Return at most one reminder per actionable task.
-        - If the note contains no reminder-worthy task, return an empty reminders array.
-
-        Examples of good extraction (English shown for format only - your output language must match the Note):
-        \(fewShotExamples(now: now, timeZone: timeZone))
-
-        Note:
-        \(noteText)
-        """
-    }
-
-    private func fewShotExamples(now: Date, timeZone: TimeZone) -> String {
-        let saturdayAtTen = nextWeekdayDate(
-            weekday: 7,
-            hour: 10,
-            minute: 0,
-            now: now,
-            timeZone: timeZone
-        )
-
-        let sundayAtTen = nextWeekdayDate(
-            weekday: 1,
-            hour: 10,
-            minute: 0,
-            now: now,
-            timeZone: timeZone
-        )
-
-        let fridayDateOnly = nextWeekdayDateOnlyString(
-            weekday: 6,
-            now: now,
-            timeZone: timeZone
-        ) ?? "2026-04-17"
-
-        return """
-        Example 1
-        Note: "Okay, I need to visit the dentist on Saturday at 10 a.m."
-        Good response:
-        {"reminders":[{"title":"Visit dentist","dueDateString":"\(formattedDateString(from: saturdayAtTen, timeZone: timeZone) ?? "2026-04-18")","dueTimeString":"\(formattedTimeString(from: saturdayAtTen, timeZone: timeZone) ?? "10:00")","rawDueDatePhrase":"Saturday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
-
-        Example 2
-        Note: "Okay, I need to call my parents on Sunday at 10 a.m."
-        Good response:
-        {"reminders":[{"title":"Call parents","dueDateString":"\(formattedDateString(from: sundayAtTen, timeZone: timeZone) ?? "2026-04-19")","dueTimeString":"\(formattedTimeString(from: sundayAtTen, timeZone: timeZone) ?? "10:00")","rawDueDatePhrase":"Sunday at 10 a.m.","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
-
-        Example 3
-        Note: "I have a dinner with my friends this Friday, so please remind me."
-        Good response:
-        {"reminders":[{"title":"Dinner with friends","dueDateString":"\(fridayDateOnly)","dueTimeString":null,"rawDueDatePhrase":"this Friday","notes":null,"priority":"high"}],"summary":"Found 1 reminder suggestion."}
-
-        Example 4
-        Note: "I had coffee and answered emails."
-        Good response:
-        {"reminders":[],"summary":"No reminder suggestions found."}
-        """
-    }
-
-    private func nextWeekdayDate(
-        weekday: Int,
-        hour: Int,
-        minute: Int,
-        now: Date,
-        timeZone: TimeZone
-    ) -> Date? {
-        let calendar = calendar(timeZone: timeZone)
-        var components = DateComponents()
-        components.weekday = weekday
-        components.hour = hour
-        components.minute = minute
-        components.second = 0
-        components.timeZone = timeZone
-
-        return calendar.nextDate(
-            after: now.addingTimeInterval(-1),
-            matching: components,
-            matchingPolicy: .nextTimePreservingSmallerComponents,
-            repeatedTimePolicy: .first,
-            direction: .forward
-        )
-    }
-
-    private func nextWeekdayDateOnlyString(
-        weekday: Int,
-        now: Date,
-        timeZone: TimeZone
-    ) -> String? {
-        let calendar = calendar(timeZone: timeZone)
-        var components = DateComponents()
-        components.weekday = weekday
-        components.hour = 9
-        components.minute = 0
-        components.second = 0
-        components.timeZone = timeZone
-
-        guard let date = calendar.nextDate(
-            after: now.addingTimeInterval(-1),
-            matching: components,
-            matchingPolicy: .nextTimePreservingSmallerComponents,
-            repeatedTimePolicy: .first,
-            direction: .forward
-        ) else {
-            return nil
-        }
-
-        return formattedDateString(from: date, timeZone: timeZone)
-    }
-
-    private func calendar(timeZone: TimeZone) -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        return calendar
-    }
-
-    private func formattedDateString(from date: Date?, timeZone: TimeZone) -> String? {
-        guard let date else { return nil }
-
-        return date.formatted(
-            Date.VerbatimFormatStyle(
-                format: "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)",
-                timeZone: timeZone,
-                calendar: calendar(timeZone: timeZone)
-            )
-        )
-    }
-
-    private func formattedTimeString(from date: Date?, timeZone: TimeZone) -> String? {
-        guard let date else { return nil }
-
-        return date.formatted(
-            Date.VerbatimFormatStyle(
-                format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
-                timeZone: timeZone,
-                calendar: calendar(timeZone: timeZone)
-            )
-        )
     }
 
     private func apiKey(for provider: AIProvider) throws -> String {

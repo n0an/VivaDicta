@@ -107,6 +107,10 @@ class Transcription {
     @Relationship(deleteRule: .cascade)
     var extractedReminderDrafts: [ExtractedReminderDraft]? = []
 
+    /// AI-extracted calendar event drafts awaiting review or already added/dismissed.
+    @Relationship(deleteRule: .cascade)
+    var extractedCalendarEventDrafts: [ExtractedCalendarEventDraft]? = []
+
     /// Chat conversations that reference this transcription as a source note.
     @Relationship(deleteRule: .cascade, inverse: \ChatConversation.transcription)
     var chatConversations: [ChatConversation]? = []

@@ -56,10 +56,19 @@ struct ReminderDraft: Codable, Sendable {
 struct ReminderDraftsResponse: Codable, Sendable {
     var reminders: [ReminderDraft]
 
+    /// Calendar events found in the same pass. Always empty when calendar
+    /// extraction is off, so callers can persist it unconditionally.
+    var events: [CalendarEventDraft]
+
     var summary: String?
 
-    nonisolated init(reminders: [ReminderDraft], summary: String? = nil) {
+    nonisolated init(
+        reminders: [ReminderDraft],
+        events: [CalendarEventDraft] = [],
+        summary: String? = nil
+    ) {
         self.reminders = reminders
+        self.events = events
         self.summary = summary
     }
 }
@@ -146,12 +155,16 @@ struct ReminderDraftsResponseSchema: Sendable {
     @Guide(description: "Reminder drafts that should be shown to the user for review. Return an empty array when the note does not contain reminder-worthy actions.")
     var reminders: [ReminderDraftSchema]
 
+    @Guide(description: "Calendar events found in the note - things that happen at a set time and that the user attends. Return an empty array when the note contains none.")
+    var events: [CalendarEventDraftSchema]
+
     @Guide(description: "Optional short summary of the extraction result, such as 'Found 2 reminder suggestions'.")
     var summary: String?
 
     var reminderDraftsResponse: ReminderDraftsResponse {
         ReminderDraftsResponse(
             reminders: reminders.map(\.reminderDraft),
+            events: events.map(\.calendarEventDraft),
             summary: summary
         )
     }
