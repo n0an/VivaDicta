@@ -9,9 +9,17 @@ The core technique is `AVAudioEngine.installTap(onBus:)`. Unlike `AVAudioRecorde
 The system has two phases on the engine:
 
 - **Armed** — The engine is running, the tap is installed, buffers are computed but immediately discarded. The audio session is active and the app stays alive.
-- **Capturing** — A real recording is in progress. The same tap writes every incoming buffer to an `AVAudioFile` on disk.
+- **Capturing** — A real recording is in progress. The same tap writes every incoming buffer to an `AVAudioFile` on disk, and, when a streaming transcription model is selected, also hands a converted copy to a live socket.
 
 Switching from armed to capturing is atomic: `AudioCaptureContext.isCapturing` is set to `true` and an `AVAudioFile` destination is assigned under an `NSLock`. No engine restart, no permission dialog, no audio gap.
+
+### Streaming from the prewarmed engine
+
+Realtime transcription models transcribe over a WebSocket while the user speaks. In the app they get their own engine (`StreamingAudioCapture`), but a hot mic session already owns one, and a second `AVAudioEngine` on the same input would fight it for the route. So `RealtimeDictationCoordinator` borrows this one instead: `startRealCapture(to:pcmStream:)` attaches a `RealtimePCMStreamSink` to the existing tap, and `stopRealCapture()` finishes the stream so the pump feeding the socket drains before the end-of-audio marker goes out.
+
+The WAV keeps the engine's **native** format, which is what this path has always recorded and what the upload fallback expects. Only the socket copy is converted, to the `pcm_s16le` 16 kHz mono every provider takes. That is why the conversion lives in the sink rather than in `StreamingAudioCapture.CaptureSink`, which converts once and writes the converted buffer to both destinations - here that would mean converting twice on the audio thread.
+
+`AVAudioConverter` consumes at most 4,096 input frames per call, so a tap buffer larger than that emits only part of its audio and holds the remainder for the next call. Nothing is lost; it just cannot be asserted one chunk at a time.
 
 ## Architecture Diagram
 
@@ -181,15 +189,25 @@ Changing the picker mid-session calls `applyTimeoutChange()`, because `scheduleS
 │  • _isCapturing: Bool       — gate: only write buffers when true            │
 │  • _audioFile: AVAudioFile? — destination file set before isCapturing=true  │
 │  • _currentAudioLevel: Float — latest RMS power reading                     │
+│  • _streamSink: RealtimePCMStreamSink? — set only while a socket wants     │
+│    the same audio; nil for every ordinary capture                          │
 │                                                                              │
 │  writeBufferIfCapturing(_:updateLevel:)  [called on audio thread, ~21ms]   │
 │    1. calculateAudioLevel(buffer)        (outside lock, no blocking)        │
 │    2. updateLevel(level) callback        (schedules Task to @MainActor)     │
 │    3. lock.lock()                                                            │
 │    4. _currentAudioLevel = level                                            │
-│    5. guard _isCapturing, let file = _audioFile else { return }             │
-│    6. file.write(from: buffer)                                              │
-│    7. lock.unlock()                                                          │
+│    5. guard _isCapturing, let file = _audioFile else { unlock; return }     │
+│    6. sink = _streamSink                  (read under the lock)             │
+│    7. file.write(from: buffer)                                              │
+│    8. lock.unlock()                                                          │
+│    9. sink?.process(buffer)               (converts OUTSIDE the lock)       │
+│                                                                              │
+│  Step 9 is deliberately outside the lock: resampling is the most expensive │
+│  thing this tap does, and holding the lock through it would stall a        │
+│  concurrent stopRealCapture() on the audio thread. A sink detached in      │
+│  between is harmless - AsyncStream.Continuation ignores a yield after      │
+│  finish().                                                                  │
 │                                                                              │
 │  Atomicity guarantee:                                                        │
 │  When startRealCapture() assigns both _audioFile and _isCapturing under     │
@@ -378,6 +396,8 @@ The file settings written by `startRealCapture()` match the engine's actual form
 | `VivaDicta/Services/AudioPrewarmManager.swift` | Core prewarm engine: session lifecycle, `AVAudioEngine` management, `AudioCaptureContext` |
 | `VivaDicta/Shared/AppGroupCoordinator.swift` | Cross-process communication: Darwin notifications, App Group UserDefaults, keyboard session activation/expiry |
 | `VivaDicta/Views/RecordViewModel.swift` | Recording path selection; calls `startRealCapture`, `stopRealCapture`, `rescheduleSessionTimeout` |
+| `VivaDicta/Services/Transcription/Realtime/RealtimePCMStreamSink.swift` | Converts the native tap buffers to 16 kHz mono for a realtime socket, leaving the WAV untouched |
+| `VivaDicta/Services/Transcription/Realtime/RealtimeDictationCoordinator.swift` | Borrows this engine via `prewarmedBy:` instead of opening its own — see Transcription-System-Architecture.md |
 | `VivaDicta/VivaDictaApp.swift` | Deeplink handler (`vivadicta://record-for-keyboard`); orchestrates prewarm start, keyboard session activation, return-to-host flow |
 | `VivaDictaKeyboard/KeyboardViewController.swift` | Keyboard mic button; opens main app via `openURL` when `uiState == .notReady` |
 | `VivaDictaKeyboard/KeyboardDictationState.swift` | Keyboard-side state machine; derives `uiState` from `isSessionActive`, `isRecording`, and `transcriptionStatus` |

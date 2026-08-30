@@ -158,8 +158,55 @@ RecordViewModel          TranscriptionManager        Provider Service
 | **ElevenLabs** | Cloud | Scribe v1 | 99 languages |
 | **Gemini** | Cloud | Gemini Flash/Pro | Multi-language |
 | **Mistral** | Cloud | Mistral STT models | Multi-language |
-| **Soniox** | Cloud | stt-async-v4 | Multi-language |
+| **Soniox** | Cloud | stt-async-v5, stt-rt-v5 (streaming) | Multi-language |
 | **Custom** | Cloud | User-configured | Depends on endpoint |
+
+## Realtime (Streaming) Transcription
+
+Most providers work by upload: the recording is finished, sent, and awaited. Five models instead transcribe over a WebSocket while the user speaks, so by the time recording stops only the tail is outstanding.
+
+| Model | Session actor | Settled unit | Unsettled tail |
+|---|---|---|---|
+| Soniox `stt-rt-v5` | `SonioxRealtimeDictationSession` | `is_final` tokens | non-final tokens, replaced per batch |
+| Deepgram Nova 3 | `DeepgramNovaRealtimeSession` | `is_final` chunks | interim string |
+| Deepgram Flux | `DeepgramFluxRealtimeSession` | `EndOfTurn` turns | open turn (`EagerEndOfTurn` is retractable) |
+| ElevenLabs Scribe | `ElevenLabsRealtimeSession` | `committed_transcript` | `partial_transcript` |
+| Mistral Voxtral Realtime | `MistralRealtimeSession` | deltas (additive) | none - no tail exists |
+
+`TranscriptionModelProvider.isStreamingModel(_:)` is the predicate; `asyncEquivalent(of:)` maps a streaming slug to the batch model used when the socket path is not taken. Flux and Voxtral Realtime have no batch counterpart, so they fall back to Nova 3 and `voxtral-mini-latest` respectively.
+
+### The shared contract
+
+Every backend is an `actor` conforming to `RealtimeDictationSession`, and all are fed identical PCM (`pcm_s16le`, 16 kHz, mono). Each wraps it for its own wire format - raw binary frames for Soniox and Deepgram, base64-in-JSON for ElevenLabs and Mistral - so the capture side stays provider-agnostic.
+
+`finish()` sends the provider's end-of-audio message, then waits up to 10 seconds for the server to flush and acknowledge. **It throws rather than returning partial text.** The WAV is written throughout, so the caller's recovery is to transcribe that file the normal way; a truncated transcript returned as a success would be saved silently with nothing to signal the loss.
+
+### Two capture paths
+
+The recorder differs by whether a hot mic session is already running, and `RecordViewModel.startCaptureAudio` branches on `prewarmManager.isSessionActive`:
+
+- **No prewarm session** - `RealtimeDictationCoordinator` opens its own `StreamingAudioCapture`, an `AVAudioEngine` capture that writes the WAV and fans identical PCM to the socket. `AVAudioRecorder`, the normal recorder, exposes no buffer callbacks and cannot stream.
+- **Prewarm session active** (the keyboard path) - the coordinator borrows the running engine via `prewarmedBy:`. `AudioPrewarmManager` keeps writing the WAV in the engine's native format and additionally feeds a `RealtimePCMStreamSink`. A second `AVAudioEngine` on the same input would fight the prewarm session for the route. See Hot-Mic-Audio-Prewarm-Architecture.md.
+
+Either way a socket that will not open falls back to an ordinary capture rather than failing the recording.
+
+### When streaming is skipped
+
+`RealtimeDictationCoordinator.canHandle(mode:modelName:)` returns false, and the mode takes the upload path, when any of these hold:
+
+- the model is not a streaming model, or its provider has no API key
+- the mode has an inline translation target
+- Speaker Labels is enabled (a global setting, not a mode property)
+
+The last two are not arbitrary: the socket is opened in transcription-only mode, and a successful stream bypasses the provider's batch job entirely, so streaming those modes would quietly save untranslated text with no speaker attribution - worse than simply being slower.
+
+### Merging tokens
+
+`RealtimeTranscriptAccumulator` holds the rule that is easy to get backwards: providers resend the non-final tail in full on every message while finals are append-only. Appending both duplicates every word as it firms up, so finals accumulate and interims are rebuilt per batch. It is a pure value type with no socket or actor involvement precisely so the rule can be tested directly.
+
+### Post-processing
+
+Streamed text runs through `TranscriptionManager.postProcessStreamedText(_:startTime:)`, sharing one implementation with the upload path so filters, formatting, word replacements, and completion analytics cannot diverge between the two.
 
 ## Key Features
 
