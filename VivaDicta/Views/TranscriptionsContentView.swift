@@ -293,7 +293,7 @@ struct TranscriptionsContentView: View {
     }
 
     private var smartDisplayedTranscriptions: [Transcription] {
-        let byID = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+        let byID = allTranscriptions.indexedByID
         return smartSearchMatches.compactMap { match in
             guard let transcription = byID[match.transcriptionId] else { return nil }
             return matchesActiveTags(for: transcription) ? transcription : nil
@@ -393,16 +393,22 @@ struct TranscriptionsContentView: View {
                 case .all:
                     filteredTranscriptions = keywordResults
                     smartSearchMatches = smartMatches
+                    // A note can come back on more than one match; keep its
+                    // best score rather than trapping on the repeat.
                     semanticScoresByID = Dictionary(
-                        uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                        smartMatches.map { ($0.transcriptionId, $0.relevanceScore) },
+                        uniquingKeysWith: max
                     )
                 case .smart:
-                    let byID = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+                    let byID = allTranscriptions.indexedByID
                     let orderedResults = smartMatches.compactMap { byID[$0.transcriptionId] }
                     filteredTranscriptions = orderedResults
                     smartSearchMatches = smartMatches
+                    // A note can come back on more than one match; keep its
+                    // best score rather than trapping on the repeat.
                     semanticScoresByID = Dictionary(
-                        uniqueKeysWithValues: smartMatches.map { ($0.transcriptionId, $0.relevanceScore) }
+                        smartMatches.map { ($0.transcriptionId, $0.relevanceScore) },
+                        uniquingKeysWith: max
                     )
                 case .keyword:
                     break

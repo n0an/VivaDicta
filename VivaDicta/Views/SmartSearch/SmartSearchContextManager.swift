@@ -66,9 +66,7 @@ struct SmartSearchContextManager {
             "Smart Search prompt assembly started query='\(preview(query, limit: 80))' searchResults=\(searchResults.count) transcriptions=\(transcriptions.count)"
         )
 
-        let transcriptionMap = Dictionary(
-            uniqueKeysWithValues: transcriptions.map { ($0.id, $0) }
-        )
+        let transcriptionMap = transcriptions.indexedByID
 
         var noteParts: [String] = []
 

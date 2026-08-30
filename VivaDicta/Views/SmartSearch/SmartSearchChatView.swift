@@ -284,7 +284,7 @@ struct SmartSearchChatView: View {
     private func resolveCitationDisplays(for message: ChatMessage) -> [SmartSearchCitationDisplay] {
         let citations = message.sourceCitations
         if !citations.isEmpty {
-            let transcriptionMap = Dictionary(uniqueKeysWithValues: allTranscriptions.map { ($0.id, $0) })
+            let transcriptionMap = allTranscriptions.indexedByID
             return citations
                 .sorted { $0.relevanceScore > $1.relevanceScore }
                 .compactMap { citation in
