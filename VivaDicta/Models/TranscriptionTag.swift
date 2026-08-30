@@ -21,13 +21,19 @@ final class TranscriptionTag {
     var sortOrder: Int = 0
     var createdAt: Date = Date()
 
+    /// When `true`, notes carrying this tag are never removed by the automatic
+    /// note or audio cleanup sweeps, regardless of how old they are.
+    var isExcludedFromAutoDelete: Bool = false
+
     init(name: String,
          colorHex: String = "#007AFF",
          icon: String = "tag",
-         sortOrder: Int = 0) {
+         sortOrder: Int = 0,
+         isExcludedFromAutoDelete: Bool = false) {
         self.name = name
         self.colorHex = colorHex
         self.icon = icon
         self.sortOrder = sortOrder
+        self.isExcludedFromAutoDelete = isExcludedFromAutoDelete
     }
 }

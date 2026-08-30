@@ -8,6 +8,14 @@
 import SwiftUI
 
 struct TagEditorSheet: View {
+    /// The values the sheet hands back on save.
+    struct Draft {
+        var name: String
+        var colorHex: String
+        var icon: String
+        var isExcludedFromAutoDelete: Bool
+    }
+
     enum Mode {
         case create
         case edit(TranscriptionTag)
@@ -21,7 +29,7 @@ struct TagEditorSheet: View {
     }
 
     let mode: Mode
-    let onSave: (String, String, String) -> Void
+    let onSave: (Draft) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
@@ -29,6 +37,7 @@ struct TagEditorSheet: View {
     @State private var selectedIcon: String
     @State private var customColor: Color = .blue
     @State private var useCustomColor = false
+    @State private var isExcludedFromAutoDelete: Bool
     @FocusState private var isNameFocused: Bool
 
     private static let colorPalette: [(name: String, hex: String)] = [
@@ -52,7 +61,7 @@ struct TagEditorSheet: View {
         "mic", "brain.head.profile", "lightbulb", "wrench.and.screwdriver", "chart.bar",
     ]
 
-    init(mode: Mode, onSave: @escaping (String, String, String) -> Void) {
+    init(mode: Mode, onSave: @escaping (Draft) -> Void) {
         self.mode = mode
         self.onSave = onSave
         switch mode {
@@ -60,6 +69,7 @@ struct TagEditorSheet: View {
             _name = State(initialValue: "")
             _selectedColorHex = State(initialValue: "#007AFF")
             _selectedIcon = State(initialValue: "tag")
+            _isExcludedFromAutoDelete = State(initialValue: false)
         case .edit(let tag):
             _name = State(initialValue: tag.name)
             _selectedColorHex = State(initialValue: tag.colorHex)
@@ -67,6 +77,7 @@ struct TagEditorSheet: View {
             let isCustom = !Self.colorPalette.contains(where: { $0.hex == tag.colorHex })
             _useCustomColor = State(initialValue: isCustom)
             _customColor = State(initialValue: Color(hex: tag.colorHex) ?? .blue)
+            _isExcludedFromAutoDelete = State(initialValue: tag.isExcludedFromAutoDelete)
         }
     }
 
@@ -150,6 +161,18 @@ struct TagEditorSheet: View {
                     .padding(.vertical, 4)
                 }
 
+                Section {
+                    Toggle(isOn: $isExcludedFromAutoDelete) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Keep From Auto-delete")
+                                .font(.body)
+                            Text("Notes with this tag are never removed by automatic note or audio cleanup, however old they get.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
                 Section("Preview") {
                     HStack(spacing: 12) {
                         Image(systemName: selectedIcon)
@@ -181,7 +204,14 @@ struct TagEditorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        onSave(name.trimmingCharacters(in: .whitespacesAndNewlines), selectedColorHex, selectedIcon)
+                        onSave(
+                            Draft(
+                                name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+                                colorHex: selectedColorHex,
+                                icon: selectedIcon,
+                                isExcludedFromAutoDelete: isExcludedFromAutoDelete
+                            )
+                        )
                         dismiss()
                     }
                     .disabled(!canSave)

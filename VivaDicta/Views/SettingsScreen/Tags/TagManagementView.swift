@@ -44,21 +44,28 @@ struct TagManagementView: View {
             }
         }
         .sheet(isPresented: $showCreateSheet) {
-            TagEditorSheet(mode: .create) { name, colorHex, icon in
-                let tag = TranscriptionTag(name: name, colorHex: colorHex, icon: icon, sortOrder: tags.count)
+            TagEditorSheet(mode: .create) { draft in
+                let tag = TranscriptionTag(
+                    name: draft.name,
+                    colorHex: draft.colorHex,
+                    icon: draft.icon,
+                    sortOrder: tags.count,
+                    isExcludedFromAutoDelete: draft.isExcludedFromAutoDelete
+                )
                 modelContext.insert(tag)
                 try? modelContext.save()
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
         .sheet(item: $tagToEdit) { tag in
-            TagEditorSheet(mode: .edit(tag)) { name, colorHex, icon in
-                tag.name = name
-                tag.colorHex = colorHex
-                tag.icon = icon
+            TagEditorSheet(mode: .edit(tag)) { draft in
+                tag.name = draft.name
+                tag.colorHex = draft.colorHex
+                tag.icon = draft.icon
+                tag.isExcludedFromAutoDelete = draft.isExcludedFromAutoDelete
                 try? modelContext.save()
             }
-            .presentationDetents([.medium])
+            .presentationDetents([.medium, .large])
         }
     }
 
@@ -96,6 +103,12 @@ private struct TagRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(tag.name)
                     .font(.body)
+
+                if tag.isExcludedFromAutoDelete {
+                    Label("Kept from auto-delete", systemImage: "pin.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
