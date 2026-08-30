@@ -55,7 +55,7 @@ enum WhatsNewCatalog {
                 icon: "arrow.uturn.backward.circle.fill",
                 iconColors: [.indigo, .purple],
                 title: "No App Switching",
-                description: "Dictate from the keyboard in any app and VivaDicta sends you straight back to where you were typing. Restored on iOS 26.4, where Apple removed the API behind it, and now covering 15 more apps."
+                description: "Dictate from the keyboard in any app and VivaDicta sends you straight back to where you were typing."
             ),
             WhatsNewFeature(
                 icon: "bolt.fill",
