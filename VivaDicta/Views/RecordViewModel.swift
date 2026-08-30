@@ -24,6 +24,15 @@ enum RecordingDestination: Equatable {
     case appendToTranscription(id: UUID)
 }
 
+/// Text queued for the automatic share sheet after a recording finishes.
+///
+/// Identity is per-request (a fresh `id` each time) so back-to-back recordings
+/// of the same text still re-present the sheet.
+struct AutoShareRequest: Identifiable, Equatable {
+    let id = UUID()
+    let text: String
+}
+
 /// Data structure to hold pending transcription when enhancement is in progress.
 private struct PendingTranscriptionData {
     let text: String
@@ -170,6 +179,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     
     var isShowingAlert = false
     var recordError: RecordError = .other
+
+    /// Set when "Auto Share Note" is on and an in-app recording finished, so
+    /// ``MainView`` can present the system share sheet. Cleared on dismissal.
+    var pendingAutoShare: AutoShareRequest?
     
     var audioPower = 0.0
 
@@ -778,6 +791,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.recordingState = .idle
                 self.aiService.clearCapturedClipboard()
 
+                self.autoShareIfEnabled(text: textToShare, sourceTag: resolvedSourceTag)
+
                 // Request app rating after successful transcription
                 RateAppManager.requestReviewIfAppropriate()
 
@@ -965,6 +980,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
                     // Request app rating after successful transcription
                     RateAppManager.requestReviewIfAppropriate()
+
+                    self.autoShareIfEnabled(
+                        text: pending.text,
+                        sourceTag: pending.sourceTag ?? SourceTag.app
+                    )
                 } catch {
                     HapticManager.error()
                     logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
@@ -1026,6 +1046,26 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             logger.logInfo("📱 Obsidian: opening directly \(output.url.absoluteString)")
             ClipboardManager.copyToClipboard(output.clipboardText)
             UIApplication.shared.open(output.url)
+        }
+    }
+
+    /// Queues the system share sheet for a freshly finished recording when
+    /// "Auto Share Note" is enabled.
+    ///
+    /// Only in-app recordings qualify: a keyboard, Watch, or extension recording
+    /// finishes with the main app in the background, where the sheet would either
+    /// be invisible or ambush the user the next time they foreground the app.
+    ///
+    /// Presentation is deferred by one short beat because the recording sheet may
+    /// still be animating away - SwiftUI silently drops a second presentation that
+    /// starts while the first is dismissing.
+    private func autoShareIfEnabled(text: String, sourceTag: String) {
+        guard sourceTag == SourceTag.app else { return }
+        guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isAutoShareAfterRecordingEnabled) else { return }
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            self?.pendingAutoShare = AutoShareRequest(text: text)
         }
     }
 

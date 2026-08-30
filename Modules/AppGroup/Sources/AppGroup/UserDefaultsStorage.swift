@@ -72,6 +72,10 @@ public enum UserDefaultsStorage {
 
         // Auto-copy
         public static let isAutoCopyAfterRecordingEnabled = "isAutoCopyAfterRecordingEnabled"
+
+        /// Presents the system share sheet automatically once a recording made
+        /// inside the app finishes transcribing.
+        public static let isAutoShareAfterRecordingEnabled = "isAutoShareAfterRecordingEnabled"
         public static let isAutoReminderExtractionEnabled = "isAutoReminderExtractionEnabled"
         public static let isCalendarEventExtractionEnabled = "isCalendarEventExtractionEnabled"
 
