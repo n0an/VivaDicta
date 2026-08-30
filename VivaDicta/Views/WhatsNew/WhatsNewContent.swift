@@ -52,6 +52,12 @@ enum WhatsNewCatalog {
         headline: "What's New in VivaDicta 3.9.0",
         features: [
             WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.indigo, .purple],
+                title: "No App Switching",
+                description: "Dictate from the keyboard in any app and VivaDicta sends you straight back to where you were typing. Restored on iOS 26.4, where Apple removed the API behind it, and now covering 15 more apps."
+            ),
+            WhatsNewFeature(
                 icon: "bolt.fill",
                 iconColors: [.yellow, .orange],
                 title: "Real-Time Dictation in the Keyboard",
@@ -62,12 +68,6 @@ enum WhatsNewCatalog {
                 iconColors: [.pink, .purple],
                 title: "Speak to Edit",
                 description: "The keyboard's rewrite tab gains a microphone. Say \"make this more formal\" or \"shorten to two bullets\" and it is applied to your text."
-            ),
-            WhatsNewFeature(
-                icon: "arrow.uturn.backward.circle.fill",
-                iconColors: [.indigo, .purple],
-                title: "Straight Back to Your App",
-                description: "The keyboard knows where you were typing again, so hot mic returns you there instead of leaving you stranded in VivaDicta. Now covering 15 more apps."
             ),
             WhatsNewFeature(
                 icon: "calendar.badge.plus",
@@ -94,7 +94,7 @@ enum WhatsNewCatalog {
                 description: "Turn on Auto Share Note and the share sheet opens by itself once a recording finishes transcribing, so sending a dictated message takes one tap."
             )
         ],
-        tagline: "Your words, ready the moment you stop talking - wherever you type."
+        tagline: "Dictate anywhere, and land right back where you started."
     )
 
     // 2026-08-09
