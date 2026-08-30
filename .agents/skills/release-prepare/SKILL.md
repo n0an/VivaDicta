@@ -171,7 +171,7 @@ Push happens during submission (see Step 10):
 # NOTE: the subcommand is `apply`, not `push` - there is no `asc metadata push`.
 asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata --dry-run   # always dry-run first
 asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
-asc validate --app 6758147238 --version X.Y.Z --platform IOS   # expect 0 errors / 0 blocking; one info-level App Privacy advisory is normal
+asc validate --app 6758147238 --version X.Y.Z --platform IOS   # expect 0 errors / 0 blocking; the info-level App Privacy advisory is permanent, ignore it
 ```
 
 ### Step 8 — Update feature changelog
@@ -276,6 +276,7 @@ See `Projects/VivaDicta/CloudKit Schema Deployment.md` in the Obsidian vault for
 ### Step 10 — Final checklist
 
 Known-answer ASC questions (don't re-ask these):
+- **App Privacy**: already published and unchanged since 3.8.0. The privacy label is per-app, not per-version, so it carries forward on its own and nothing needs confirming each release. `asc validate` always reports `privacy.publish_state.unverified` at info level because publish state is not exposed by the public API - that line is expected and is not a blocker. Only revisit if a release starts collecting data it did not before, which means a new SDK or a new analytics event, not a new feature.
 - **Export compliance / encryption**: always "No - app does not use non-exempt encryption". The app doesn't ship its own encryption; any HTTPS usage is covered by the standard exemption. **This is now declared permanently** by `ITSAppUsesNonExemptEncryption = false` in `VivaDicta/Info.plist`, so uploaded builds arrive already `exempt` and nobody should be asked. If a build ever shows `n/a` in `asc builds list`, that key went missing - fix the plist rather than patching the build.
 
 Before shipping (Step 11):
@@ -293,8 +294,7 @@ Before shipping (Step 11):
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
-- [ ] After build upload: `asc metadata apply` + `asc validate` returns 0 errors / 0 blocking (one info-level App Privacy advisory is expected)
-- [ ] App Privacy confirmed published - `asc validate` **cannot** verify this via the public API, so it must be eyeballed: https://appstoreconnect.apple.com/apps/6758147238/appPrivacy
+- [ ] After build upload: `asc metadata apply` + `asc validate` returns 0 errors / 0 blocking (the permanent info-level App Privacy advisory is expected)
 - [ ] After the release ships: empty `whats-new-running.md` (clear items, keep the `Running What's New (next release)` header) so it only tracks the next upcoming release
 
 ### Step 11 — Ship it (upload → attach → validate → submit)
@@ -334,12 +334,16 @@ asc review doctor --app 6758147238 --output table
 
 Target state: `asc validate` = 0 errors / 0 blocking, `asc review doctor` = `blockingCount 0` with `nextAction: No submission blockers detected`.
 
-#### 4. Anton: confirm App Privacy, then submit
+#### 4. Submit
 
-`asc validate` **cannot** verify App Privacy publish state through the public API - that is the one permanent info-level advisory. Eyeball it:
-https://appstoreconnect.apple.com/apps/6758147238/appPrivacy
+```bash
+asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --dry-run
+asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --confirm
+```
 
-Then click **Add for Review**, or have the agent run `asc publish appstore --app 6758147238 --version X.Y.Z --submit --confirm`.
+Or click **Add for Review** in App Store Connect.
+
+The dry-run reports `wouldSubmit` and whether the build is `alreadyAttached`, so it is worth running even when step 3 already attached it.
 
 **Always ask before submitting**, every time. Everything up to attaching the build is reversible; submission is not (only cancellable).
 
