@@ -10,6 +10,7 @@ import SwiftData
 import Testing
 import AICore
 import AppGroup
+import Presets
 @testable import VivaDicta
 
 /// `RecordViewModel` is now constructible in a test: its AI, transcription,
@@ -286,5 +287,157 @@ struct RecordViewModelTests {
             try? await Task.sleep(for: .milliseconds(50))
         }
         return sut.pendingAutoShare
+    }
+
+    // MARK: - Voice Instruction ("Speak to Edit")
+
+    @MainActor
+    @Test func voiceInstruction_appliesSpokenInstructionToTargetText_andReturnsItToTheKeyboard() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "make this more formal")
+        let ai = MockAIProcessingService()
+        ai.stubGenerateVariationResult = .success(("Good afternoon.", 0.2))
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(
+            recordURL: audio,
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard,
+            destination: .voiceInstruction(targetText: "hey whats up", modeName: "Parakeet")
+        ).value
+
+        // The transcript is the instruction; the keyboard's text is the input.
+        #expect(ai.generateVariationCallCount == 1)
+        #expect(ai.lastGenerateVariationText == "hey whats up")
+        #expect(ai.lastGenerateVariationPreset?.promptInstructions == "make this more formal")
+        // The wrapper carries the "do not answer questions" rule that keeps the
+        // model rewriting instead of replying.
+        #expect(ai.lastGenerateVariationPreset?.useSystemTemplate == true)
+        #expect(appGroup.textProcessingResults == ["Good afternoon."])
+        #expect(appGroup.textProcessingErrors.isEmpty)
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func voiceInstruction_persistsNothing() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "shorten this")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = true
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(
+            recordURL: audio,
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard,
+            destination: .voiceInstruction(targetText: "a long paragraph", modeName: "Parakeet")
+        ).value
+
+        // No note, and the mode's own AI processing never runs - the instruction
+        // replaces it rather than stacking on top of it.
+        #expect(try container.mainContext.fetch(FetchDescriptor<Transcription>()).isEmpty)
+        #expect(ai.enhanceCallCount == 0)
+        // The instruction audio is discarded too.
+        #expect(!FileManager.default.fileExists(atPath: audio.path))
+    }
+
+    @MainActor
+    @Test func voiceInstruction_whenNothingWasSaid_releasesTheKeyboardWithAnError() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "   ")
+        let ai = MockAIProcessingService()
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        // The keyboard blocks on a continuation for this whole round trip, so an
+        // empty instruction has to fail it rather than go quiet.
+        await sut.transcribeSpeechTask(
+            recordURL: audio,
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard,
+            destination: .voiceInstruction(targetText: "untouched", modeName: "Parakeet")
+        ).value
+
+        #expect(ai.generateVariationCallCount == 0)
+        #expect(appGroup.textProcessingErrors.count == 1)
+        #expect(appGroup.textProcessingResults.isEmpty)
+    }
+
+    @MainActor
+    @Test func voiceInstruction_whenAIFails_releasesTheKeyboardWithAnError() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "translate to French")
+        let ai = MockAIProcessingService()
+        ai.stubGenerateVariationResult = .failure(FlowTestError.boom)
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(
+            recordURL: audio,
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard,
+            destination: .voiceInstruction(targetText: "hello there", modeName: "Parakeet")
+        ).value
+
+        #expect(appGroup.textProcessingErrors.count == 1)
+        #expect(appGroup.textProcessingResults.isEmpty)
+        #expect(try container.mainContext.fetch(FetchDescriptor<Transcription>()).isEmpty)
+    }
+
+    @MainActor
+    @Test func voiceInstruction_whenRecordingCannotStart_releasesTheKeyboardInsteadOfHanging() throws {
+        let appGroup = MockAppGroupBridge()
+        let prewarm = MockAudioPrewarmer()
+        prewarm.isSessionActive = false // no session -> recording will not start
+        let container = try ModelContainer(
+            for: Transcription.self,
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+        // Held, not discarded: the handler captures `self` weakly, so a released
+        // view model would make this pass without running any of the code.
+        let sut = RecordViewModel(
+            appState: AppState(),
+            modelContainer: container,
+            transcriptionManager: MockTranscriber(),
+            aiService: MockAIProcessingService(),
+            prewarmManager: prewarm,
+            appGroupBridge: appGroup
+        )
+        appGroup.stubPendingVoiceInstruction = (targetText: "some text", modeName: "Parakeet")
+
+        appGroup.onStartRecordingRequested?()
+
+        // Without this the keyboard would sit on its continuation until the
+        // session expiry timeout.
+        #expect(appGroup.textProcessingErrors.count == 1)
+        withExtendedLifetime(sut) {}
+    }
+
+    @MainActor
+    @Test func startRecording_withoutAParkedInstruction_staysOnTheOrdinaryNotePath() throws {
+        let appGroup = MockAppGroupBridge()
+        let prewarm = MockAudioPrewarmer()
+        prewarm.isSessionActive = false
+        let container = try ModelContainer(
+            for: Transcription.self,
+            configurations: .init(isStoredInMemoryOnly: true)
+        )
+        let sut = RecordViewModel(
+            appState: AppState(),
+            modelContainer: container,
+            transcriptionManager: MockTranscriber(),
+            aiService: MockAIProcessingService(),
+            prewarmManager: prewarm,
+            appGroupBridge: appGroup
+        )
+
+        appGroup.onStartRecordingRequested?()
+
+        // An ordinary dictation that cannot start must not report on the text
+        // processing channel - nothing is waiting there.
+        #expect(appGroup.textProcessingErrors.isEmpty)
+        withExtendedLifetime(sut) {}
     }
 }

@@ -21,6 +21,7 @@ struct RewriteModesView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     let onPresetSelected: (VivaMode, String) -> Void
+    let onSpeakInstruction: (VivaMode) -> Void
     let onOpenApp: () -> Void
     let onBackspace: () -> Void
     let onDeleteWord: () -> Void
@@ -129,6 +130,10 @@ struct RewriteModesView: View {
 
     private var presetListView: some View {
         VStack(spacing: 0) {
+            speakInstructionButton
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
             KeyboardCategoryChipsView(
                 categories: allCategories,
                 selectedCategory: $selectedCategory,
@@ -192,6 +197,30 @@ struct RewriteModesView: View {
                 .scrollIndicators(.hidden)
             }
         }
+    }
+
+    // MARK: - Speak an Instruction
+
+    /// Entry point for an ad-hoc spoken instruction, for the rewrites no preset covers.
+    private var speakInstructionButton: some View {
+        Button {
+            HapticManager.mediumImpact()
+            onSpeakInstruction(dictationState.vivaModeManager.selectedVivaMode)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 14, weight: .semibold))
+
+                Text("Speak an instruction")
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .glassCapsule(tint: .orange, fallback: Color.orange)
+        }
+        .buttonStyle(.plain)
     }
 
     private let gridColumns = [

@@ -43,6 +43,8 @@ final class KeyboardDictationState {
 
     enum TextProcessingPhase: Equatable {
         case idle
+        /// Recording a spoken rewrite instruction ("speak to edit").
+        case recordingInstruction
         case sendingToApp
         case waitingForResult(modeName: String)
         case completed
@@ -135,9 +137,11 @@ final class KeyboardDictationState {
         }
         AppGroupCoordinator.shared.onTranscriptionTranscribing = { [weak self] in
             self?.transcriptionStatus = .transcribing
+            self?.advanceInstructionPhaseIfNeeded()
         }
         AppGroupCoordinator.shared.onTranscriptionEnhancing = { [weak self] in
             self?.transcriptionStatus = .enhancing
+            self?.advanceInstructionPhaseIfNeeded()
         }
         AppGroupCoordinator.shared.onTranscriptionCompleted = { [weak self] transcription in
             self?.transcriptionStatus = .completed
@@ -217,6 +221,17 @@ final class KeyboardDictationState {
     
     func requestCancelRecording() {
         AppGroupCoordinator.shared.requestCancelRecording()
+    }
+
+    /// Moves a spoken instruction out of its recording phase once the main app
+    /// starts working on it.
+    ///
+    /// The instruction round trip rides the ordinary recording notifications, so
+    /// these broadcasts are the only progress signal the keyboard gets. While one
+    /// is in flight they drive the text processing UI, not the dictation UI.
+    private func advanceInstructionPhaseIfNeeded() {
+        guard textProcessingPhase == .recordingInstruction else { return }
+        textProcessingPhase = .waitingForResult(modeName: vivaModeManager.selectedVivaMode.name)
     }
 
     // MARK: - Error Auto-dismiss

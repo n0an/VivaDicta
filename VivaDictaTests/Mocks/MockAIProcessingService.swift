@@ -50,6 +50,8 @@ final class MockAIProcessingService: AIProcessingService {
 
     var stubGenerateVariationResult: Result<(String, TimeInterval), Error> = .success(("variation", 0))
     private(set) var generateVariationCallCount = 0
+    private(set) var lastGenerateVariationText: String?
+    private(set) var lastGenerateVariationPreset: Preset?
     func generateVariation(
         text: String,
         preset: Preset,
@@ -57,6 +59,8 @@ final class MockAIProcessingService: AIProcessingService {
         onPartialResult: (@MainActor (String) -> Void)?
     ) async throws -> (String, TimeInterval) {
         generateVariationCallCount += 1
+        lastGenerateVariationText = text
+        lastGenerateVariationPreset = preset
         return try stubGenerateVariationResult.get()
     }
 

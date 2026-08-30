@@ -29,6 +29,8 @@ final class MockAppGroupBridge: AppGroupBridge {
     private(set) var textProcessingErrors: [String] = []
     private(set) var refreshKeyboardSessionExpiryCalls: [Int] = []
     var stubPendingTextProcessing: (text: String, modeName: String, presetId: String?)?
+    var stubPendingVoiceInstruction: (targetText: String, modeName: String)?
+    private(set) var clearPendingVoiceInstructionCallCount = 0
 
     func updateRecordingState(_ isRecording: Bool) { recordingStates.append(isRecording) }
     func updateAudioLevel(_ level: CGFloat) { audioLevels.append(level) }
@@ -43,5 +45,15 @@ final class MockAppGroupBridge: AppGroupBridge {
     func getAndConsumePendingTextProcessing() -> (text: String, modeName: String, presetId: String?)? {
         defer { stubPendingTextProcessing = nil }
         return stubPendingTextProcessing
+    }
+
+    func getAndConsumePendingVoiceInstruction() -> (targetText: String, modeName: String)? {
+        defer { stubPendingVoiceInstruction = nil }
+        return stubPendingVoiceInstruction
+    }
+
+    func clearPendingVoiceInstruction() {
+        clearPendingVoiceInstructionCallCount += 1
+        stubPendingVoiceInstruction = nil
     }
 }
