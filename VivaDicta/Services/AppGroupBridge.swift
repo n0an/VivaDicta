@@ -32,6 +32,8 @@ protocol AppGroupBridge: AnyObject {
     func shareTextProcessingError(_ message: String)
     func refreshKeyboardSessionExpiry(timeoutSeconds: Int)
     func getAndConsumePendingTextProcessing() -> (text: String, modeName: String, presetId: String?)?
+    func getAndConsumePendingVoiceInstruction() -> (targetText: String, modeName: String)?
+    func clearPendingVoiceInstruction()
 }
 
 extension AppGroupCoordinator: AppGroupBridge {}

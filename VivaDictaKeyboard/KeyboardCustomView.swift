@@ -118,6 +118,9 @@ struct KeyboardCustomView: View {
                         onCancel: {
                             keyboardVC?.textProcessor.cancel()
                             dictationState.textProcessingPhase = .idle
+                        },
+                        onStopInstruction: {
+                            dictationState.requestStopRecording()
                         }
                     )
                 } else if dictationState.activeTab == .recentNotes {
@@ -148,6 +151,14 @@ struct KeyboardCustomView: View {
                                 proxy: vc.textDocumentProxy,
                                 mode: mode,
                                 presetId: presetId,
+                                dictationState: dictationState
+                            )
+                        },
+                        onSpeakInstruction: { mode in
+                            guard let vc = keyboardVC else { return }
+                            vc.textProcessor.processTextWithSpokenInstruction(
+                                proxy: vc.textDocumentProxy,
+                                mode: mode,
                                 dictationState: dictationState
                             )
                         },

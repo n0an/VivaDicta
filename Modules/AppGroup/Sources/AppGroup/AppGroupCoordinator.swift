@@ -103,6 +103,13 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         static let textProcessingResult = "textProcessingResult"
         static let textProcessingErrorMessage = "textProcessingErrorMessage"
 
+        // Voice instruction (keyboard "speak to edit"): the keyboard parks the
+        // text to rewrite here *before* posting the ordinary start-recording
+        // notification. The main app consumes it when recording starts, which
+        // is what turns that recording into an instruction rather than a note.
+        static let voiceInstructionTargetText = "voiceInstructionTargetText"
+        static let voiceInstructionModeName = "voiceInstructionModeName"
+
         // Obsidian hand-off: main app publishes when the current transcription
         // was triggered by the keyboard and needs the keyboard extension to
         // open `obsidian://...` on its behalf. The keyboard owns the clipboard
@@ -212,6 +219,8 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingResult)
         sharedDefaults?.removeObject(forKey: UserDefaultsKeys.textProcessingErrorMessage)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.voiceInstructionTargetText)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.voiceInstructionModeName)
 
         logger.logError("🧹 Complete session state reset on app launch - fresh start")
     }
@@ -418,6 +427,45 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         defaults.removeObject(forKey: UserDefaultsKeys.textProcessingModeName)
         defaults.removeObject(forKey: UserDefaultsKeys.textProcessingPresetId)
         return (text, modeName, presetId)
+    }
+
+    // MARK: - Voice Instruction (Keyboard "Speak to Edit")
+
+    /// Requests the main app to record a spoken rewrite instruction for `targetText`.
+    ///
+    /// Parks the payload first, then posts the ordinary start-recording notification.
+    /// The main app consumes the payload in its start handler, which is what routes
+    /// the recording to the instruction path (no AI enhancement, nothing persisted)
+    /// instead of the usual new-note path. The rewritten text comes back over the
+    /// existing `textProcessingCompleted` / `textProcessingError` notifications.
+    public func requestVoiceInstructionRecording(targetText: String, modeName: String) {
+        sharedDefaults?.set(targetText, forKey: UserDefaultsKeys.voiceInstructionTargetText)
+        sharedDefaults?.set(modeName, forKey: UserDefaultsKeys.voiceInstructionModeName)
+        sharedDefaults?.synchronize()
+        logger.logError("🗣️ Keyboard requested voice instruction recording with mode: \(modeName), target length: \(targetText.count)")
+        requestStartRecording()
+    }
+
+    /// Retrieves and clears the pending voice instruction target (called by main app).
+    public func getAndConsumePendingVoiceInstruction() -> (targetText: String, modeName: String)? {
+        guard let defaults = sharedDefaults,
+              let targetText = defaults.string(forKey: UserDefaultsKeys.voiceInstructionTargetText),
+              let modeName = defaults.string(forKey: UserDefaultsKeys.voiceInstructionModeName),
+              !targetText.isEmpty else {
+            clearPendingVoiceInstruction()
+            return nil
+        }
+        clearPendingVoiceInstruction()
+        return (targetText, modeName)
+    }
+
+    /// Drops any parked voice instruction payload without consuming it.
+    ///
+    /// Called when the keyboard abandons the request before the main app picked
+    /// it up, so a later ordinary dictation is not mistaken for an instruction.
+    public func clearPendingVoiceInstruction() {
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.voiceInstructionTargetText)
+        sharedDefaults?.removeObject(forKey: UserDefaultsKeys.voiceInstructionModeName)
     }
 
     /// Shares the AI-processed text result back to the keyboard extension (called by main app).

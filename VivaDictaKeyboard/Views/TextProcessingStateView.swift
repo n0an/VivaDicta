@@ -15,6 +15,8 @@ import DesignSystem
 struct TextProcessingStateView: View {
     let phase: KeyboardDictationState.TextProcessingPhase
     let onCancel: () -> Void
+    /// Ends a spoken instruction recording. Only reachable in `.recordingInstruction`.
+    var onStopInstruction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -42,7 +44,7 @@ struct TextProcessingStateView: View {
             VStack(spacing: 16) {
                 Image(systemName: statusIcon)
                     .font(.system(size: 40, weight: .semibold))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(phase == .recordingInstruction ? .red : .orange)
                     .symbolEffect(.pulse, options: .repeat(.continuous), isActive: isAnimating)
 
                 Text(statusText)
@@ -50,6 +52,22 @@ struct TextProcessingStateView: View {
                     .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
+
+                if phase == .recordingInstruction, let onStopInstruction {
+                    Button {
+                        HapticManager.mediumImpact()
+                        onStopInstruction()
+                    } label: {
+                        Label("Stop", systemImage: "stop.fill")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 12)
+                            .glassCapsule(tint: .red, fallback: Color.red)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 4)
+                }
             }
 
             Spacer()
@@ -60,7 +78,7 @@ struct TextProcessingStateView: View {
 
     private var isAnimating: Bool {
         switch phase {
-        case .sendingToApp, .waitingForResult:
+        case .recordingInstruction, .sendingToApp, .waitingForResult:
             true
         default:
             false
@@ -69,6 +87,8 @@ struct TextProcessingStateView: View {
 
     private var statusIcon: String {
         switch phase {
+        case .recordingInstruction:
+            "mic.fill"
         case .sendingToApp, .waitingForResult:
             "sparkles"
         case .completed:
@@ -82,6 +102,8 @@ struct TextProcessingStateView: View {
 
     private var statusText: String {
         switch phase {
+        case .recordingInstruction:
+            "Say what to do with the text"
         case .sendingToApp:
             "Sending to app..."
         case .waitingForResult(let modeName):

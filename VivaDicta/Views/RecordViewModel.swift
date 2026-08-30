@@ -22,6 +22,12 @@ import AIProviders
 enum RecordingDestination: Equatable {
     case newNote
     case appendToTranscription(id: UUID)
+    /// A spoken rewrite instruction from the keyboard ("speak to edit").
+    ///
+    /// The transcript is the *instruction*, not the content: it is applied to
+    /// `targetText` and handed straight back to the keyboard. Nothing is
+    /// enhanced, saved, indexed, or added to Recent Notes along the way.
+    case voiceInstruction(targetText: String, modeName: String)
 }
 
 /// Data structure to hold pending transcription when enhancement is in progress.
@@ -144,6 +150,15 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private var pendingTranscription: PendingTranscriptionData?
     private var activeRecordingDestination: RecordingDestination = .newNote
     private var activeSourceTag: String = SourceTag.app
+
+    /// True from the moment a keyboard voice instruction starts recording until
+    /// its rewrite is delivered or failed.
+    ///
+    /// `activeRecordingDestination` cannot stand in for this: `stopCaptureAudio`
+    /// clears it and carries the destination onward as a local, so by the time
+    /// the AI call runs there is nothing left to read. The keyboard is blocked
+    /// on a continuation for the whole window, so every exit has to release it.
+    private var isAwaitingVoiceInstructionResult = false
 
     /// Non-nil only while a streaming model is recording. Its presence is what
     /// makes stop/cancel take the realtime branch.
@@ -564,6 +579,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 self.recordingState = .transcribing
                 self.transcriptionProgress = nil
 
+                // The destination is the authority on whether a keyboard is
+                // blocked on this run, so re-arm from it rather than relying on
+                // the start handler having done so.
+                if case .voiceInstruction = destination {
+                    self.isAwaitingVoiceInstructionResult = true
+                }
+
                 // Notify keyboard that transcription has started
                 appGroupBridge.updateTranscriptionStatus(.transcribing)
 
@@ -637,12 +659,29 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     // Clean up audio file
                     try? audioFileService.remove(at: audioURLToTranscribe)
 
+                    // The keyboard is blocked awaiting a rewrite; an empty
+                    // instruction never produces one, so release it here.
+                    failPendingVoiceInstruction("Didn't catch an instruction. Try again.")
+
                     // Reset state
                     resetValues()
                     aiService.clearCapturedClipboard()
                     recordingState = .idle
                     appGroupBridge.updateRecordingState(false)
                     appGroupBridge.updateTranscriptionStatus(.idle)
+                    return
+                }
+
+                // The spoken text is an instruction, not content: apply it to the
+                // keyboard's text and hand the result back. Deliberately ahead of
+                // the enhance/save/index block below, none of which should run.
+                if case .voiceInstruction(let targetText, let modeName) = destination {
+                    await applyVoiceInstruction(
+                        instruction: transcribedText,
+                        to: targetText,
+                        modeName: modeName,
+                        audioURL: audioURLToTranscribe
+                    )
                     return
                 }
 
@@ -747,6 +786,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         sourceTag: resolvedSourceTag
                     )
                     textToShare = transcribedText
+
+                case .voiceInstruction:
+                    // Unreachable: the voice instruction path returns well above
+                    // this, before any enhance or save work. Bail out rather than
+                    // trap if that ever stops being true.
+                    logger.logError("🗣️ Voice instruction reached the save switch - skipping save")
+                    return
                 }
 
                 // Auto-copy to clipboard if enabled
@@ -794,8 +840,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 recordingState = .error(.transcribe)
                 resetValues()
 
-                // Notify keyboard of error
-                appGroupBridge.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+                // Notify keyboard of error. A voice instruction is awaiting a text
+                // processing result, not a transcription, so it needs the other channel.
+                if !failPendingVoiceInstruction("Transcription failed: \(error.localizedDescription)") {
+                    appGroupBridge.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+                }
 
                 // Reschedule session timeout even on error
                 self.prewarmManager.rescheduleSessionTimeout()
@@ -803,6 +852,95 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
     }
     
+    // MARK: - Voice Instruction ("Speak to Edit")
+
+    /// Applies a spoken rewrite instruction to the keyboard's text and returns the
+    /// result over the app-group text processing channel.
+    ///
+    /// The instruction is wrapped in an ephemeral ``Preset`` so it runs through the
+    /// same system-prompt template the tapped presets use. That wrapper is what
+    /// stops the model *answering* "make this shorter" conversationally instead of
+    /// rewriting the text. Nothing survives the call: the preset is never saved, no
+    /// ``Transcription`` is created, and the instruction audio is discarded.
+    private func applyVoiceInstruction(
+        instruction: String,
+        to targetText: String,
+        modeName: String,
+        audioURL: URL
+    ) async {
+        defer {
+            isAwaitingVoiceInstructionResult = false
+            try? audioFileService.remove(at: audioURL)
+            resetValues()
+            aiService.clearCapturedClipboard()
+            recordingState = .idle
+            appGroupBridge.updateRecordingState(false)
+            appGroupBridge.updateTranscriptionStatus(.idle)
+            prewarmManager.rescheduleSessionTimeout()
+        }
+
+        logger.logInfo("🗣️ Applying voice instruction (\(instruction.count) chars) to \(targetText.count) chars with mode: \(modeName)")
+
+        recordingState = .enhancing
+        appGroupBridge.updateTranscriptionStatus(.enhancing)
+        // The keyboard is blocked on this round trip - keep the session alive
+        // for it the same way the tapped-preset path does.
+        appGroupBridge.refreshKeyboardSessionExpiry(timeoutSeconds: prewarmManager.audioSessionTimeout)
+
+        do {
+            let (result, _) = try await aiService.generateVariation(
+                text: targetText,
+                preset: Self.voiceInstructionPreset(instruction: instruction),
+                modeOverride: aiService.getMode(name: modeName),
+                onPartialResult: nil
+            )
+            guard !result.isEmpty else {
+                logger.logError("🗣️ Voice instruction returned empty result")
+                failPendingVoiceInstruction("AI returned empty result")
+                return
+            }
+            // A cancel that landed mid-call already released the keyboard. Delivering
+            // now would rewrite text the user just backed out of.
+            guard isAwaitingVoiceInstructionResult else {
+                logger.logInfo("🗣️ Voice instruction result discarded - cancelled while generating")
+                return
+            }
+            isAwaitingVoiceInstructionResult = false
+            appGroupBridge.shareTextProcessingResult(result)
+        } catch {
+            logger.logError("🗣️ Voice instruction failed: \(error.localizedDescription)")
+            failPendingVoiceInstruction(error.localizedDescription)
+        }
+    }
+
+    /// Releases the keyboard from an in-flight voice instruction round trip.
+    ///
+    /// Returns `true` when there was one to release, so callers can fall through
+    /// to the ordinary transcription error channel when there wasn't.
+    @discardableResult
+    private func failPendingVoiceInstruction(_ message: String) -> Bool {
+        guard isAwaitingVoiceInstructionResult else { return false }
+        isAwaitingVoiceInstructionResult = false
+        appGroupBridge.shareTextProcessingError(message)
+        return true
+    }
+
+    /// A throwaway preset carrying one spoken instruction.
+    ///
+    /// `useSystemTemplate` is on so the instruction lands inside the standard
+    /// enhancer wrapper (which carries the "do not answer questions" rule) rather
+    /// than becoming a bare system message the model may treat as a chat prompt.
+    private static func voiceInstructionPreset(instruction: String) -> Preset {
+        Preset(
+            id: "voice_instruction",
+            name: "Voice Instruction",
+            icon: "mic.fill",
+            category: "Rewrite",
+            promptInstructions: instruction,
+            useSystemTemplate: true
+        )
+    }
+
     func playAudio(data: Data) throws {
         self.recordingState = .transcribing
         audioPlayer = try AVAudioPlayer(data: data)
@@ -833,6 +971,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         activeRecordingDestination = .newNote
         activeSourceTag = SourceTag.app
         pendingTagIds.removeAll()
+        failPendingVoiceInstruction("Cancelled")
 
         // Stop real capture if still recording
         if prewarmManager.isSessionActive && prewarmManager.audioEngine?.isRunning == true {
@@ -970,6 +1109,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     logger.logError("📱 Failed to save transcription: \(error.localizedDescription)")
                 }
             }
+
+            // A voice instruction never sets `pendingTranscription`, so it falls
+            // through the save block above with the keyboard still blocked.
+            failPendingVoiceInstruction("Cancelled")
 
             resetValues()
             recordingState = .idle
@@ -1225,17 +1368,33 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         appGroupBridge.onStartRecordingRequested = { [weak self] in
             guard let self = self else { return }
 
+            // A parked voice instruction turns this recording into a rewrite
+            // instruction rather than a note. Consume it either way: leaving it
+            // behind would make the *next* ordinary dictation an instruction.
+            let voiceInstruction = self.appGroupBridge.getAndConsumePendingVoiceInstruction()
+
             // Only start if prewarm session is active and not already recording
-            if self.prewarmManager.isSessionActive && self.recordingState != .recording {
-                self.logger.logInfo("📱 Starting recording from keyboard request")
-
-                // Reload the selected VivaMode from extension before starting
-                self.aiService.reloadSelectedModeFromExtension()
-                // Update TranscriptionManager with the reloaded mode
-                self.transcriptionManager.setCurrentMode(self.aiService.selectedMode)
-
-                self.startCaptureAudio(sourceTag: SourceTag.keyboard)
+            guard self.prewarmManager.isSessionActive && self.recordingState != .recording else {
+                // The keyboard is blocked awaiting a result it will never get,
+                // so say so rather than letting it hang until session expiry.
+                if voiceInstruction != nil {
+                    self.isAwaitingVoiceInstructionResult = true
+                    self.failPendingVoiceInstruction("Could not start recording. Open VivaDicta and try again.")
+                }
+                return
             }
+
+            self.logger.logInfo("📱 Starting recording from keyboard request")
+
+            // Reload the selected VivaMode from extension before starting
+            self.aiService.reloadSelectedModeFromExtension()
+            // Update TranscriptionManager with the reloaded mode
+            self.transcriptionManager.setCurrentMode(self.aiService.selectedMode)
+
+            let destination: RecordingDestination = voiceInstruction
+                .map { .voiceInstruction(targetText: $0.targetText, modeName: $0.modeName) } ?? .newNote
+            self.isAwaitingVoiceInstructionResult = voiceInstruction != nil
+            self.startCaptureAudio(destination: destination, sourceTag: SourceTag.keyboard)
         }
 
         // Handle stop recording request from keyboard
