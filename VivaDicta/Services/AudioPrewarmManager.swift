@@ -22,9 +22,19 @@ protocol AudioPrewarmer {
     var audioSessionTimeout: Int { get }
     var currentAudioLevel: Float { get }
     var audioEngine: AVAudioEngine? { get }
-    func startRealCapture(to url: URL) throws
+    /// Starts writing the live tap to `url`, and - when `pcmStream` is given -
+    /// additionally fans 16 kHz mono PCM into it for a realtime socket.
+    /// The stream is finished by ``stopRealCapture()``.
+    func startRealCapture(to url: URL, pcmStream: AsyncStream<Data>.Continuation?) throws
     func stopRealCapture()
     func rescheduleSessionTimeout()
+}
+
+extension AudioPrewarmer {
+    /// File-only capture, which is every caller that is not streaming.
+    func startRealCapture(to url: URL) throws {
+        try startRealCapture(to: url, pcmStream: nil)
+    }
 }
 
 @Observable
@@ -189,6 +199,7 @@ final class AudioPrewarmManager: AudioPrewarmer {
         // Stop capturing if active
         captureContext?.isCapturing = false
         captureContext?.audioFile = nil
+        captureContext?.finishStreamSink()
         captureContext = nil
 
         // Stop audio engine
@@ -283,8 +294,13 @@ final class AudioPrewarmManager: AudioPrewarmer {
     // MARK: - Real Recorder (Parallel)
 
     /// Starts real recording in parallel with dummy recorder
-    /// - Parameter url: URL to save the real recording
-    func startRealCapture(to url: URL) throws {
+    /// - Parameters:
+    ///   - url: URL to save the real recording
+    ///   - pcmStream: When present, the same tap also feeds it converted
+    ///     16 kHz mono PCM for a realtime socket. The WAV keeps the engine's
+    ///     native format either way - that is what this path has always
+    ///     recorded and what the upload fallback expects.
+    func startRealCapture(to url: URL, pcmStream: AsyncStream<Data>.Continuation? = nil) throws {
         guard isWithinSessionTimeout() else {
             throw PrewarmError.sessionExpired
         }
@@ -327,6 +343,20 @@ final class AudioPrewarmManager: AudioPrewarmer {
 
         let audioFile = try AVAudioFile(forWriting: url, settings: settings)
 
+        // Built before capture is armed so the first buffer already has
+        // somewhere to go. A converter that cannot be made leaves the stream
+        // unfed, so finish it immediately and let the caller's socket fail into
+        // the upload fallback rather than hang until its finalize timeout.
+        if let pcmStream {
+            if let sink = RealtimePCMStreamSink(inputFormat: engineFormat, continuation: pcmStream) {
+                captureContext.streamSink = sink
+                logger.logInfo("🎙️ Realtime PCM stream attached to the prewarmed tap")
+            } else {
+                logger.logError("⚠️ Could not build a realtime PCM converter for the prewarmed engine format")
+                pcmStream.finish()
+            }
+        }
+
         // Atomically start capturing to the new file
         captureContext.audioFile = audioFile
         captureContext.isCapturing = true
@@ -339,9 +369,12 @@ final class AudioPrewarmManager: AudioPrewarmer {
     func stopRealCapture() {
         logger.logInfo("🎙️ Stopping real capture (timeout deferred until processing completes)")
 
-        // Stop writing to file atomically
+        // Stop writing to file atomically. The stream is finished after the
+        // capture flag clears, so the pump feeding the socket sees every buffer
+        // that was still in flight before it drains.
         captureContext?.isCapturing = false
         captureContext?.audioFile = nil
+        captureContext?.finishStreamSink()
 
         // Audio engine keeps running (no check needed)
         guard audioEngine?.isRunning == true else {
@@ -464,6 +497,7 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
     private var _isCapturing = false
     private var _audioFile: AVAudioFile?
     private var _currentAudioLevel: Float = 0.0
+    private var _streamSink: RealtimePCMStreamSink?
 
     init() {}
 
@@ -499,6 +533,32 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
         return _currentAudioLevel
     }
 
+    /// Attached while a realtime socket wants the same audio the file gets.
+    /// Nil for every ordinary capture, which is the common case.
+    var streamSink: RealtimePCMStreamSink? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _streamSink
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _streamSink = newValue
+        }
+    }
+
+    /// Detaches the sink and closes its stream, so the pump feeding the socket
+    /// drains and exits. Idempotent.
+    func finishStreamSink() {
+        lock.lock()
+        let sink = _streamSink
+        _streamSink = nil
+        lock.unlock()
+
+        sink?.finish()
+    }
+
     func writeBufferIfCapturing(_ buffer: AVAudioPCMBuffer, updateLevel: @escaping (Float) -> Void) {
         // Calculate audio level from PCM buffer
         let level = calculateAudioLevel(from: buffer)
@@ -508,11 +568,14 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
 
         // Now handle file writing with lock
         lock.lock()
-        defer { lock.unlock() }
 
         _currentAudioLevel = level
 
-        guard _isCapturing, let file = _audioFile else { return }
+        guard _isCapturing, let file = _audioFile else {
+            lock.unlock()
+            return
+        }
+        let sink = _streamSink
 
         do {
             try file.write(from: buffer)
@@ -520,6 +583,14 @@ nonisolated private final class AudioCaptureContext: @unchecked Sendable {
             // Log error but don't crash audio thread
             logger.logError("Failed to write audio buffer: \(error.localizedDescription)")
         }
+        lock.unlock()
+
+        // Converted outside the lock: it is the most expensive thing this tap
+        // does, and holding the lock through it would stall a concurrent
+        // `stopRealCapture()` on the audio thread. A sink detached in between
+        // is harmless - `AsyncStream.Continuation` ignores a yield after
+        // `finish()`.
+        sink?.process(buffer)
     }
 
     private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) -> Float {

@@ -238,8 +238,25 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 appGroupBridge.updateRecordingState(true)
 
                 do {
-                    // Use prewarm manager's AVAudioEngine for recording
-                    try prewarmManager.startRealCapture(to: captureURL)
+                    // The hot mic is already running, so a streaming model does
+                    // not get its own engine here - a second `AVAudioEngine` on
+                    // the same input would fight the prewarm session for the
+                    // route. The coordinator borrows this one instead: the
+                    // prewarm manager keeps writing the WAV exactly as before
+                    // and additionally feeds the socket.
+                    let modelName = transcriptionManager.getCurrentTranscriptionModel()?.name
+                    if let modelName, RealtimeDictationCoordinator.canHandle(
+                        mode: transcriptionManager.currentMode,
+                        modelName: modelName
+                    ) {
+                        try await startPrewarmedRealtimeCapture(
+                            modelName: modelName,
+                            transcriptionLanguage: transcriptionManager.currentMode.transcriptionLanguage ?? "auto"
+                        )
+                    } else {
+                        // Use prewarm manager's AVAudioEngine for recording
+                        try prewarmManager.startRealCapture(to: captureURL)
+                    }
 
                     // Recording is live - seed tags inherited from an active filter.
                     pendingTagIds = initialTagIds
@@ -362,6 +379,41 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     
     /// Stops audio recording and begins transcription.
     ///
+    /// Opens a realtime socket fed by the already-running prewarm engine.
+    ///
+    /// Falls back to a plain prewarmed capture rather than throwing: the hot mic
+    /// is the keyboard's whole reason for existing, and losing the recording
+    /// because a socket would not open is a far worse outcome than losing the
+    /// speedup. The WAV is written either way, so the fallback is just the
+    /// upload path the keyboard used before.
+    private func startPrewarmedRealtimeCapture(
+        modelName: String,
+        transcriptionLanguage: String
+    ) async throws {
+        let coordinator = RealtimeDictationCoordinator()
+
+        // Published BEFORE awaiting start, for the same reason as the normal
+        // path: a Stop landing during socket setup must find the coordinator.
+        realtimeCoordinator = coordinator
+
+        do {
+            try await coordinator.start(
+                writingTo: captureURL,
+                modelName: modelName,
+                transcriptionLanguage: transcriptionLanguage,
+                prewarmedBy: prewarmManager
+            )
+            logger.logInfo("🎙️ Recording with realtime streaming over the prewarmed engine")
+        } catch {
+            realtimeCoordinator = nil
+            logger.logWarning("🎙️ Realtime start failed on the prewarmed engine, recording normally: \(error.localizedDescription)")
+            // `startRealCapture` may have armed the tap before failing, and
+            // arming twice would leak the first file handle.
+            prewarmManager.stopRealCapture()
+            try prewarmManager.startRealCapture(to: captureURL)
+        }
+    }
+
     /// - Parameter modelContext: The SwiftData context for saving the transcription.
     func stopCaptureAudio(modelContext: ModelContext) {
         HapticManager.mediumImpact()
@@ -373,12 +425,40 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
             logger.logInfo("🎙️ Stopping real capture in prewarm mode (dummy continues)")
+            // Always first: this disarms the tap and closes the PCM stream, so
+            // the pump feeding the socket drains everything recorded before the
+            // end-of-audio marker goes out.
             prewarmManager.stopRealCapture()
+
+            let streamingCoordinator = realtimeCoordinator
+            self.realtimeCoordinator = nil
+
+            if let streamingCoordinator {
+                // Leave `.recording` before awaiting the flush - a second Stop
+                // tap would otherwise move the capture file out from under this.
+                recordingState = .transcribing
+                appGroupBridge.updateRecordingState(false)
+            }
 
             // In prewarm mode, we need a small delay to ensure file is flushed to disk
             // before trying to move it
-            Task {
+            transcribingSpeechTask = Task {
                 try? await Task.sleep(for: .milliseconds(100))
+
+                if let streamingCoordinator {
+                    do {
+                        realtimeTranscript = try await streamingCoordinator.finish()
+                        logger.logInfo("🎙️ Realtime transcript ready at stop (prewarmed)")
+                    } catch {
+                        realtimeTranscript = nil
+                        logger.logWarning("🎙️ Realtime transcription failed, falling back to upload: \(error.localizedDescription)")
+                    }
+
+                    guard !Task.isCancelled else {
+                        await streamingCoordinator.cancel()
+                        return
+                    }
+                }
 
                 resetValues()
 

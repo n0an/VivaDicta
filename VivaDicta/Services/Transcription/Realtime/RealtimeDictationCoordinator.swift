@@ -31,10 +31,18 @@ final class RealtimeDictationCoordinator {
     private var pumpTask: Task<Void, Never>?
     private(set) var isActive = false
 
+    /// True when the audio comes from an already-running engine (the keyboard's
+    /// hot mic) rather than this coordinator's own capture. In that mode the
+    /// engine, the WAV and the teardown all belong to `AudioPrewarmManager`, so
+    /// `capture` is never started and must never be stopped.
+    private(set) var usesPrewarmedCapture = false
+
     /// Mic level for the waveform while streaming, standing in for
-    /// `AudioRecordingService.currentAudioPower` on this path.
+    /// `AudioRecordingService.currentAudioPower` on this path. Zero when the
+    /// audio is prewarmed - the caller already reads the level off the
+    /// prewarm manager on that path.
     var currentAudioLevel: Double {
-        Double(capture.currentAudioLevel)
+        usesPrewarmedCapture ? 0 : Double(capture.currentAudioLevel)
     }
 
     init(keychain: any KeychainService = DefaultKeychainService()) {
@@ -70,7 +78,19 @@ final class RealtimeDictationCoordinator {
     /// Starts capture and opens the socket. Throws only if *capture* fails -
     /// a socket that never connects surfaces later, at `finish()`, by which
     /// point the WAV is complete and the fallback can take over.
-    func start(writingTo url: URL, modelName: String, transcriptionLanguage: String) async throws {
+    ///
+    /// - Parameter prewarmer: When given, audio comes from that already-running
+    ///   engine instead of this coordinator opening its own. This is the
+    ///   keyboard's hot-mic path: `AudioPrewarmManager` holds the only session
+    ///   and engine, and a second `AVAudioEngine` on the same input would fight
+    ///   it for the route. The prewarmer writes the WAV as it always has and
+    ///   additionally feeds the socket.
+    func start(
+        writingTo url: URL,
+        modelName: String,
+        transcriptionLanguage: String,
+        prewarmedBy prewarmer: (any AudioPrewarmer)? = nil
+    ) async throws {
         guard !isActive else { return }
 
         guard let apiKey = Self.apiKey(for: modelName, keychain: keychain), !apiKey.isEmpty else {
@@ -80,8 +100,18 @@ final class RealtimeDictationCoordinator {
         let session = Self.makeSession(for: modelName)
         self.session = session
 
-        let stream = capture.makeStream()
-        try await capture.start(writingTo: url)
+        let stream: AsyncStream<Data>
+        if let prewarmer {
+            usesPrewarmedCapture = true
+            var continuation: AsyncStream<Data>.Continuation!
+            // Same bound as `StreamingAudioCapture.makeStream()`: a stalled
+            // socket drops old audio rather than growing without limit.
+            stream = AsyncStream<Data>(bufferingPolicy: .bufferingNewest(50)) { continuation = $0 }
+            try prewarmer.startRealCapture(to: url, pcmStream: continuation)
+        } else {
+            stream = capture.makeStream()
+            try await capture.start(writingTo: url)
+        }
         isActive = true
 
         // "auto" means let the provider detect; sending it as a hint would be wrong.
@@ -145,7 +175,12 @@ final class RealtimeDictationCoordinator {
         isActive = false
 
         // Stop the mic first so no audio arrives after the end-of-audio marker.
-        await capture.stop()
+        // On the prewarmed path the caller has already called
+        // `stopRealCapture()`, which is what disarms the tap and closes the
+        // stream - the engine itself stays running for the next dictation.
+        if !usesPrewarmedCapture {
+            await capture.stop()
+        }
 
         // `capture.stop()` finishes the stream, but up to ~1s of chunks may
         // still be buffered in it. Wait for the pump to drain them rather than
@@ -167,7 +202,12 @@ final class RealtimeDictationCoordinator {
 
     func cancel() async {
         isActive = false
-        await capture.stop()
+        // The prewarmed engine belongs to `AudioPrewarmManager`; the caller's
+        // cancel path stops its capture. Stopping `capture` here would tear
+        // down an engine this coordinator never started.
+        if !usesPrewarmedCapture {
+            await capture.stop()
+        }
         pumpTask?.cancel()
         pumpTask = nil
         await session?.cancel()
