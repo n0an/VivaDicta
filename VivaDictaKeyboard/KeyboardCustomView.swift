@@ -83,6 +83,7 @@ struct KeyboardCustomView: View {
         case .english: result = base
         case .french: result = AzertyLayout.rewrite(base)
         case .german: result = GermanLayout.rewrite(base)
+        case .czech: result = CzechLayout.rewrite(base)
         case .spanish: result = SpanishLayout.rewrite(base)
         case .russian: result = RussianLayout.rewrite(base)
         }
@@ -246,6 +247,7 @@ struct KeyboardCustomView: View {
                                 case .english: return params.standardActions()
                                 case .french: return AzertyCallouts.actionsBuilder(params)
                                 case .german: return GermanCallouts.actionsBuilder(params)
+                                case .czech: return CzechCallouts.actionsBuilder(params)
                                 case .spanish: return SpanishCallouts.actionsBuilder(params)
                                 case .russian: return RussianCallouts.actionsBuilder(params)
                                 }

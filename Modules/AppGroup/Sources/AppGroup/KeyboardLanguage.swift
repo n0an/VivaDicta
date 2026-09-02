@@ -20,6 +20,7 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
     case english
     case french
     case german
+    case czech
     case spanish
     case russian
 
@@ -31,6 +32,7 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
         case .english: "EN"
         case .french: "FR"
         case .german: "DE"
+        case .czech: "CZ"
         case .spanish: "ES"
         case .russian: "RU"
         }
@@ -42,6 +44,7 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
         case .english: "English"
         case .french: "Français"
         case .german: "Deutsch"
+        case .czech: "Čeština"
         case .spanish: "Español"
         case .russian: "Русский"
         }
@@ -53,6 +56,7 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
         case .english: "QWERTY"
         case .french: "AZERTY"
         case .german: "QWERTZ"
+        case .czech: "QWERTZ"
         case .spanish: "QWERTY + ñ"
         case .russian: "ЙЦУКЕН"
         }
@@ -67,6 +71,7 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
         case .english: ["en"]
         case .french: ["fr"]
         case .german: ["de"]
+        case .czech: ["cs"]
         case .spanish: ["es"]
         case .russian: ["ru"]
         }
