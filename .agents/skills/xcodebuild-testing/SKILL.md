@@ -9,7 +9,7 @@ Use this skill when you need to run unit tests, UI tests, or specific test cases
 
 ## Related Skills
 
-- See [`ios-log-capture`](../ios-log-capture/SKILL.md) for capturing logs during test execution
+- See [`logs-start`](../logs-start/SKILL.md) and [`logs-stop`](../logs-stop/SKILL.md) for capturing logs during test execution
 - See [`axe-simulator-control`](../axe-simulator-control/SKILL.md) for automating simulator interactions during UI tests
 - See [`screenshot`](../screenshot/SKILL.md) for capturing screenshots during test failures
 
@@ -191,7 +191,7 @@ xcodebuild -scheme VivaDicta \
 
 ### 2D. Start Log Capture Session
 
-Start log capture using the `start-logs` skill. See [`ios-log-capture`](../ios-log-capture/SKILL.md) for the full logging workflow.
+Start log capture using the [`logs-start`](../logs-start/SKILL.md) skill. With no argument it captures the simulator, which is what these tests run against.
 
 This will:
 - Automatically detect the booted simulator
@@ -212,11 +212,11 @@ xcodebuild -scheme VivaDicta \
 
 ### 4D. Stop Log Capture and Analyze
 
-Stop capture with the `stop-logs` skill.
+Stop capture with the [`logs-stop`](../logs-stop/SKILL.md) skill.
 
 Useful follow-up filters:
-- `stop-logs errors`
-- `stop-logs warnings`
+- `logs-stop errors`
+- `logs-stop warnings`
 
 Manual analysis remains the same:
 

@@ -41,7 +41,7 @@ All categories are defined in `LoggerExtension.swift` via the `LogCategory` enum
 `LoggerExtension.swift` checks `ProcessInfo.processInfo.environment["ENABLE_PRINT_LOGS"]`. When set to `"1"`, every `logInfo()` / `logError()` etc. also calls `print()` to stdout. This is needed because `devicectl --console` only captures stdout, not OSLog.
 
 - **Running from Xcode**: env var not set, no duplicate prints
-- **Running via `/start-logs-device`**: env var set, prints visible in terminal
+- **Running via `/logs-start device`**: env var set, prints visible in terminal
 - **Running normally on device**: env var not set, logs only in OSLog
 
 ## Log Capture Methods
@@ -50,15 +50,15 @@ All categories are defined in `LoggerExtension.swift` via the `LogCategory` enum
 
 | Command | Description |
 |---------|-------------|
-| `/start-logs` | Start capturing simulator logs |
-| `/stop-logs` | Stop capture, show summary |
+| `/logs-start` | Start capturing simulator logs (the default tier) |
+| `/logs-stop` | Stop capture, show summary |
 
 ### Physical Device — Real-Time (Main App Only)
 
 | Command | Description |
 |---------|-------------|
-| `/start-logs-device` | Launch app on device via `devicectl` with `ENABLE_PRINT_LOGS=1` |
-| `/stop-logs-device` | Stop capture |
+| `/logs-start device` | Launch app on device via `devicectl` with `ENABLE_PRINT_LOGS=1` |
+| `/logs-stop` | Stop capture |
 
 - Captures **main app process only** (not keyboard/widget extensions)
 - Logs stream in real-time in the terminal
@@ -69,8 +69,8 @@ All categories are defined in `LoggerExtension.swift` via the `LogCategory` enum
 
 | Command | Description |
 |---------|-------------|
-| `/start-logs-device-structured` | Record timestamp for later collection |
-| `/stop-logs-device-structured` | Collect all logs since timestamp via `sudo log collect` |
+| `/logs-start structured` | Record timestamp for later collection |
+| `/logs-stop` | Collect all logs since timestamp via `sudo log collect` |
 
 - Captures **all processes**: main app, keyboard extension, widget, share extension
 - Uses OSLog directly — no need for `ENABLE_PRINT_LOGS`
@@ -84,11 +84,13 @@ All categories are defined in `LoggerExtension.swift` via the `LogCategory` enum
 
 | Scenario | Method |
 |----------|--------|
-| Debugging main app in simulator | `/start-logs` + `/stop-logs` |
-| Debugging main app on device, real-time | `/start-logs-device` |
-| Debugging keyboard extension | `/start-logs-device-structured` |
-| Debugging main app + extension interaction | `/start-logs-device-structured` |
-| Post-mortem analysis of a device issue | `/start-logs-device-structured` |
+| Debugging main app in simulator | `/logs-start` |
+| Debugging main app on device, real-time | `/logs-start device` |
+| Debugging keyboard extension | `/logs-start structured` |
+| Debugging main app + extension interaction | `/logs-start structured` |
+| Post-mortem analysis of a device issue | `/logs-start structured` |
+
+All of them end with `/logs-stop`, which detects the active tier itself.
 
 ## Analyzing Collected Logs
 

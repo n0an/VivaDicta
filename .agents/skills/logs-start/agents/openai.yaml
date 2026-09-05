@@ -1,0 +1,8 @@
+interface:
+  display_name: "Start Logs"
+  short_description: "Start a VivaDicta log capture."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $logs-start on this project."
+
+policy:
+  allow_implicit_invocation: false

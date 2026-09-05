@@ -190,7 +190,7 @@ Run `./build-docc.sh` from the project root on the `main` branch. The script bui
 
 ## Debugging & Logs
 
-- Use `$start-logs` + `$stop-logs` (simulator), `$start-logs-device` + `$stop-logs-device` (device real-time), or `$start-logs-device-structured` + `$stop-logs-device-structured` (device with extensions).
+- Use `$logs-start` to capture and `$logs-stop` to end it. `$logs-start` defaults to the simulator; pass `device` for live device stdout (main app only) or `structured` for the device unified log (the only tier that reaches extensions). `$logs-stop` takes no tier - it detects what is running.
 - All logging uses `Logger` from `os` framework via `LoggerExtension.swift`. Use `logger.logInfo()`, `logger.logError()` etc. — never raw `print()`.
 
 ## Swift Instructions

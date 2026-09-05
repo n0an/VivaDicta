@@ -1,0 +1,8 @@
+interface:
+  display_name: "Stop Logs"
+  short_description: "Stop whichever VivaDicta log capture is active, then summarize it."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $logs-stop on this project."
+
+policy:
+  allow_implicit_invocation: false
