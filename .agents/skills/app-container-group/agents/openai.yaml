@@ -1,0 +1,8 @@
+interface:
+  display_name: "App Group Container Path"
+  short_description: "Print the path to VivaDicta's App Group container directory in the iOS Simulator"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $app-container-group on this project."
+
+policy:
+  allow_implicit_invocation: false

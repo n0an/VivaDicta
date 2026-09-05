@@ -1,0 +1,8 @@
+interface:
+  display_name: "Lines of Code Report"
+  short_description: "Count Swift lines of code across the VivaDicta codebase and refresh the production-vs-test history chart."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $loc-report on this project."
+
+policy:
+  allow_implicit_invocation: true

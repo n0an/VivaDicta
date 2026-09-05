@@ -1,0 +1,8 @@
+interface:
+  display_name: "iOS Simulator Scripts"
+  short_description: "21 production-ready scripts for iOS app testing, building, and automation."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $ios-simulator-skill on this project."
+
+policy:
+  allow_implicit_invocation: true

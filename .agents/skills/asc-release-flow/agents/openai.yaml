@@ -1,0 +1,8 @@
+interface:
+  display_name: "App Store Release Flow"
+  short_description: "Determine whether an app is ready to submit, then drive the App Store release flow with asc, including first-time..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $asc-release-flow on this project."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,8 @@
+interface:
+  display_name: "Test Coverage Report"
+  short_description: "Measure VivaDicta test code coverage from the terminal."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $coverage-report on this project."
+
+policy:
+  allow_implicit_invocation: true

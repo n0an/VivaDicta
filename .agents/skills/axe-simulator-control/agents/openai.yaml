@@ -1,0 +1,8 @@
+interface:
+  display_name: "AXe Simulator Control"
+  short_description: "Automate iOS Simulator interactions using AXe for taps, gestures, text input, hardware buttons, and video recording"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $axe-simulator-control on this project."
+
+policy:
+  allow_implicit_invocation: true

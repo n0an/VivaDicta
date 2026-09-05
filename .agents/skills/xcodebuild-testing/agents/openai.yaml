@@ -1,0 +1,8 @@
+interface:
+  display_name: "Run Tests"
+  short_description: "Run unit tests, UI tests, or specific test cases for VivaDicta using xcodebuild command-line tool"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $xcodebuild-testing on this project."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,8 @@
+interface:
+  display_name: "ASCII Diagram"
+  short_description: "Create ASCII diagrams representing component architecture, data flow, or codebase structure"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $diagram on this project."
+
+policy:
+  allow_implicit_invocation: false

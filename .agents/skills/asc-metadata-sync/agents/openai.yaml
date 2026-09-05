@@ -1,0 +1,8 @@
+interface:
+  display_name: "App Store Metadata Sync"
+  short_description: "Sync and validate App Store metadata and localizations with asc, including legacy metadata format migration."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $asc-metadata-sync on this project."
+
+policy:
+  allow_implicit_invocation: true

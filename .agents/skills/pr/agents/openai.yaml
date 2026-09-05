@@ -1,0 +1,8 @@
+interface:
+  display_name: "Open Pull Request"
+  short_description: "Create a GitHub Pull Request in Claude Code with Claude and Codex review requests and built-in polling workflow"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $pr on this project."
+
+policy:
+  allow_implicit_invocation: false

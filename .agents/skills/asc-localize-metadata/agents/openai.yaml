@@ -1,0 +1,8 @@
+interface:
+  display_name: "Localize App Store Metadata"
+  short_description: "Automatically translate and sync App Store metadata (description, keywords, what's new, subtitle) to multiple..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $asc-localize-metadata on this project."
+
+policy:
+  allow_implicit_invocation: true

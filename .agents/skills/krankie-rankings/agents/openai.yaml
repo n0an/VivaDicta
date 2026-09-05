@@ -1,0 +1,8 @@
+interface:
+  display_name: "Krankie Rankings"
+  short_description: "Pull VivaDicta App Store keyword rankings via krankie (free, self-hosted), compare against the previous check, and..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $krankie-rankings on this project."
+
+policy:
+  allow_implicit_invocation: true

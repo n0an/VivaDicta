@@ -1,0 +1,8 @@
+interface:
+  display_name: "ASO Audit"
+  short_description: "Run an offline ASO audit on canonical App Store metadata under `./metadata` and surface keyword gaps using Astro MCP."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $asc-aso-audit on this project."
+
+policy:
+  allow_implicit_invocation: true

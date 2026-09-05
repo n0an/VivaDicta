@@ -1,0 +1,8 @@
+interface:
+  display_name: "Commit & Push"
+  short_description: "Commit everything in logical chunks and push to remote"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $commit-push on this project."
+
+policy:
+  allow_implicit_invocation: false

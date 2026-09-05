@@ -1,0 +1,8 @@
+interface:
+  display_name: "Simulator Screenshot Mode"
+  short_description: "Set the iOS Simulator status bar to screenshot-ready state with clean time, battery, and signal"
+  brand_color: "#7C3AED"
+  default_prompt: "Use $simulator-screenshot-time on this project."
+
+policy:
+  allow_implicit_invocation: false

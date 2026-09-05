@@ -1,0 +1,8 @@
+interface:
+  display_name: "Krankie ASO Audit"
+  short_description: "Run an ASO audit on canonical App Store metadata under `./metadata`, then a krankie-based competitor keyword-gap..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $krankie-audit on this project."
+
+policy:
+  allow_implicit_invocation: true

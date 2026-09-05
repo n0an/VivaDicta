@@ -1,0 +1,8 @@
+interface:
+  display_name: "Simulator Screenshot"
+  short_description: "Capture screenshots from iOS Simulator using native xcrun simctl command for documentation, debugging, and visual..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $screenshot on this project."
+
+policy:
+  allow_implicit_invocation: false

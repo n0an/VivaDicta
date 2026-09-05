@@ -1,0 +1,8 @@
+interface:
+  display_name: "Prepare Release"
+  short_description: "Prepare a new VivaDicta release - version bump, What's New screen, App Store metadata, code sweep, and..."
+  brand_color: "#7C3AED"
+  default_prompt: "Use $release-prepare on this project."
+
+policy:
+  allow_implicit_invocation: true
