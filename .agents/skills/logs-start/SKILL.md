@@ -21,6 +21,17 @@ resolves the active tier on its own - you never have to name it again.
 
 Anything else: say what was passed, list the three, and stop. Do not guess.
 
+**When invoked with no argument**, start the simulator capture as usual, then
+close your report with this reminder so the other tiers stay discoverable:
+
+> Started the simulator capture (default). Other tiers: `/logs-start device`
+> for live device stdout (main app only), `/logs-start structured` for the
+> device unified log (the only tier that sees the keyboard and other
+> extensions).
+
+Do not ask which tier to use instead of starting - the default is the default.
+Only mention the alternatives after the capture is already running.
+
 ## Choosing a tier
 
 - **`sim`** is the default because it is free and the richest: real unified-log
