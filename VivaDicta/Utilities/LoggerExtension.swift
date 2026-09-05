@@ -112,48 +112,115 @@ public extension Logger {
         ProcessInfo.processInfo.environment["ENABLE_PRINT_LOGS"] == "1"
     }
 
-    /// Log info level with optional print statement
-    nonisolated func logInfo(_ message: String) {
-        self.info("\(message, privacy: .public)")
+    /// Wall-clock stamp for the print mirror.
+    ///
+    /// `devicectl --console` streams stdout, which carries none of the unified
+    /// log's metadata, so the time has to be part of the message itself.
+    private nonisolated static let printTimestampStyle = Date.VerbatimFormatStyle(
+        format: """
+            \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\
+            \(minute: .twoDigits):\(second: .twoDigits).\(secondFraction: .fractional(3))
+            """,
+        timeZone: .current,
+        calendar: .current
+    )
 
-        if Self.printLogsEnabled {
-            print(message)
+    /// Mirrors one message to stdout so a device console capture can read it.
+    ///
+    /// Unified logging records the subsystem but not the call site, and stdout
+    /// records nothing at all, so level, time and origin are written into the
+    /// line. Format: `18:06:04.357 [INFO] VivaDicta/AIService.swift:854 message`
+    private nonisolated static func mirrorToPrint(
+        _ level: String,
+        _ message: String,
+        _ fileID: String,
+        _ line: Int
+    ) {
+        print("\(Date.now.formatted(printTimestampStyle)) [\(level)] \(fileID):\(line) \(message)")
+    }
+
+    /// Log info level with optional print statement
+    nonisolated func logInfo(
+        _ message: @autoclosure () -> String,
+        fileID: String = #fileID,
+        line: Int = #line
+    ) {
+        let mirroring = Self.printLogsEnabled
+        guard mirroring || isEnabled(type: .info) else { return }
+
+        let text = message()
+        self.info("\(text, privacy: .public)")
+
+        if mirroring {
+            Self.mirrorToPrint("INFO", text, fileID, line)
         }
     }
 
     /// Log debug level with optional print statement
-    nonisolated func logDebug(_ message: String) {
-        self.debug("\(message, privacy: .public)")
+    nonisolated func logDebug(
+        _ message: @autoclosure () -> String,
+        fileID: String = #fileID,
+        line: Int = #line
+    ) {
+        let mirroring = Self.printLogsEnabled
+        guard mirroring || isEnabled(type: .debug) else { return }
 
-        if Self.printLogsEnabled {
-            print(message)
+        let text = message()
+        self.debug("\(text, privacy: .public)")
+
+        if mirroring {
+            Self.mirrorToPrint("DEBUG", text, fileID, line)
         }
     }
 
     /// Log error level with optional print statement
-    nonisolated func logError(_ message: String) {
-        self.error("\(message, privacy: .public)")
+    nonisolated func logError(
+        _ message: @autoclosure () -> String,
+        fileID: String = #fileID,
+        line: Int = #line
+    ) {
+        let mirroring = Self.printLogsEnabled
+        guard mirroring || isEnabled(type: .error) else { return }
 
-        if Self.printLogsEnabled {
-            print(message)
+        let text = message()
+        self.error("\(text, privacy: .public)")
+
+        if mirroring {
+            Self.mirrorToPrint("ERROR", text, fileID, line)
         }
     }
 
     /// Log warning level with optional print statement
-    nonisolated func logWarning(_ message: String) {
-        self.warning("\(message, privacy: .public)")
+    nonisolated func logWarning(
+        _ message: @autoclosure () -> String,
+        fileID: String = #fileID,
+        line: Int = #line
+    ) {
+        let mirroring = Self.printLogsEnabled
+        guard mirroring || isEnabled(type: .error) else { return }
 
-        if Self.printLogsEnabled {
-            print(message)
+        let text = message()
+        self.warning("\(text, privacy: .public)")
+
+        if mirroring {
+            Self.mirrorToPrint("WARN", text, fileID, line)
         }
     }
 
     /// Log notice level with optional print statement
-    nonisolated func logNotice(_ message: String) {
-        self.notice("\(message, privacy: .public)")
+    nonisolated func logNotice(
+        _ message: @autoclosure () -> String,
+        fileID: String = #fileID,
+        line: Int = #line
+    ) {
+        let mirroring = Self.printLogsEnabled
+        guard mirroring || isEnabled(type: .default) else { return }
 
-        if Self.printLogsEnabled {
-            print(message)
+        let text = message()
+        self.notice("\(text, privacy: .public)")
+
+        if mirroring {
+            Self.mirrorToPrint("NOTICE", text, fileID, line)
         }
     }
 }
