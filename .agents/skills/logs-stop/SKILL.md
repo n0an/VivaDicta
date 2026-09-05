@@ -48,7 +48,24 @@ The capture ends with `App terminated due to signal 15` - that is this skill's
 hours old, show its timestamp and ask before collecting - the marker may be
 left over from an abandoned session, and collecting is expensive.
 
-The script needs interactive `sudo`, so the user must run it themselves:
+The script needs interactive `sudo`, so the user must run it themselves. **Root
+is a hard requirement inside `/usr/bin/log`, not a choice this script makes** -
+verified 2026-09-05, running it unprivileged fails outright and writes nothing:
+
+```
+$ /usr/bin/log collect --device-udid <udid> --start <time> --output out.logarchive
+log: Must be root to collect logs from attached device
+```
+
+There is no flag or output-path that avoids it, so do not try to drop the sudo.
+(Local-only `log collect`, with no `--device-udid`, is the case that can run
+unprivileged - the device path talks to attached hardware.)
+
+Note also that `log` is a shell builtin in Anton's zsh, so a bare `log show ...`
+typed interactively fails with `too many arguments`. Use `/usr/bin/log`. The
+script is unaffected: it runs under `#!/bin/bash`.
+
+
 
 ```bash
 chmod +x ./scripts/collect_device_logs.sh

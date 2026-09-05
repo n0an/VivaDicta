@@ -54,8 +54,11 @@ if [ $? -eq 0 ]; then
 
   # Show summary
   TOTAL_LINES=$(wc -l < "${LOGFILE}")
-  ERRORS=$(grep -ic "error" "${LOGFILE}" 2>/dev/null || echo "0")
-  WARNINGS=$(grep -ic "warning" "${LOGFILE}" 2>/dev/null || echo "0")
+  # grep -c prints the count AND exits 1 when it is zero, so a `|| echo 0`
+  # fallback appends a second line and yields "0\n0". Let grep's own output
+  # stand and neutralize only the exit status.
+  ERRORS=$(grep -ic "error" "${LOGFILE}"; true)
+  WARNINGS=$(grep -ic "warning" "${LOGFILE}"; true)
 
   echo "Summary:"
   echo "  Total log entries: ${TOTAL_LINES}"
@@ -63,7 +66,7 @@ if [ $? -eq 0 ]; then
   echo "  Warnings: ${WARNINGS}"
   echo ""
 
-  if [ "${ERRORS}" -gt 0 ] 2>/dev/null || [ "${WARNINGS}" -gt 0 ] 2>/dev/null; then
+  if [ "${ERRORS}" -gt 0 ] || [ "${WARNINGS}" -gt 0 ]; then
     echo "Recent errors/warnings:"
     grep -iE "error|warning" "${LOGFILE}" | tail -20
   fi
