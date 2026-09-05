@@ -34,7 +34,7 @@ Launch VivaDicta on a connected physical device with print logging enabled and k
 ## How resolution works
 
 - **Device**: auto-discovered from `xcrun devicectl list devices` — the entry that is real hardware (`reality == physical`), runs iOS, and has `tunnelState == connected`. Simulators appear in the same list and are excluded. Zero matches or several both fail with a readable message listing what was found.
-- **Bundle id**: the first of `com.antonnovoselov.VivaDicta-beta` (development build, preferred) then `com.antonnovoselov.VivaDicta` (release/TestFlight) that is actually installed. If the release build is chosen, the script says so, because a build without `get-task-allow` can yield less console output than a development build.
+- **Bundle id**: `com.antonnovoselov.VivaDicta`, if it is actually installed. Both the QA and Release configurations build under that id, so it covers a QA build run from Xcode as well as a TestFlight or App Store install. The Debug configuration uses `com.antonnovoselov.VivaDicta-beta`, but that build is not in use; pass `--bundle` to target it if it is ever installed.
 
 ## Notes
 

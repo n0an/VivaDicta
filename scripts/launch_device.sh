@@ -10,8 +10,10 @@
 
 set -uo pipefail
 
-# Preferred first: a development build gives the freshest code under the console.
-BUNDLE_CANDIDATES=(com.antonnovoselov.VivaDicta-beta com.antonnovoselov.VivaDicta)
+# Both the QA and Release configurations build under this id; only the unused
+# Debug configuration uses "com.antonnovoselov.VivaDicta-beta". Pass --bundle
+# to target that one if it is ever installed.
+BUNDLE_CANDIDATES=(com.antonnovoselov.VivaDicta)
 
 DEVICE=""
 BUNDLE_ID=""
@@ -107,13 +109,6 @@ else
         echo "       Build to the device from Xcode first, then re-run." >&2
         exit 1
     fi
-fi
-
-# A release/TestFlight build has no get-task-allow, so the console attach may be
-# refused or silent. Say so up front rather than leaving an empty log file.
-if [ "$BUNDLE_ID" = "com.antonnovoselov.VivaDicta" ]; then
-    echo "Note: using the release bundle id ($BUNDLE_ID); the -beta dev build is not installed."
-    echo "      Console output may be limited compared with a development build."
 fi
 
 echo "Device:  ${DEVICE_NAME:-$DEVICE} ($DEVICE)"
