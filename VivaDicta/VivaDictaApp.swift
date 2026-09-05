@@ -589,7 +589,24 @@ struct VivaDictaApp: App {
         "com.cloud-compiler",           // CodeSnack IDE - no known URL scheme
         "com.corp.messenger.syncer",    // Syncer corporate messenger - no known URL scheme
         "com.yottaram.eMoods",          // eMoods tracker - no known URL scheme
-        "com.anton"                     // Not a shipping App Store app - a dev build
+        "com.anton",                    // Not a shipping App Store app - a dev build
+
+        // Apple view services and system apps that register no URL types.
+        // Read from the shipping binaries in the simulator runtimes.
+        "com.apple.campo",              // Campo (Siri chatbot, iOS 27) - no CFBundleURLTypes
+        "com.apple.mobilesms.compose",  // MessagesViewService - the compose sheet over other apps
+        "com.apple.ShortcutsUI",        // ShortcutsUI view service - no CFBundleURLTypes
+
+        // Checked by hand: no custom scheme, and no universal link that opens
+        // the app at its root.
+        "com.deepseek.chat",            // DeepSeek - AASA lists the bundle with an empty paths array
+        "com.hevyapp.hevy",             // Hevy - AASA has no root path, only per-object routes
+        "com.stably.orca.mobile",       // Orca IDE - no AASA, no known scheme
+        "org.edupage",                  // EduPage - no AASA, no known scheme
+        "com.rivetrune.cognilog",       // CogniLog - no AASA, no known scheme
+        "com.t3tools.t3code",           // T3 Code - t3.codes serves no AASA
+        "com.davetech.todo",            // MinimaList to-do - no AASA, no known scheme
+        "cc.calacatta.happiest"         // Not on any App Store storefront; calacatta.cc does not resolve
     ]
 
     /// Reports a host app we could not return to, so its URL scheme can be
@@ -680,19 +697,44 @@ struct VivaDictaApp: App {
             "com.apple.reminders": "x-apple-reminderkit://", // NOT x-apple-reminder://, unregistered
             "com.letterboxd.LetterboxdApp": "letterboxd://",
             "eusoft.eudic.ip": "eudic://",
+            "com.ex3ndr.happy": "happy://",          // Expo scheme in the app's own app.config.js
+            "psyche.kelivo": "kelivo://",
+            "com.codality.NotationalFlow": "simplenote://",  // this bundle id is Simplenote
+            "com.agiletortoise.Drafts5": "drafts://",
+            "com.ubercab.UberClient": "uber://",
+            "com.tinyspeck.chatlyio": "slack://open", // this bundle id is Slack
 
             // Corroborated across independent sources but not read from the
             // shipping app, so a miss is possible - it degrades to the prompt.
             "notion.id": "notion://",
             "com.meituan.imeituan": "imeituan://",
             "com.newin.nplayer.basic": "nplayer-http://",
+            "com.evernote.iPhone.Evernote": "evernote://",
+            "jp.naver.line": "line://",
+            "com.google.ios.youtube": "youtube://",
+            "com.ebay.iphone": "ebay://",
+            "com.google.Docs": "googledocs://",
+            "com.taobao.taobao4iphone": "taobao://",
+            "company.thebrowser.ArcMobile2": "arcmobile2://",
+
+            // Single-source or inferred from a sibling platform. Weaker still,
+            // and kept only because a miss costs nothing beyond the prompt the
+            // user would otherwise have gotten anyway.
+            "com.alibaba.sourcing": "enalibaba://",  // one scheme database, no vendor doc
+            "com.automattic.beeper": "beeper://",    // documented for Beeper Desktop, assumed shared
+            "com.xiaojukeji.didi": "diditaxi://",    // long-cited legacy scheme, no primary source
 
             // No custom scheme; universal link confirmed in the app's AASA file.
             "com.google.ios.ytcreator": "https://studio.youtube.com/",
             "com.amazon.AmazonDE": "https://www.amazon.de/",
             "ru.ivi": "https://www.ivi.ru/",
             "ru.oneme.app": "https://max.ru/",
-            "ru.ozon.OzonStore": "https://www.ozon.ru/"
+            "ru.ozon.OzonStore": "https://www.ozon.ru/",
+            "com.amazon.AmazonUK": "https://www.amazon.co.uk/",
+            "com.amazon.Amazon": "https://www.amazon.com/",
+            "com.ClassDojo": "https://www.classdojo.com/ul/home",
+            "com.kouzoh.ios.mercari": "https://jp.mercari.com/",
+            "com.ubercab.UberEats": "https://www.ubereats.com/"
         ]
 
         return knownURLs[bundleId].flatMap(URL.init(string:))

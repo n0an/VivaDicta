@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Analyze Unrecognized Host Apps
 
-**Last run:** 2026-08-29 - added 15 return-URL mappings (Swiftgram, Open Minis, WeChat, Spotify team-ID variant, Reminders, Letterboxd, Eudic, Notion, Meituan, nPlayer, plus 5 universal-link fallbacks) and 5 knownNoSchemeHosts entries. Also removed the `canOpenURL` gate and the dead `LSApplicationQueriesSchemes` array, which had exceeded Apple's 50-entry cap and was silently killing the most recent mappings. Note: this sample predates the iOS 26.4 host-resolution fix, so it under-reports - re-run once 3.9.0 has been out a few weeks.
+**Last run:** 2026-09-05 - added 29 return-URL mappings (Happy Coder, Kelivo, Simplenote, Drafts, Uber, Slack, Evernote, LINE, YouTube, eBay, Google Docs, Taobao, Arc Search, plus 5 AASA universal-link fallbacks for Amazon US/UK, ClassDojo, Mercari and Uber Eats) and 11 knownNoSchemeHosts entries. Three mappings (Alibaba `enalibaba://`, Beeper `beeper://`, DiDi `diditaxi://`) went in at explicitly lower confidence and sit under their own comment block. Two lookup techniques worth reusing: the iTunes lookup API (`https://itunes.apple.com/lookup?bundleId=...`) resolves a bundle ID to an app name and seller URL in one call, and it caught a misidentification - `com.codality.NotationalFlow` is Simplenote, not the note app the name suggests; and an AASA is not always at `/.well-known/` (Hevy serves its own at `https://hevy.com/apple-app-site-association`). Also note an AASA entry with an empty `paths` array (DeepSeek) matches nothing and is not a usable fallback. This sample still predates the iOS 26.4 host-resolution fix, so it under-reports.
 
 You are given the following context:
 $ARGUMENTS
