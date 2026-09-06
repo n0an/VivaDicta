@@ -10,6 +10,8 @@ import SwiftData
 import Testing
 import AICore
 import AppGroup
+import AudioRecording
+import AudioRecordingMocks
 import Presets
 @testable import VivaDicta
 
@@ -95,7 +97,10 @@ struct RecordViewModelTests {
     private func makeSUT(
         transcriber: MockTranscriber,
         aiService: MockAIProcessingService = MockAIProcessingService(),
-        appGroup: MockAppGroupBridge = MockAppGroupBridge()
+        appGroup: MockAppGroupBridge = MockAppGroupBridge(),
+        audioFileService: AudioFileService = DefaultAudioFileService(),
+        audioRecordingService: AudioRecordingService = MockAudioRecordingService(),
+        prewarmManager: any AudioPrewarmer = MockAudioPrewarmer()
     ) throws -> (sut: RecordViewModel, container: ModelContainer) {
         // `saveNewTranscription` kicks off fire-and-forget RAGIndexingService vector
         // indexing when SmartSearch is on (default), which would do real LumoKit I/O
@@ -110,7 +115,9 @@ struct RecordViewModelTests {
             modelContainer: container,
             transcriptionManager: transcriber,
             aiService: aiService,
-            prewarmManager: MockAudioPrewarmer(),
+            audioRecordingService: audioRecordingService,
+            audioFileService: audioFileService,
+            prewarmManager: prewarmManager,
             appGroupBridge: appGroup
         )
         return (sut, container)
@@ -228,6 +235,172 @@ struct RecordViewModelTests {
         #expect(saved.isEmpty)
         #expect(sut.recordingState == .idle)
         #expect(appGroup.transcriptionStatuses.contains(.idle))
+    }
+
+    // MARK: - Transcription failure (issue #384)
+
+    /// A readable audio file the rescue path can measure. The success-path tests
+    /// get away with a 4-byte "RIFF" stub because `AVURLAsset` reports 0 on it
+    /// rather than throwing; the rescue gates on `fileSize`, so it needs bytes.
+    @MainActor
+    private func failingFileService(size: Int64 = 4096, duration: TimeInterval = 7) -> MockAudioFileService {
+        let fileService = MockAudioFileService()
+        fileService.stubFileSize = .success(size)
+        fileService.stubDuration = .success(duration)
+        fileService.stubRemove = .success(())
+        return fileService
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFails_keepsRecordingAsFailedNote() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            appGroup: appGroup,
+            audioFileService: failingFileService()
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        // The recording survives as a note pointing at its audio, so the detail
+        // view can play it back and retranscribe it.
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        let rescued = try #require(saved.first)
+        #expect(rescued.text.isEmpty)
+        #expect(rescued.audioFileName == audio.lastPathComponent)
+        #expect(rescued.audioDuration == 7)
+        #expect(rescued.isFailedTranscription)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFails_alertsWithTheReasonAndReturnsToIdle() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: failingFileService()
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(sut.isShowingAlert == true)
+        if case .transcribe(let reason) = sut.recordError {
+            #expect(!reason.isEmpty)
+        } else {
+            Issue.record("expected recordError == .transcribe, got \(String(describing: sut.recordError))")
+        }
+        // Not parked in `.error`: that state renders nowhere and leaves the
+        // append-to-note actions disabled until the next successful recording.
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFailsAndAudioIsGone_savesNothing() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let fileService = failingFileService()
+        fileService.stubFileSize = .success(0) // nothing on disk to rescue
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(try container.mainContext.fetch(FetchDescriptor<Transcription>()).isEmpty)
+        // The user is still told, even though there was nothing to keep.
+        #expect(sut.isShowingAlert == true)
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func failedTranscription_clearsItsStatusOnceARetrySucceeds() throws {
+        let sut = Transcription(text: "", audioDuration: 7, audioFileName: "abc.wav")
+        sut.transcriptionStatus = TranscriptionStatus.failed.rawValue
+        #expect(sut.isFailedTranscription)
+
+        sut.text = "recovered on retry"
+        sut.clearFailedStatus()
+
+        #expect(!sut.isFailedTranscription)
+        #expect(sut.transcriptionStatus == TranscriptionStatus.completed.rawValue)
+    }
+
+    // MARK: - Audio session interruptions (issue #386)
+
+    @MainActor
+    @Test func interruption_whileRecording_finishesTheCaptureAndAlerts() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "cut short")
+        let recorder = MockAudioRecordingService()
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService,
+            audioRecordingService: recorder
+        )
+        sut.recordingState = .recording
+
+        recorder.fireInterruption()
+        await sut.transcribingSpeechTask?.value
+
+        // The partial audio went through the normal stop path rather than being
+        // dropped: it was moved into place and transcribed.
+        #expect(fileService.moveCallCount == 1)
+        #expect(transcriber.transcribeCallCount == 1)
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.first?.text == "cut short")
+
+        // And the user is told why the recording ended early.
+        #expect(sut.isShowingAlert == true)
+        #expect(sut.recordError == .interrupted)
+    }
+
+    @MainActor
+    @Test func interruption_whenNotRecording_isIgnored() throws {
+        let recorder = MockAudioRecordingService()
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, _) = try makeSUT(
+            transcriber: MockTranscriber(currentMode: parakeetMode()),
+            audioFileService: fileService,
+            audioRecordingService: recorder
+        )
+
+        // Both capture paths report the same interruption, so the handler has to
+        // tolerate arriving with nothing to stop.
+        recorder.fireInterruption()
+
+        #expect(fileService.moveCallCount == 0)
+        #expect(sut.isShowingAlert == false)
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func interruption_onTheHotMicPath_closesTheCapture() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "hot mic partial")
+        let prewarm = MockAudioPrewarmer()
+        prewarm.isSessionActive = true
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, _) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService,
+            prewarmManager: prewarm
+        )
+        sut.recordingState = .recording
+
+        prewarm.fireInterruption()
+        await sut.transcribingSpeechTask?.value
+
+        #expect(prewarm.stopRealCaptureCallCount == 1)
+        #expect(sut.recordError == .interrupted)
     }
 
     // MARK: - Auto Share Note

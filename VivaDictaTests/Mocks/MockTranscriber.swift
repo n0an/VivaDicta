@@ -11,6 +11,9 @@ import TranscriptionCore
 final class MockTranscriber: Transcriber {
     var currentMode: VivaMode
     var stubbedText: String
+    /// When set, ``transcribe(audioURL:progressHandler:)`` throws this instead of
+    /// returning ``stubbedText`` - the network-drop / unreachable-API case.
+    var stubbedError: (any Error)?
     private(set) var setCurrentModeCalls: [VivaMode] = []
     private(set) var transcribeCallCount = 0
 
@@ -28,6 +31,7 @@ final class MockTranscriber: Transcriber {
 
     func transcribe(audioURL: URL, progressHandler: TranscriptionProgressHandler?) async throws -> String {
         transcribeCallCount += 1
+        if let stubbedError { throw stubbedError }
         return stubbedText
     }
 

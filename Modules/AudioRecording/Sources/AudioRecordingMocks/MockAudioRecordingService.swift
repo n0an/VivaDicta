@@ -35,6 +35,7 @@ public final class MockAudioRecordingService: AudioRecordingService {
     public private(set) var capturedStartSettings: [String: Any]?
 
     public var onDidFinishUnsuccessfully: (@MainActor () -> Void)?
+    public var onInterruption: (@MainActor () -> Void)?
 
     public var isRecording: Bool { stubIsRecording }
     public var currentTime: TimeInterval { stubCurrentTime }
@@ -44,6 +45,11 @@ public final class MockAudioRecordingService: AudioRecordingService {
     /// unsuccessful finish, invoking the wired-up consumer callback.
     public func fireDidFinishUnsuccessfully() {
         onDidFinishUnsuccessfully?()
+    }
+
+    /// Test helper: simulate the audio session being interrupted mid-recording.
+    public func fireInterruption() {
+        onInterruption?()
     }
 
     public func startRecording(to url: URL, settings: [String: Any]) throws {

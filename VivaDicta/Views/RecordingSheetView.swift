@@ -128,19 +128,10 @@ struct RecordingSheetView: View {
         .presentationDragIndicator(.hidden)
         .onAppear { recordingStartDate = Date() }
         .interactiveDismissDisabled(vm.recordingState == .recording)
-        .alert(isPresented: $appState.recordViewModel.isShowingAlert, error: vm.recordError) { recordError in
-            switch recordError {
-            case .userDenied:
-                Button("Settings") {
-                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-                }
-                Button("Cancel", role: .cancel) { }
-            default:
-                Button("OK") { }
-            }
-        } message: { recordError in
-            Text(recordError.failureReason)
-        }
+        // No alert here on purpose: this sheet is presented only while
+        // `recordingState == .recording`, and no recording failure is raised in
+        // that window, so an alert attached here can never appear. `MainView`
+        // presents them all - see its `recordErrorAlertBinding`.
     }
 
     private func toggleTagSelector() {

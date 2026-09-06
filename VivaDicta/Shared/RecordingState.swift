@@ -19,7 +19,12 @@ enum RecordError: LocalizedError, Equatable {
     case avInitError
     case userDenied
     case recordError
-    case transcribe
+    /// A call, alarm, or Siri took the microphone mid-recording. Not a failure:
+    /// whatever was captured before it is saved and transcribed as usual.
+    case interrupted
+    /// Transcription threw. The associated value is the underlying reason,
+    /// surfaced to the user the way ``aiEnhancement`` surfaces its own.
+    case transcribe(String)
     case aiGuardrail
     case aiRefusal(String)
     case aiEnhancement(String)
@@ -34,8 +39,10 @@ enum RecordError: LocalizedError, Equatable {
             "Microphone access denied"
         case .recordError:
             "Recording failed"
+        case .interrupted:
+            "Recording Interrupted"
         case .transcribe:
-            "Transcription failed"
+            "Transcription Failed"
         case .aiGuardrail:
             "AI Safety Guardrail Triggered"
         case .aiRefusal:
@@ -56,9 +63,11 @@ enum RecordError: LocalizedError, Equatable {
         case .userDenied:
             return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
         case .recordError:
-            return "Failed to record audio. Check that no other app is using the microphone and try again."
-        case .transcribe:
-            return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
+            return "Failed to start recording. Check that no other app is using the microphone and try again."
+        case .interrupted:
+            return "Something else needed the microphone, so recording stopped early. The audio captured up to that point was saved and transcribed."
+        case .transcribe(let reason):
+            return "Failed to transcribe the recording: \(reason). The recording was saved - open it from the notes list to play it back or retry."
         case .aiGuardrail:
             return "Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content."
         case .aiRefusal(let reason):

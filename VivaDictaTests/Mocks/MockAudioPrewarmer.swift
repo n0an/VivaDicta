@@ -13,6 +13,8 @@ final class MockAudioPrewarmer: AudioPrewarmer {
     var currentAudioLevel: Float = 0.0
     var audioEngine: AVAudioEngine?
 
+    var onInterruption: (@MainActor () -> Void)?
+
     var stubStartRealCaptureError: Error?
     private(set) var startRealCaptureCallCount = 0
     private(set) var stopRealCaptureCallCount = 0
@@ -36,4 +38,9 @@ final class MockAudioPrewarmer: AudioPrewarmer {
         lastPCMStream?.finish()
     }
     func rescheduleSessionTimeout() { rescheduleSessionTimeoutCallCount += 1 }
+
+    /// Test helper: simulate the audio session being interrupted mid-capture.
+    func fireInterruption() {
+        onInterruption?()
+    }
 }

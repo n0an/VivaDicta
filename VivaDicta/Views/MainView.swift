@@ -328,10 +328,19 @@ struct MainView: View {
         } message: {
             Text(fileErrorMessage)
         }
-        .alert("AI Safety Guardrail Triggered", isPresented: aiGuardrailAlertBinding) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content.")
+        .alert(isPresented: recordErrorAlertBinding, error: appState.recordViewModel?.recordError) { recordError in
+            if case .userDenied = recordError {
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
+            }
+        } message: { recordError in
+            Text(recordError.failureReason)
         }
         .sheet(isPresented: $showBulkTagPicker) {
             BulkTagPickerSheet(transcriptions: transcriptions.filter { selectedTranscriptionIDs.contains($0.id) })
@@ -362,9 +371,18 @@ struct MainView: View {
         )
     }
 
-    private var aiGuardrailAlertBinding: Binding<Bool> {
+    /// Presents every recording failure.
+    ///
+    /// The recording sheet used to carry this alert, but the sheet is bound to
+    /// `recordingState == .recording` and no failure is ever raised while that
+    /// holds: a failed start happens before or on the way out of `.recording`,
+    /// and transcription and AI errors land two states later. So the sheet was
+    /// always gone (or never opened) by the time `isShowingAlert` flipped, and
+    /// the alert presented against a view that no longer existed. The main
+    /// screen is always mounted, so it owns them all.
+    private var recordErrorAlertBinding: Binding<Bool> {
         Binding(
-            get: { appState.recordViewModel?.isShowingAlert == true && appState.recordViewModel?.recordError == .aiGuardrail },
+            get: { appState.recordViewModel?.isShowingAlert == true },
             set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
         )
     }
