@@ -328,10 +328,10 @@ struct MainView: View {
         } message: {
             Text(fileErrorMessage)
         }
-        .alert("AI Safety Guardrail Triggered", isPresented: aiGuardrailAlertBinding) {
+        .alert(isPresented: postRecordingAlertBinding, error: appState.recordViewModel?.recordError) { _ in
             Button("OK", role: .cancel) {}
-        } message: {
-            Text("Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content.")
+        } message: { recordError in
+            Text(recordError.failureReason)
         }
         .sheet(isPresented: $showBulkTagPicker) {
             BulkTagPickerSheet(transcriptions: transcriptions.filter { selectedTranscriptionIDs.contains($0.id) })
@@ -362,9 +362,19 @@ struct MainView: View {
         )
     }
 
-    private var aiGuardrailAlertBinding: Binding<Bool> {
+    /// Presents the failures that arrive after the recording sheet has closed.
+    ///
+    /// The sheet carries its own alert, but it is bound to
+    /// `recordingState == .recording`, so it is already gone by the time
+    /// transcription or AI processing throws. Without this binding those errors
+    /// set `isShowingAlert` against a view that no longer exists and the user
+    /// sees nothing at all.
+    private var postRecordingAlertBinding: Binding<Bool> {
         Binding(
-            get: { appState.recordViewModel?.isShowingAlert == true && appState.recordViewModel?.recordError == .aiGuardrail },
+            get: {
+                appState.recordViewModel?.isShowingAlert == true
+                    && appState.recordViewModel?.recordError.isPostRecording == true
+            },
             set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
         )
     }

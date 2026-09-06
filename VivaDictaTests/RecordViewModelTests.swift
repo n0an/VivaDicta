@@ -10,6 +10,8 @@ import SwiftData
 import Testing
 import AICore
 import AppGroup
+import AudioRecording
+import AudioRecordingMocks
 import Presets
 @testable import VivaDicta
 
@@ -95,7 +97,8 @@ struct RecordViewModelTests {
     private func makeSUT(
         transcriber: MockTranscriber,
         aiService: MockAIProcessingService = MockAIProcessingService(),
-        appGroup: MockAppGroupBridge = MockAppGroupBridge()
+        appGroup: MockAppGroupBridge = MockAppGroupBridge(),
+        audioFileService: AudioFileService = DefaultAudioFileService()
     ) throws -> (sut: RecordViewModel, container: ModelContainer) {
         // `saveNewTranscription` kicks off fire-and-forget RAGIndexingService vector
         // indexing when SmartSearch is on (default), which would do real LumoKit I/O
@@ -110,6 +113,7 @@ struct RecordViewModelTests {
             modelContainer: container,
             transcriptionManager: transcriber,
             aiService: aiService,
+            audioFileService: audioFileService,
             prewarmManager: MockAudioPrewarmer(),
             appGroupBridge: appGroup
         )
@@ -228,6 +232,114 @@ struct RecordViewModelTests {
         #expect(saved.isEmpty)
         #expect(sut.recordingState == .idle)
         #expect(appGroup.transcriptionStatuses.contains(.idle))
+    }
+
+    // MARK: - Transcription failure (issue #384)
+
+    /// A readable audio file the rescue path can measure. The success-path tests
+    /// get away with a 4-byte "RIFF" stub because `AVURLAsset` reports 0 on it
+    /// rather than throwing; the rescue gates on `fileSize`, so it needs bytes.
+    @MainActor
+    private func failingFileService(size: Int64 = 4096, duration: TimeInterval = 7) -> MockAudioFileService {
+        let fileService = MockAudioFileService()
+        fileService.stubFileSize = .success(size)
+        fileService.stubDuration = .success(duration)
+        fileService.stubRemove = .success(())
+        return fileService
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFails_keepsRecordingAsFailedNote() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            appGroup: appGroup,
+            audioFileService: failingFileService()
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        // The recording survives as a note pointing at its audio, so the detail
+        // view can play it back and retranscribe it.
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.count == 1)
+        let rescued = try #require(saved.first)
+        #expect(rescued.text.isEmpty)
+        #expect(rescued.audioFileName == audio.lastPathComponent)
+        #expect(rescued.audioDuration == 7)
+        #expect(rescued.isFailedTranscription)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFails_alertsWithTheReasonAndReturnsToIdle() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: failingFileService()
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(sut.isShowingAlert == true)
+        if case .transcribe(let reason) = sut.recordError {
+            #expect(!reason.isEmpty)
+        } else {
+            Issue.record("expected recordError == .transcribe, got \(String(describing: sut.recordError))")
+        }
+        // Not parked in `.error`: that state renders nowhere and leaves the
+        // append-to-note actions disabled until the next successful recording.
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func transcribeSpeechTask_whenTranscriptionFailsAndAudioIsGone_savesNothing() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode())
+        transcriber.stubbedError = FlowTestError.boom
+        let fileService = failingFileService()
+        fileService.stubFileSize = .success(0) // nothing on disk to rescue
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService
+        )
+        let audio = try makeDummyAudioFile()
+
+        await sut.transcribeSpeechTask(recordURL: audio, modelContext: container.mainContext).value
+
+        #expect(try container.mainContext.fetch(FetchDescriptor<Transcription>()).isEmpty)
+        // The user is still told, even though there was nothing to keep.
+        #expect(sut.isShowingAlert == true)
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func failedTranscription_clearsItsStatusOnceARetrySucceeds() throws {
+        let sut = Transcription(text: "", audioDuration: 7, audioFileName: "abc.wav")
+        sut.transcriptionStatus = TranscriptionStatus.failed.rawValue
+        #expect(sut.isFailedTranscription)
+
+        sut.text = "recovered on retry"
+        sut.clearFailedStatus()
+
+        #expect(!sut.isFailedTranscription)
+        #expect(sut.transcriptionStatus == TranscriptionStatus.completed.rawValue)
+    }
+
+    @MainActor
+    @Test func postRecordingErrors_areTheOnesTheSheetCannotShow() {
+        // The recording sheet is bound to `recordingState == .recording`, so
+        // anything raised after that has to be presented by MainView instead.
+        #expect(RecordError.transcribe("boom").isPostRecording)
+        #expect(RecordError.aiEnhancement("boom").isPostRecording)
+        #expect(RecordError.aiRefusal("boom").isPostRecording)
+        #expect(RecordError.aiGuardrail.isPostRecording)
+        #expect(!RecordError.userDenied.isPostRecording)
+        #expect(!RecordError.recordError.isPostRecording)
+        #expect(!RecordError.avInitError.isPostRecording)
     }
 
     // MARK: - Auto Share Note

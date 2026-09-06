@@ -19,7 +19,9 @@ enum RecordError: LocalizedError, Equatable {
     case avInitError
     case userDenied
     case recordError
-    case transcribe
+    /// Transcription threw. The associated value is the underlying reason,
+    /// surfaced to the user the way ``aiEnhancement`` surfaces its own.
+    case transcribe(String)
     case aiGuardrail
     case aiRefusal(String)
     case aiEnhancement(String)
@@ -35,7 +37,7 @@ enum RecordError: LocalizedError, Equatable {
         case .recordError:
             "Recording failed"
         case .transcribe:
-            "Transcription failed"
+            "Transcription Failed"
         case .aiGuardrail:
             "AI Safety Guardrail Triggered"
         case .aiRefusal:
@@ -49,6 +51,20 @@ enum RecordError: LocalizedError, Equatable {
         }
     }
 
+    /// True for failures raised after the recording sheet has already dismissed.
+    ///
+    /// The sheet is bound to `recordingState == .recording`, so anything thrown
+    /// during transcription or AI processing arrives with no sheet left to carry
+    /// the alert. `MainView` presents these instead.
+    var isPostRecording: Bool {
+        switch self {
+        case .transcribe, .aiGuardrail, .aiRefusal, .aiEnhancement:
+            true
+        case .avInitError, .userDenied, .recordError, .other, .debugError:
+            false
+        }
+    }
+
     var failureReason: String {
         switch self {
         case .avInitError:
@@ -57,8 +73,8 @@ enum RecordError: LocalizedError, Equatable {
             return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
         case .recordError:
             return "Failed to record audio. Check that no other app is using the microphone and try again."
-        case .transcribe:
-            return "Failed to transcribe the recorded audio. Please check your transcription settings and try again."
+        case .transcribe(let reason):
+            return "Failed to transcribe the recording: \(reason). The recording was saved - open it from the notes list to play it back or retry."
         case .aiGuardrail:
             return "Apple's on-device AI blocked this content due to safety guidelines. Your transcription was saved without AI processing. Consider using a cloud AI provider for this type of content."
         case .aiRefusal(let reason):

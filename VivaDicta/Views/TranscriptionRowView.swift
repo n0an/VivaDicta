@@ -61,10 +61,17 @@ struct TranscriptionRowView: View {
                     }
                 }
 
-                Text(displayText)
-                    .font(.body)
-                    .lineLimit(2)
-                    .lineSpacing(2)
+                if transcription.isFailedTranscription {
+                    Label("No text captured - open to retry", systemImage: "exclamationmark.arrow.circlepath")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                } else {
+                    Text(displayText)
+                        .font(.body)
+                        .lineLimit(2)
+                        .lineSpacing(2)
+                }
 
                 if !assignedTags.isEmpty {
                     HStack(spacing: 6) {
@@ -118,6 +125,7 @@ struct TranscriptionRowView: View {
                 .labelStyle(.iconOnly)
                 .font(.system(size: 13))
                 .frame(width: 24, height: 24)
+                .disabled(transcription.isFailedTranscription)
                 .foregroundStyle(showCopied ? .green : .secondary)
                 .buttonStyle(.borderless)
                 .contentTransition(.symbolEffect(.replace))

@@ -9,6 +9,16 @@ import Foundation
 import SwiftData
 import CoreSpotlight
 
+/// The lifecycle stage recorded in ``Transcription/transcriptionStatus``.
+///
+/// The raw values are the contract with the macOS app, which writes the same
+/// strings into the CloudKit-synced field, so they must not be renamed.
+enum TranscriptionStatus: String {
+    case pending
+    case completed
+    case failed
+}
+
 /// A SwiftData model representing a voice transcription with optional AI processing.
 ///
 /// `Transcription` stores the result of transcribing audio, including both the raw
@@ -89,7 +99,10 @@ class Transcription {
     /// UUID of the Viva Mode active during transcription.
     var powerModeId: String?
 
-    /// Status of the transcription (pending/completed/failed, synced from macOS).
+    /// Status of the transcription (pending/completed/failed, shared with macOS).
+    ///
+    /// Only ``TranscriptionStatus/failed`` is written on iOS, by the record flow
+    /// when transcription throws - see ``isFailedTranscription``.
     var transcriptionStatus: String?
 
     /// Source that created this transcription (app, keyboard, shareExtension, actionExtension, macApp).
@@ -226,6 +239,25 @@ class Transcription {
 
         let mb = kb / 1024.0
         return "\(mb.formatted(.number.precision(.fractionLength(1)))) MB"
+    }
+}
+
+extension Transcription {
+    /// True when transcription never produced text and the audio is still on disk
+    /// waiting for a retry.
+    ///
+    /// The record flow saves one of these instead of discarding the recording when
+    /// transcription throws, so the note is reachable in the list and the detail
+    /// view's retranscribe button can retry it.
+    var isFailedTranscription: Bool {
+        transcriptionStatus == TranscriptionStatus.failed.rawValue
+    }
+
+    /// Clears the failure marker after a retry produced text.
+    func clearFailedStatus() {
+        if isFailedTranscription {
+            transcriptionStatus = TranscriptionStatus.completed.rawValue
+        }
     }
 }
 

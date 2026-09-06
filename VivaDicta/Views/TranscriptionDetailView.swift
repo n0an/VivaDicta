@@ -34,6 +34,8 @@ struct TranscriptionDetailView: View {
     @State private var showGuardrailAlert: Bool = false
     @State private var showEnhancementErrorAlert: Bool = false
     @State private var enhancementErrorMessage: String = ""
+    @State private var showRetranscribeErrorAlert: Bool = false
+    @State private var retranscribeErrorMessage: String = ""
     @State private var showPresetPicker: Bool = false
     @State private var showExtractedRemindersSheet: Bool = false
     @State private var showMetaInfo: Bool = false
@@ -721,6 +723,8 @@ struct TranscriptionDetailView: View {
                     .font(.system(size: 16, weight: .regular, design: .default))
                     .lineSpacing(2)
                     .redacted(reason: .placeholder)
+            } else if transcription.isFailedTranscription && displayedText.isEmpty {
+                failedTranscriptionNotice
             } else {
                 Text(displayedText)
                     .font(.system(size: 16, weight: .regular, design: .default))
@@ -729,6 +733,39 @@ struct TranscriptionDetailView: View {
             }
         }
         .modifier(ConditionalShimmer(isActive: isShimmering))
+        // Attached here rather than in `body`: that modifier chain is already at
+        // the type-checker's budget, and an alert works from anywhere in the
+        // hierarchy.
+        .alert(
+            "Transcription Failed",
+            isPresented: $showRetranscribeErrorAlert
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(retranscribeErrorMessage)
+        }
+    }
+
+    /// Stands in for the transcript on a note the record flow rescued after
+    /// transcription threw. The audio is intact, so the retranscribe button in
+    /// the bottom bar is the way out - point the user at it.
+    private var failedTranscriptionNotice: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("No text captured", systemImage: "exclamationmark.triangle")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Text("Transcription failed for this recording. The audio was kept - play it back below, or retry transcription.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineSpacing(2)
+
+            Button("Retry Transcription", systemImage: "arrow.clockwise") {
+                retranscribe()
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!canRetranscribe)
+        }
     }
 
 
@@ -1093,6 +1130,7 @@ struct TranscriptionDetailView: View {
                 let transcriptionDuration = Date().timeIntervalSince(transcriptionStart)
 
                 transcription.text = newText
+                transcription.clearFailedStatus()
                 transcription.transcriptionModelName = appState.transcriptionManager.getCurrentTranscriptionModel()?.displayName
                 transcription.transcriptionProviderName = appState.transcriptionManager.currentMode.transcriptionProvider.displayName
                 transcription.transcriptionDuration = transcriptionDuration
@@ -1115,6 +1153,12 @@ struct TranscriptionDetailView: View {
             } catch {
                 if Task.isCancelled { return }
                 HapticManager.error()
+
+                // A retry is the only way out of a rescued failed note, so a
+                // silent second failure would strand the user exactly the way
+                // the original failure did.
+                retranscribeErrorMessage = error.localizedDescription
+                showRetranscribeErrorAlert = true
             }
 
             processingState = .idle

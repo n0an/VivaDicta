@@ -32,16 +32,24 @@ struct MultiNoteCreationView: View {
 
     private var availableSourceTags: [String] {
         var seen = Set<String>()
-        return allTranscriptions.compactMap(\.sourceTag).filter { seen.insert($0).inserted }
+        return chattableTranscriptions.compactMap(\.sourceTag).filter { seen.insert($0).inserted }
     }
 
     private var hasActiveTagFilter: Bool {
         !selectedSourceTags.isEmpty || !selectedUserTagIds.isEmpty
     }
 
+    /// Notes that can actually take part in a conversation.
+    ///
+    /// A rescued failed transcription has no text yet, so it has nothing to
+    /// contribute to a chat - it stays out of the picker until a retry fills it in.
+    private var chattableTranscriptions: [Transcription] {
+        allTranscriptions.filter { !$0.isFailedTranscription }
+    }
+
     private var displayedTranscriptions: [Transcription] {
-        guard hasActiveTagFilter else { return allTranscriptions }
-        return allTranscriptions.filter { transcription in
+        guard hasActiveTagFilter else { return chattableTranscriptions }
+        return chattableTranscriptions.filter { transcription in
             let matchesSource = selectedSourceTags.isEmpty ||
                 (transcription.sourceTag.map { selectedSourceTags.contains($0) } ?? false)
             let matchesUserTag = selectedUserTagIds.isEmpty ||
@@ -59,7 +67,7 @@ struct MultiNoteCreationView: View {
     }
 
     private var selectedTranscriptions: [Transcription] {
-        allTranscriptions.filter { selectedNoteIds.contains($0.id) }
+        chattableTranscriptions.filter { selectedNoteIds.contains($0.id) }
     }
 
     // MARK: - Body

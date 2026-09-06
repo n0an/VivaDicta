@@ -588,6 +588,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             ) ?? .invalid
             defer { appState?.backgroundTaskService.endBackgroundTask(bgTaskID) }
 
+            // Declared outside the do block so the catch knows which file is
+            // actually on disk - downsampling deletes the original and swaps in
+            // the 16kHz copy, and the rescue below has to save the survivor.
+            var audioURLToTranscribe = recordURL
+
             do {
                 self.recordingState = .transcribing
                 self.transcriptionProgress = nil
@@ -601,8 +606,6 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
 
                 // Notify keyboard that transcription has started
                 appGroupBridge.updateTranscriptionStatus(.transcribing)
-
-                var audioURLToTranscribe = recordURL
 
                 if transcriptionManager.currentMode.transcriptionProvider == .parakeet {
                     logger.logInfo("🎙️ Skipping pre-downsampling for Parakeet because FluidAudio handles file conversion internally")
@@ -852,14 +855,40 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     return
                 }
                 HapticManager.error()
-                recordingState = .error(.transcribe)
-                resetValues()
+
+                let reason = error.localizedDescription
+                logger.logError("📱 Transcription failed: \(reason)")
 
                 // Notify keyboard of error. A voice instruction is awaiting a text
                 // processing result, not a transcription, so it needs the other channel.
-                if !failPendingVoiceInstruction("Transcription failed: \(error.localizedDescription)") {
-                    appGroupBridge.updateTranscriptionError("Transcription failed: \(error.localizedDescription)")
+                let wasVoiceInstruction = failPendingVoiceInstruction("Transcription failed: \(reason)")
+                if !wasVoiceInstruction {
+                    appGroupBridge.updateTranscriptionError("Transcription failed: \(reason)")
                 }
+
+                if wasVoiceInstruction {
+                    // The audio is a rewrite instruction, not content. It has no
+                    // note to belong to, so discard it the way the successful and
+                    // empty-instruction paths do rather than orphan it on disk.
+                    try? audioFileService.remove(at: audioURLToTranscribe)
+                } else {
+                    await saveFailedTranscription(
+                        audioURL: audioURLToTranscribe,
+                        modelContext: modelContext,
+                        sourceTag: sourceTag ?? SourceTag.app
+                    )
+                }
+
+                resetValues()
+
+                recordError = .transcribe(reason)
+                isShowingAlert = true
+
+                // Back to idle rather than parking in `.error`: nothing renders
+                // that state, and the append-to-note actions in the detail view
+                // stay disabled for as long as it sticks.
+                recordingState = .idle
+                appGroupBridge.updateRecordingState(false)
 
                 // Reschedule session timeout even on error
                 self.prewarmManager.rescheduleSessionTimeout()
@@ -1279,6 +1308,63 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             modelContext: modelContext
         )
 
+        return transcription
+    }
+
+    /// Saves a placeholder note for a recording whose transcription threw.
+    ///
+    /// Without this the WAV stays in `Documents/Audio` with nothing pointing at
+    /// it: unreachable from the app (the Documents folder is not exposed in
+    /// Files), invisible to ``AudioCleanupService`` - which only walks audio
+    /// referenced by a ``Transcription`` - and therefore lost for good.
+    ///
+    /// The note carries no text, which is what ``Transcription/transcriptionStatus``
+    /// marks as ``TranscriptionStatus/failed``: the list and detail view label it
+    /// as a failed recording, and the detail view's existing retranscribe button
+    /// retries it off ``Transcription/audioFileName``.
+    ///
+    /// Deliberately not indexed to Spotlight or RAG - there is no text to index
+    /// until a retry succeeds.
+    @discardableResult
+    private func saveFailedTranscription(
+        audioURL: URL,
+        modelContext: ModelContext,
+        sourceTag: String?
+    ) async -> Transcription? {
+        // Existence, not readability, is the gate: a note pointing at audio that
+        // AVFoundation happens to choke on is still worth keeping, because the
+        // user can play it back and retry. Only an absent or empty file has
+        // nothing to rescue.
+        let fileSize = (try? audioFileService.fileSize(at: audioURL)) ?? 0
+        guard fileSize > 0 else {
+            logger.logError("📱 Cannot rescue the failed recording - audio is missing or empty")
+            return nil
+        }
+
+        let audioDuration = (try? await audioFileService.duration(of: audioURL)) ?? 0
+
+        let transcription = Transcription(
+            text: "",
+            audioDuration: audioDuration,
+            audioFileName: audioURL.lastPathComponent,
+            transcriptionModelName: transcriptionManager.getCurrentTranscriptionModel()?.displayName,
+            transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
+            powerModeId: aiService.selectedMode.id.uuidString,
+            sourceTag: sourceTag
+        )
+        transcription.transcriptionStatus = TranscriptionStatus.failed.rawValue
+
+        modelContext.insert(transcription)
+        applyPendingTags(to: transcription, modelContext: modelContext)
+
+        do {
+            try modelContext.save()
+        } catch {
+            logger.logError("📱 Failed to save the rescued recording: \(error.localizedDescription)")
+            return nil
+        }
+
+        logger.logInfo("📱 Saved a failed-transcription note for \(audioURL.lastPathComponent) so the audio stays reachable")
         return transcription
     }
 
