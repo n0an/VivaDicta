@@ -98,7 +98,9 @@ struct RecordViewModelTests {
         transcriber: MockTranscriber,
         aiService: MockAIProcessingService = MockAIProcessingService(),
         appGroup: MockAppGroupBridge = MockAppGroupBridge(),
-        audioFileService: AudioFileService = DefaultAudioFileService()
+        audioFileService: AudioFileService = DefaultAudioFileService(),
+        audioRecordingService: AudioRecordingService = MockAudioRecordingService(),
+        prewarmManager: any AudioPrewarmer = MockAudioPrewarmer()
     ) throws -> (sut: RecordViewModel, container: ModelContainer) {
         // `saveNewTranscription` kicks off fire-and-forget RAGIndexingService vector
         // indexing when SmartSearch is on (default), which would do real LumoKit I/O
@@ -113,8 +115,9 @@ struct RecordViewModelTests {
             modelContainer: container,
             transcriptionManager: transcriber,
             aiService: aiService,
+            audioRecordingService: audioRecordingService,
             audioFileService: audioFileService,
-            prewarmManager: MockAudioPrewarmer(),
+            prewarmManager: prewarmManager,
             appGroupBridge: appGroup
         )
         return (sut, container)
@@ -327,6 +330,77 @@ struct RecordViewModelTests {
 
         #expect(!sut.isFailedTranscription)
         #expect(sut.transcriptionStatus == TranscriptionStatus.completed.rawValue)
+    }
+
+    // MARK: - Audio session interruptions (issue #386)
+
+    @MainActor
+    @Test func interruption_whileRecording_finishesTheCaptureAndAlerts() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "cut short")
+        let recorder = MockAudioRecordingService()
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, container) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService,
+            audioRecordingService: recorder
+        )
+        sut.recordingState = .recording
+
+        recorder.fireInterruption()
+        await sut.transcribingSpeechTask?.value
+
+        // The partial audio went through the normal stop path rather than being
+        // dropped: it was moved into place and transcribed.
+        #expect(fileService.moveCallCount == 1)
+        #expect(transcriber.transcribeCallCount == 1)
+        let saved = try container.mainContext.fetch(FetchDescriptor<Transcription>())
+        #expect(saved.first?.text == "cut short")
+
+        // And the user is told why the recording ended early.
+        #expect(sut.isShowingAlert == true)
+        #expect(sut.recordError == .interrupted)
+    }
+
+    @MainActor
+    @Test func interruption_whenNotRecording_isIgnored() throws {
+        let recorder = MockAudioRecordingService()
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, _) = try makeSUT(
+            transcriber: MockTranscriber(currentMode: parakeetMode()),
+            audioFileService: fileService,
+            audioRecordingService: recorder
+        )
+
+        // Both capture paths report the same interruption, so the handler has to
+        // tolerate arriving with nothing to stop.
+        recorder.fireInterruption()
+
+        #expect(fileService.moveCallCount == 0)
+        #expect(sut.isShowingAlert == false)
+        #expect(sut.recordingState == .idle)
+    }
+
+    @MainActor
+    @Test func interruption_onTheHotMicPath_closesTheCapture() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "hot mic partial")
+        let prewarm = MockAudioPrewarmer()
+        prewarm.isSessionActive = true
+        let fileService = MockAudioFileService()
+        fileService.stubMove = .success(())
+        let (sut, _) = try makeSUT(
+            transcriber: transcriber,
+            audioFileService: fileService,
+            prewarmManager: prewarm
+        )
+        sut.recordingState = .recording
+
+        prewarm.fireInterruption()
+        await sut.transcribingSpeechTask?.value
+
+        #expect(prewarm.stopRealCaptureCallCount == 1)
+        #expect(sut.recordError == .interrupted)
     }
 
     // MARK: - Auto Share Note

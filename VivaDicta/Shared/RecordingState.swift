@@ -19,6 +19,9 @@ enum RecordError: LocalizedError, Equatable {
     case avInitError
     case userDenied
     case recordError
+    /// A call, alarm, or Siri took the microphone mid-recording. Not a failure:
+    /// whatever was captured before it is saved and transcribed as usual.
+    case interrupted
     /// Transcription threw. The associated value is the underlying reason,
     /// surfaced to the user the way ``aiEnhancement`` surfaces its own.
     case transcribe(String)
@@ -36,6 +39,8 @@ enum RecordError: LocalizedError, Equatable {
             "Microphone access denied"
         case .recordError:
             "Recording failed"
+        case .interrupted:
+            "Recording Interrupted"
         case .transcribe:
             "Transcription Failed"
         case .aiGuardrail:
@@ -59,6 +64,8 @@ enum RecordError: LocalizedError, Equatable {
             return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
         case .recordError:
             return "Failed to start recording. Check that no other app is using the microphone and try again."
+        case .interrupted:
+            return "Something else needed the microphone, so recording stopped early. The audio captured up to that point was saved and transcribed."
         case .transcribe(let reason):
             return "Failed to transcribe the recording: \(reason). The recording was saved - open it from the notes list to play it back or retry."
         case .aiGuardrail:

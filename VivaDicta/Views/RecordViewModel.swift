@@ -145,6 +145,14 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             self.resetValues()
             self.recordingState = .idle
         }
+        // Both capture paths can be interrupted, and only one of them is live
+        // at a time, so they share a handler. It is idempotent either way.
+        self.audioRecordingService.onInterruption = { [weak self] in
+            self?.handleRecordingInterrupted()
+        }
+        self.prewarmManager.onInterruption = { [weak self] in
+            self?.handleRecordingInterrupted()
+        }
         setupKeyboardRecordingHandlers()
     }
 
@@ -214,6 +222,32 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
     }
     
+    /// Finishes a recording the system ended for us.
+    ///
+    /// An interruption is a Stop the user never pressed: a call, an alarm, or
+    /// Siri took the microphone, the capture is already closed, and the only
+    /// open question is what happens to the audio recorded up to that point.
+    /// Running it through the normal stop path transcribes and saves it like
+    /// any other recording, which beats dropping however many minutes the user
+    /// had already spoken.
+    ///
+    /// Guarded on `.recording` because both capture paths report the same
+    /// interruption and only one of them owns the live capture.
+    private func handleRecordingInterrupted() {
+        guard recordingState == .recording else { return }
+
+        logger.logInfo("🎙️ Recording interrupted - finishing with the audio captured so far")
+
+        // Queued behind the stop: the alert is informational, and raising it
+        // first would fight the sheet that stopping is about to dismiss.
+        defer {
+            recordError = .interrupted
+            isShowingAlert = true
+        }
+
+        stopCaptureAudio(modelContext: modelContext)
+    }
+
     /// Surfaces a failed start and hands the UI back to the user.
     ///
     /// Both start paths flip `recordingState` to `.recording` before attempting

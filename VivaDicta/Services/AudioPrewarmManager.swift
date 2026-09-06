@@ -17,7 +17,7 @@ import os
 /// the production conformance; tests inject a mock so the view model's recording
 /// flow can be exercised without a live AVAudioEngine.
 @MainActor
-protocol AudioPrewarmer {
+protocol AudioPrewarmer: AnyObject {
     var isSessionActive: Bool { get }
     var audioSessionTimeout: Int { get }
     var currentAudioLevel: Float { get }
@@ -28,6 +28,16 @@ protocol AudioPrewarmer {
     func startRealCapture(to url: URL, pcmStream: AsyncStream<Data>.Continuation?) throws
     func stopRealCapture()
     func rescheduleSessionTimeout()
+
+    /// Fired when the audio session is interrupted while a real capture is
+    /// running - a phone call, an alarm, Siri.
+    ///
+    /// The capture is already closed and its file finalized by the time this
+    /// arrives, so the audio recorded up to the interruption is complete. The
+    /// engine restarts on its own once the interruption ends, so the hot mic
+    /// stays usable; only the in-progress recording needs a decision, and that
+    /// belongs to the consumer.
+    var onInterruption: (@MainActor () -> Void)? { get set }
 }
 
 extension AudioPrewarmer {
@@ -58,6 +68,9 @@ final class AudioPrewarmManager: AudioPrewarmer {
 
     var audioEngine: AVAudioEngine?
     private var captureContext: AudioCaptureContext?
+    private var interruptionObserver: (any NSObjectProtocol)?
+
+    var onInterruption: (@MainActor () -> Void)?
 
     /// Whether the live session was configured with a microphone input route.
     /// Text-processing sessions are not, so a recording arriving inside one has
@@ -164,6 +177,8 @@ final class AudioPrewarmManager: AudioPrewarmer {
         // Setup session timeout
         scheduleSessionTimeout()
 
+        observeInterruptions()
+
         // Update observable state
         isSessionActiveObservable = true
 
@@ -195,6 +210,8 @@ final class AudioPrewarmManager: AudioPrewarmer {
     /// Ends the prewarm session and cleans up all resources
     func endSession() {
         logger.logInfo("🎙️ Ending prewarm session")
+
+        stopObservingInterruptions()
 
         // Stop capturing if active
         captureContext?.isCapturing = false
@@ -228,6 +245,101 @@ final class AudioPrewarmManager: AudioPrewarmer {
 
         logger.logInfo("🎙️ Prewarm session and keyboard session ended")
     }
+
+    // MARK: - Interruptions
+
+    /// Watches for the phone call, alarm, or Siri invocation that takes the mic
+    /// away mid-session.
+    ///
+    /// The hot mic holds a live `AVAudioEngine` for minutes at a time, so it is
+    /// far more exposed to this than a short recording is. Without an observer
+    /// the engine is left stopped by the system: the tap goes quiet, the level
+    /// meter flatlines, and every later `startRealCapture` writes an empty file
+    /// while reporting success.
+    private func observeInterruptions() {
+        #if !os(macOS)
+        stopObservingInterruptions()
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            // The outer capture has to be weak too: an inner `[weak self]` alone
+            // still makes this closure hold self strongly, cycling through
+            // `interruptionObserver`.
+            guard self != nil else { return }
+            guard let info = notification.userInfo,
+                  let typeRaw = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeRaw) else {
+                return
+            }
+            let options = (info[AVAudioSessionInterruptionOptionKey] as? UInt)
+                .map(AVAudioSession.InterruptionOptions.init(rawValue:)) ?? []
+            Task { @MainActor [weak self] in
+                self?.handleInterruption(type: type, options: options)
+            }
+        }
+        #endif
+    }
+
+    private func stopObservingInterruptions() {
+        guard let interruptionObserver else { return }
+        NotificationCenter.default.removeObserver(interruptionObserver)
+        self.interruptionObserver = nil
+    }
+
+    #if !os(macOS)
+    private func handleInterruption(
+        type: AVAudioSession.InterruptionType,
+        options: AVAudioSession.InterruptionOptions
+    ) {
+        switch type {
+        case .began:
+            let wasCapturing = captureContext?.isCapturing == true
+            logger.logInfo("🎙️ Audio session interrupted (capturing: \(wasCapturing))")
+
+            // Close the file first: `stopRealCapture` clears the capture flag
+            // and releases the `AVAudioFile`, which is what finalizes the WAV
+            // header. Tearing the engine down first would leave the last
+            // buffers unwritten.
+            if wasCapturing {
+                stopRealCapture()
+            }
+
+            // The system has already stopped the engine; make our own state
+            // agree so `isSessionActive` stops claiming a hot mic that is not
+            // running.
+            audioEngine?.stop()
+
+            if wasCapturing {
+                onInterruption?()
+            }
+
+        case .ended:
+            guard options.contains(.shouldResume) else {
+                logger.logInfo("🎙️ Interruption ended without shouldResume - leaving the session down")
+                endSession()
+                return
+            }
+            logger.logInfo("🎙️ Interruption ended - restarting the prewarm session")
+            Task { @MainActor in
+                do {
+                    // A full restart rather than `audioEngine?.start()`: the
+                    // route can have changed under the interruption, so the tap
+                    // and its format have to be rebuilt against whatever input
+                    // came back.
+                    endSession()
+                    try await startPrewarmSession(needsMicrophone: true)
+                } catch {
+                    logger.logError("❌ Could not restart the prewarm session after an interruption: \(error.localizedDescription)")
+                }
+            }
+
+        @unknown default:
+            break
+        }
+    }
+    #endif
 
     // MARK: - Audio Engine (Continuous)
 
