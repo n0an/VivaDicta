@@ -81,12 +81,19 @@ public enum KeyboardLanguage: String, CaseIterable, Sendable, Hashable, Identifi
     /// preference list, set in iOS Settings -> General -> Language & Region)
     /// and returns the subset of `KeyboardLanguage` cases that match.
     ///
-    /// Used during the one-shot onboarding migration to pre-check toggles for
-    /// languages the user is likely to want. After that first run the user's
-    /// explicit choices take precedence.
-    public static func preferredFromSystem() -> Set<KeyboardLanguage> {
+    /// Used to pre-check toggles for languages the user is likely to want:
+    /// once during the onboarding migration, and again for any language added
+    /// in a later release (see `AppGroupCoordinator.ensureNewLanguagesSeeded`).
+    /// A language is only ever considered once - after that the user's explicit
+    /// choice takes precedence.
+    ///
+    /// - Parameter preferredLanguages: BCP-47 tags to inspect. Defaults to the
+    ///   live system list; injectable so the matching is testable.
+    public static func preferredFromSystem(
+        preferredLanguages: [String] = Locale.preferredLanguages
+    ) -> Set<KeyboardLanguage> {
         var result: Set<KeyboardLanguage> = []
-        for tag in Locale.preferredLanguages {
+        for tag in preferredLanguages {
             // Locale(identifier:).language.languageCode gives the primary
             // language code without region (e.g. "en-US" -> "en").
             guard let code = Locale(identifier: tag).language.languageCode?.identifier else { continue }
