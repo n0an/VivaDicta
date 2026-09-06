@@ -144,6 +144,12 @@ final class RealtimeDictationCoordinator {
         if modelName == TranscriptionModelProvider.mistralRealtimeModel {
             return MistralRealtimeSession()
         }
+        if modelName == TranscriptionModelProvider.cartesiaRealtimeModel {
+            return CartesiaRealtimeSession(modelName: modelName)
+        }
+        if modelName == TranscriptionModelProvider.geminiLiveRealtimeModel {
+            return GeminiLiveRealtimeSession()
+        }
         return SonioxRealtimeDictationSession()
     }
 
@@ -159,6 +165,12 @@ final class RealtimeDictationCoordinator {
         }
         if modelName == TranscriptionModelProvider.mistralRealtimeModel {
             return AIProvider.mistral.apiKey
+        }
+        if modelName == TranscriptionModelProvider.cartesiaRealtimeModel {
+            return AIProvider.cartesia.apiKey
+        }
+        if modelName == TranscriptionModelProvider.geminiLiveRealtimeModel {
+            return AIProvider.gemini.apiKey
         }
         return keychain.getString(forKey: "sonioxAPIKey")
     }

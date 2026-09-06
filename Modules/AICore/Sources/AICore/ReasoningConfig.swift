@@ -18,6 +18,7 @@ public struct ReasoningConfig {
     // validation error, so the usual minimal-effort default would 400 every
     // enhancement call.
     static let geminiLowReasoningModels: Set<String> = [
+        "gemini-3.8-flash",
         "gemini-3.7-flash"
     ]
 
@@ -46,6 +47,14 @@ public struct ReasoningConfig {
     static let openAIMinimalReasoningModels: Set<String> = [
         "gpt-5-mini",
         "gpt-5-nano"
+    ]
+
+    /// "low" is the floor for these: unlike the GPT-5 generation they offer no
+    /// "none" or "minimal" level (gpt-6-astra takes low/medium/high/xhigh/max),
+    /// so asking for one would 400 every enhancement call. Left at the floor
+    /// because cleaning up dictation gains nothing from a longer reasoning pass.
+    static let openAILowReasoningModels: Set<String> = [
+        "gpt-6-astra"
     ]
 
     // gpt-oss-120b defaults to "medium" on Cerebras, "low" is the cheapest option
@@ -94,27 +103,36 @@ public struct ReasoningConfig {
         "kimi-k2.7"
     ]
 
+    /// Whether the model belongs to OpenAI's reasoning family, which steers
+    /// effort with `reasoning_effort` rather than `temperature` and renamed its
+    /// output cap. Covers the GPT-5 generation and GPT-6 (`gpt-6-astra`).
+    ///
+    /// Matched on the bare model id so gateway-prefixed ids
+    /// ("openai/gpt-5.6-terra" on OpenRouter or Vercel) are covered too.
+    private static func isOpenAIReasoningFamily(_ modelName: String) -> Bool {
+        let id = bareModelID(modelName)
+        return id.hasPrefix("gpt-5") || id.hasPrefix("gpt-6")
+    }
+
     /// Whether a `temperature` field belongs in this model's request body.
     ///
-    /// False for the GPT-5 reasoning family, which uses `reasoning_effort`, and
+    /// False for OpenAI's reasoning family, which uses `reasoning_effort`, and
     /// for the models above, which accept only 1 - omitting it lets the server
     /// pick that default rather than us hard-coding a value per family.
     public static func sendsTemperature(for modelName: String) -> Bool {
+        if isOpenAIReasoningFamily(modelName) { return false }
         let id = modelName.lowercased()
-        if id.hasPrefix("gpt-5") { return false }
         return !fixedTemperatureModelIDs.contains(where: id.contains)
     }
 
     /// Whether this model's output cap belongs in `max_completion_tokens`
     /// rather than `max_tokens`.
     ///
-    /// The GPT-5 reasoning family rejects the older field outright:
+    /// OpenAI's reasoning family rejects the older field outright:
     /// `Unsupported parameter: 'max_tokens' is not supported with this model.
-    /// Use 'max_completion_tokens' instead.` Matched on the bare model id, so
-    /// gateway-prefixed ids ("openai/gpt-5.6-terra" on OpenRouter or Vercel)
-    /// are covered too.
+    /// Use 'max_completion_tokens' instead.`
     public static func usesMaxCompletionTokens(for modelName: String) -> Bool {
-        bareModelID(modelName).hasPrefix("gpt-5")
+        isOpenAIReasoningFamily(modelName)
     }
 
     /// Floor for an output cap sent to a reasoning model.
@@ -143,6 +161,7 @@ public struct ReasoningConfig {
         else if geminiMinimalReasoningModels.contains(modelName) { return "minimal" }
         else if openAINoneReasoningModels.contains(modelName) { return "none" }
         else if openAIMinimalReasoningModels.contains(modelName) { return "minimal" }
+        else if openAILowReasoningModels.contains(modelName) { return "low" }
         else if cerebrasReasoningModels.contains(modelName) { return "low" }
         else if groqLowReasoningModels.contains(modelName) { return "low" }
         else if groqQwenReasoningModels.contains(modelName) { return "none" }

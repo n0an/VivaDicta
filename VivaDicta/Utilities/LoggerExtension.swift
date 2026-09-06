@@ -46,6 +46,8 @@ public enum LogCategory: String {
     case deepgramNovaRealtimeDictation = "DeepgramNovaRealtimeDictation"
     case elevenLabsRealtimeDictation = "ElevenLabsRealtimeDictation"
     case mistralRealtimeDictation = "MistralRealtimeDictation"
+    case cartesiaRealtimeDictation = "CartesiaRealtimeDictation"
+    case geminiLiveRealtimeDictation = "GeminiLiveRealtimeDictation"
     case streamingAudioCapture = "StreamingAudioCapture"
 
     // MARK: - Services - Live Translation
