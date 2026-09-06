@@ -17,6 +17,55 @@ public struct TranscriptionOutputFilter {
         #"\{.*?\}"#      // {}
     ]
 
+    /// Memorized subtitle-credit strings Whisper emits when it is handed
+    /// silence or noise. They are baked into the model from uncleaned training
+    /// data (subtitle files that carried their author's signature), so they
+    /// arrive as confident, well-formed text rather than as garbage.
+    ///
+    /// Stripped **anywhere** in the transcript, not just as a whole line:
+    /// `WhisperKitTranscriptionService` joins every segment with a space, so a
+    /// trailing silent segment lands at the end of the same line as real
+    /// speech. These strings are specific enough that a mid-sentence match is
+    /// a hallucination and not something a person dictated.
+    ///
+    /// Matched without consulting the language, deliberately. Detection has
+    /// nothing to work with on a silence-only clip, and these are long enough
+    /// that cross-language collisions are not a real risk.
+    private static let signatureHallucinations = [
+        // ru - the DimaTorzok family. The verb varies (добавил / сделал /
+        // создал / "и перевод сделал"), the name does not.
+        #"Субтитры[^\n]{0,40}?DimaTorzok\.?"#,
+        #"\bDimaTorzok\b\.?"#,
+        #"Редактор\s+субтитров[^\n]{0,80}?Корректор\s+\S+"#,
+        #"Субтитры\s+подогнал\s+«[^»]{1,40}»!?"#,
+        // Same failure in other languages, same shape.
+        #"Altyazı\s+M\.K\.?"#,
+        #"Titulky\s+vytvořil\s+\S+"#,
+        #"ترجمة\s+نانسي\s+قنقر"#
+    ]
+
+    /// Hallucinations that are ordinary phrases in isolation, so they are only
+    /// dropped when they are the **entire** transcript. "Спасибо за просмотр!"
+    /// mid-sentence is somebody talking; on its own after a silent recording it
+    /// is the model filling a void.
+    ///
+    /// English equivalents ("Thanks for watching!", "Thank you.") are
+    /// deliberately absent: this is a dictation app, and those are things
+    /// people genuinely dictate on their own.
+    private static let standaloneHallucinations = [
+        #"Спасибо\s+за\s+субтитры!?"#,
+        #"Спасибо\s+за\s+просмотр!?"#,
+        #"Продолжение\s+следует\.{0,3}"#,
+        #"Смотрите\s+продолжение[^\n]{0,60}"#,
+        #"ПОДПИШИСЬ\s+НА\s+КАНАЛ!?"#,
+        // All-caps sound labels the model emits over noise.
+        #"(?:ВЕС[ЕЁ]ЛАЯ|СПОКОЙНАЯ|ГРУСТНАЯ|ТРЕВОЖНАЯ)\s+(?:МУЗЫКА|МЕЛОДИЯ)"#,
+        #"ЛАЙ\s+СОБАК"#,
+        #"ШУМ\s+ДОЖДЯ"#,
+        #"ПЕРЕСТРЕЛКА"#,
+        #"КАШЕЛЬ"#
+    ]
+
     /// Hesitation sounds that have no real-word collisions in any language.
     /// Always stripped regardless of language.
     ///
@@ -78,6 +127,13 @@ public struct TranscriptionOutputFilter {
             }
         }
 
+        // Strip memorized hallucinations. Deliberately outside the
+        // `removeFillers` check below: a filler is something the user actually
+        // said and chose to keep, a hallucination is text they never uttered.
+        // The toggle is an editorial preference about real speech, so it has
+        // no say over fabricated content.
+        filteredText = stripHallucinations(filteredText)
+
         // Resolve language, pick filler set, and remove filler words.
         let fillerLanguage: String
         if removeFillers {
@@ -134,6 +190,33 @@ public struct TranscriptionOutputFilter {
             view = view.dropLast()
         }
         return String(view)
+    }
+
+    /// Removes memorized subtitle-credit hallucinations.
+    ///
+    /// Signature strings go anywhere in the text; the ambiguous ones only count
+    /// when they are the whole transcript, so real speech that happens to end
+    /// with "продолжение следует" survives.
+    private static func stripHallucinations(_ text: String) -> String {
+        var result = text
+
+        for pattern in signatureHallucinations {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { continue }
+            let range = NSRange(result.startIndex..., in: result)
+            result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "")
+        }
+
+        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        for pattern in standaloneHallucinations {
+            let anchored = "^\\W*(?:\(pattern))\\W*$"
+            guard let regex = try? NSRegularExpression(pattern: anchored, options: .caseInsensitive) else { continue }
+            let range = NSRange(trimmed.startIndex..., in: trimmed)
+            if regex.firstMatch(in: trimmed, options: [], range: range) != nil {
+                return ""
+            }
+        }
+
+        return result
     }
 
     /// Resolves the language code used to pick the filler set.

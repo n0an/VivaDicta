@@ -33,6 +33,35 @@ public final class WhisperKitTranscriptionService: @unchecked Sendable {
         }
     }
 
+    // MARK: - Silence Handling
+
+    /// Whisper answers silence with memorized subtitle credits from its training
+    /// data - in Russian the "Субтитры ... DimaTorzok" family, with equivalents
+    /// in Turkish, Czech and Arabic. `TranscriptionOutputFilter` strips whatever
+    /// reaches the transcript, but these three options stop most of it being
+    /// generated at all, which is the better place to fix it.
+    ///
+    /// A segment is discarded when `noSpeechProb > noSpeechThreshold`, unless
+    /// `avgLogProb > logProbThreshold` overrides that (WhisperKit's
+    /// `SegmentSeeker.swift`). Memorized credit lines defeat the default pairing
+    /// precisely because the model is *confident* about them: high no-speech
+    /// probability, but a high average log-probability that buys them a reprieve.
+    /// So both ends move - the skip triggers sooner, and the escape hatch is
+    /// narrower.
+
+    /// Down from WhisperKit's 0.6, so a quiet segment is called silence sooner.
+    private static let noSpeechThreshold: Float = 0.4
+
+    /// Up from WhisperKit's -1.0, narrowing the confidence override that lets a
+    /// memorized string survive the no-speech check. Kept well below 0 so
+    /// genuinely quiet speech is not thrown away with it.
+    private static let logProbThreshold: Float = -0.7
+
+    /// WhisperKit defaults this to `false`; OpenAI's reference implementation
+    /// defaults it to `true`. Suppresses blank/whitespace tokens at the start of
+    /// a window, which is where a hallucinated credit line begins.
+    private static let suppressBlank = true
+
     private var whisperKit: WhisperKit?
     private var speakerKit: SpeakerKit?
     private var currentModelName: String?
@@ -72,14 +101,25 @@ public final class WhisperKitTranscriptionService: @unchecked Sendable {
                 language: (options.language == "auto" ? nil : options.language),
                 detectLanguage: (options.language == "auto" ? true : nil),
                 wordTimestamps: options.isSpeakerDiarizationEnabled,
+                suppressBlank: Self.suppressBlank,
+                logProbThreshold: Self.logProbThreshold,
+                noSpeechThreshold: Self.noSpeechThreshold,
                 chunkingStrategy: options.isVADEnabled ? .vad : nil
             )
 
-            let result = try await whisperKit.transcribe(audioPath: audioURL.path, decodeOptions: decodingOptions)
+            let rawResult = try await whisperKit.transcribe(audioPath: audioURL.path, decodeOptions: decodingOptions)
 
-            let transcribedText = result
-                .map { $0.text }
-                .joined(separator: " ")
+            // Drop the confident-text-over-silence tail before anything reads
+            // the transcript, so diarization and the plain path agree.
+            let result = TranscriptionSegmentCleanup.droppingTrailingHallucinations(in: rawResult)
+            let droppedSegments = rawResult.reduce(0) { $0 + $1.segments.count }
+                - result.reduce(0) { $0 + $1.segments.count }
+            if droppedSegments > 0 {
+                logger.logNotice("🧹 Dropped \(droppedSegments) trailing hallucinated segment(s)")
+            }
+
+            let transcribedText = TranscriptionSegmentCleanup
+                .joinedText(result.flatMap(\.segments))
                 .trimmingCharacters(in: .whitespacesAndNewlines)
 
             if options.isSpeakerDiarizationEnabled,
