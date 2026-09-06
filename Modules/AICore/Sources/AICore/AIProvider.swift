@@ -386,7 +386,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
-            return "gemini-3.7-flash"
+            return "gemini-3.8-flash"
         case .anthropic:
             return "claude-sonnet-5"
         case .openAI:
@@ -563,6 +563,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .gemini:
             return [
+                "gemini-3.8-flash",
                 "gemini-3.7-flash",
                 "gemini-3.6-flash",
                 "gemini-3.1-pro-preview",
@@ -574,11 +575,12 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gemini-2.5-flash",
             ]
         case .anthropic:
-            // claude-fable-5 is the top capability tier; it always thinks and
+            // The Fable tier is the top capability tier; it always thinks and
             // rejects an explicit `thinking: disabled`. We never send a thinking
             // parameter, so it works as-is - AnthropicService already skips the
             // leading thinking block when reading the response.
             return [
+                "claude-fable-5-1",
                 "claude-fable-5",
                 "claude-opus-5",
                 "claude-opus-4-8",
@@ -593,6 +595,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // gpt-5.1, gpt-5.2 and gpt-4.1-nano are deprecated/shutting down;
             // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
+                "gpt-6-astra",
                 "gpt-5.6-sol",
                 "gpt-5.6-terra",
                 "gpt-5.6-luna",
@@ -625,6 +628,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .zai:
             return [
+                "glm-5.3",
+                "glm-5.3-flash",
                 "glm-5.2",
                 "glm-5.1",
                 "glm-5-turbo",

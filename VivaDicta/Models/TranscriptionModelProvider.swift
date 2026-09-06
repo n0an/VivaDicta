@@ -145,6 +145,24 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// Mistral's batch model, used when a Voxtral Realtime selection uploads.
     nonisolated static let mistralBatchModel = "voxtral-mini-latest"
 
+    /// Cartesia's Ink 2. Realtime-only: the batch `/stt` endpoint accepts the
+    /// `ink-whisper` family and nothing else, so an upload falls back to
+    /// `ink-whisper`.
+    /// `nonisolated` so the realtime session - an actor - can read it.
+    nonisolated static let cartesiaRealtimeModel = "ink-2"
+
+    /// Cartesia's batch model, used when an Ink 2 selection uploads.
+    nonisolated static let cartesiaBatchModel = "ink-whisper"
+
+    /// Gemini's Live transcription model. Realtime-only: it is served by the
+    /// Live (`BidiGenerateContent`) socket, not the Interactions API that
+    /// `gemini-3.5-transcribe` speaks, so an upload falls back to that one.
+    /// `nonisolated` so the realtime session - an actor - can read it.
+    nonisolated static let geminiLiveRealtimeModel = "gemini-3.5-transcribe-live"
+
+    /// Gemini's dedicated batch STT model, used when a Live selection uploads.
+    nonisolated static let geminiBatchTranscribeModel = "gemini-3.5-transcribe"
+
     nonisolated static func isDeepgramFluxModel(_ modelName: String) -> Bool {
         modelName == deepgramFluxEnglishModel || modelName == deepgramFluxMultilingualModel
     }
@@ -158,6 +176,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             || deepgramNovaRealtimeModels.contains(modelName)
             || modelName == elevenLabsRealtimeModel
             || modelName == mistralRealtimeModel
+            || modelName == cartesiaRealtimeModel
+            || modelName == geminiLiveRealtimeModel
     }
 
     /// The model to send to a batch/upload endpoint for a given selection.
@@ -168,6 +188,8 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     static func asyncEquivalent(of modelName: String) -> String {
         if isDeepgramFluxModel(modelName) { return deepgramBatchModel }
         if modelName == mistralRealtimeModel { return mistralBatchModel }
+        if modelName == cartesiaRealtimeModel { return cartesiaBatchModel }
+        if modelName == geminiLiveRealtimeModel { return geminiBatchTranscribeModel }
         return modelName == sonioxRealtimeModel ? sonioxAsyncModel : modelName
     }
     
@@ -236,7 +258,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         switch self {
         case .groq: "whisper-large-v3-turbo"
         case .mistral: "voxtral-mini-latest"
-        case .gemini: "gemini-3.7-flash"
+        case .gemini: "gemini-3.8-flash"
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-transcribe"
@@ -551,6 +573,18 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
+                name: "ink-2",
+                displayName: "Cartesia Ink 2",
+                description: "Cartesia's newest Ink model - transcribes while you speak and takes your custom vocabulary as keyterms, so names and jargon land right. Realtime only; falls back to Ink Whisper on upload.",
+                provider: .cartesia,
+                speed: 0.98,
+                accuracy: 0.96,
+                cost: 0.4,  // Placeholder - Cartesia bills per credit, not per minute
+                supportManyLanguages: true,
+                supportedLanguages: cartesiaLanguages
+            ),
+
+            CloudModel(
                 name: "ink-whisper",
                 displayName: "Cartesia Ink Whisper",
                 description: "Cartesia's batch Speech-to-Text with arbitrary-length audio support, word-level timestamps, and 100+ languages. Free credits on signup.",
@@ -576,6 +610,17 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
 
             // Gemini Models
             CloudModel(
+                name: "gemini-3.5-transcribe-live",
+                displayName: "Gemini 3.5 Transcribe Live",
+                description: "Streams to Google while you speak instead of uploading after you stop, so the transcript is ready the moment you finish. 85+ languages with automatic detection. Trades speaker labels for latency; falls back to Gemini 3.5 Transcribe on upload.",
+                provider: .gemini,
+                speed: 1.0,
+                accuracy: 0.95,
+                cost: 0.3,
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3.5-transcribe",
                 displayName: "Gemini 3.5 Transcribe",
                 description: "Google's dedicated speech-to-text model - 85+ languages, speaker labels, and it removes fillers and self-corrections as it transcribes.",
@@ -587,9 +632,20 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
                 supportedLanguages: allLanguages
             ),
             CloudModel(
+                name: "gemini-3.8-flash",
+                displayName: "Gemini 3.8 Flash",
+                description: "Google's latest and most capable Flash model, successor to 3.7 Flash.",
+                provider: .gemini,
+                speed: 0.95,
+                accuracy: 0.95,
+                cost: 0.3,  // $0.002/min - Free tier (15 RPM) + $300 Google Cloud credits for 90 days
+                supportManyLanguages: true,
+                supportedLanguages: allLanguages
+            ),
+            CloudModel(
                 name: "gemini-3.7-flash",
                 displayName: "Gemini 3.7 Flash",
-                description: "Google's latest and most capable Flash model, successor to 3.6 Flash.",
+                description: "Google's previous-generation Flash model, superseded by Gemini 3.8 Flash.",
                 provider: .gemini,
                 speed: 0.94,
                 accuracy: 0.94,
@@ -600,7 +656,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             CloudModel(
                 name: "gemini-3.6-flash",
                 displayName: "Gemini 3.6 Flash",
-                description: "Google's previous-generation fast multimodal model, superseded by Gemini 3.7 Flash.",
+                description: "Google's older fast multimodal model, superseded by Gemini 3.8 Flash.",
                 provider: .gemini,
                 speed: 0.93,
                 accuracy: 0.93,
