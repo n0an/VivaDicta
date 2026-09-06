@@ -15,6 +15,7 @@ enum SettingsDestination: Hashable {
     case transcriptionModels
     case chatTools
     case geminiTranscriptionPrompt
+    case remindersAndCalendar
 
     // Dictionary
     case correctSpelling

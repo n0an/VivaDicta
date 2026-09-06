@@ -25,14 +25,8 @@ struct SettingsView: View {
     private var isVADEnabled = true
     @AppStorage(AppGroupCoordinator.kIsSpeakerDiarizationEnabled, store: UserDefaultsStorage.shared)
     private var isSpeakerDiarizationEnabled = false
-    @AppStorage(AppGroupCoordinator.kGeminiTranscriptionThinkingLevel, store: UserDefaultsStorage.shared)
-    private var geminiThinkingLevel: GeminiTranscriptionService.ThinkingLevel = .low
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
-    @AppStorage(UserDefaultsStorage.Keys.isAutoReminderExtractionEnabled, store: UserDefaultsStorage.appPrivate)
-    private var isAutoReminderExtractionEnabled = false
-    @AppStorage(UserDefaultsStorage.Keys.isCalendarEventExtractionEnabled, store: UserDefaultsStorage.appPrivate)
-    private var isCalendarEventExtractionEnabled = false
     @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
     @AppStorage(UserDefaultsStorage.Keys.preferredMicrophone, store: UserDefaultsStorage.shared)
     private var preferredMicrophone: PreferredMicrophone = .default
@@ -189,33 +183,6 @@ struct SettingsView: View {
                         HapticManager.selectionChanged()
                     }
 
-                    Picker(selection: $geminiThinkingLevel) {
-                        Text("Low").tag(GeminiTranscriptionService.ThinkingLevel.low)
-                        Text("Medium").tag(GeminiTranscriptionService.ThinkingLevel.medium)
-                        Text("High").tag(GeminiTranscriptionService.ThinkingLevel.high)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Gemini Thinking Level")
-                                .font(.body)
-                            Text("How much Gemini reasons before answering. Low is fastest and cheapest")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: geminiThinkingLevel) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-
-                    NavigationLink(value: SettingsDestination.geminiTranscriptionPrompt) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Gemini Transcription Prompt")
-                                .font(.body)
-                            Text("Customize the instruction sent with the audio")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
                     Toggle(isOn: $isAutoCopyAfterRecordingEnabled) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Copy to Clipboard")
@@ -253,29 +220,8 @@ struct SettingsView: View {
                     NavigationLink(value: SettingsDestination.presetsSettings) {
                         Text("AI Processing Presets")
                     }
-                    Toggle(isOn: $isAutoReminderExtractionEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Extract Reminder Suggestions Automatically")
-                                .font(.body)
-                            Text("After saving a new note, detect reminder-worthy tasks in the background and keep them ready for review.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isAutoReminderExtractionEnabled) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-                    Toggle(isOn: $isCalendarEventExtractionEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Extract Calendar Events Too")
-                                .font(.body)
-                            Text("Also look for things that happen at a set time - a dinner, a meeting, an appointment - and offer them as calendar events.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isCalendarEventExtractionEnabled) { _, _ in
-                        HapticManager.selectionChanged()
+                    NavigationLink(value: SettingsDestination.remindersAndCalendar) {
+                        Text("Reminders and Calendar")
                     }
                     if ChineseScriptPreferenceStore.shouldShowSetting(modes: appState.aiService.modes) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -653,6 +599,19 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    Link(destination: URL(string: "https://vivadicta.com")!) {
+                        HStack {
+                            Image(systemName: "desktopcomputer")
+                                .foregroundStyle(.indigo)
+                            Text("VivaDicta for macOS")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "arrow.up.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section {
@@ -701,6 +660,8 @@ struct SettingsView: View {
                     AdvancedSettingsView()
                 case .geminiTranscriptionPrompt:
                     GeminiTranscriptionPromptView()
+                case .remindersAndCalendar:
+                    RemindersCalendarSettingsView()
                 }
             }
             .navigationDestination(for: Preset.self) { preset in
