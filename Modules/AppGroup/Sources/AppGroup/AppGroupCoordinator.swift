@@ -70,6 +70,10 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     public static let kEnabledKeyboardLanguages = "enabledKeyboardLanguages"
     public static let kCurrentKeyboardLanguage = "currentKeyboardLanguage"
     private static let kDidMigrateLanguageSettings = "didMigrateLanguageSettings_v1"
+    /// Languages already offered to this install, so a language added in a
+    /// later release can be auto-enabled exactly once. See
+    /// `ensureNewLanguagesSeeded()`.
+    private static let kSeededLanguages = "seededKeyboardLanguages"
     // Legacy keys, kept here only so the migration code can read and clear them.
     private static let kLegacyKeyboardLayoutStyle = "keyboardLayoutStyle"
     private static let kLegacyIsRussianLayoutEnabled = "isRussianLayoutEnabled"
@@ -740,28 +744,20 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// Stored as a comma-separated list of raw values in shared UserDefaults.
     public var enabledKeyboardLanguages: Set<KeyboardLanguage> {
         get {
-            ensureLanguageSettingsMigrated()
-            guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kEnabledKeyboardLanguages),
-                  !raw.isEmpty else {
-                return [.english]
-            }
-            let langs = raw
-                .split(separator: ",")
-                .compactMap { KeyboardLanguage(rawValue: String($0)) }
-            return langs.isEmpty ? [.english] : Set(langs)
+            ensureLanguageSettingsUpToDate()
+            let langs = AppGroupCoordinator.parseLanguages(
+                sharedDefaults?.string(forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
+            )
+            return langs.isEmpty ? [.english] : langs
         }
         set {
-            // Run migration before persisting so a write that beats any read
-            // (e.g. a future code path that calls the setter first) cannot leave
-            // the marker unset and have the next getter overwrite the user's
-            // value with the legacy-derived seed.
-            ensureLanguageSettingsMigrated()
+            // Run migration and seeding before persisting so a write that beats
+            // any read (e.g. a future code path that calls the setter first)
+            // cannot leave the markers unset and have the next getter overwrite
+            // the user's value with the derived seed.
+            ensureLanguageSettingsUpToDate()
             let safe = newValue.isEmpty ? Set([KeyboardLanguage.english]) : newValue
-            // Serialize in canonical (allCases) order for deterministic storage.
-            let raw = KeyboardLanguage.allCases
-                .filter { safe.contains($0) }
-                .map(\.rawValue)
-                .joined(separator: ",")
+            let raw = AppGroupCoordinator.serializeLanguages(safe)
             sharedDefaults?.set(raw, forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
             // If the currently active language was just disabled, snap to the
             // first enabled language so the keyboard never points at a missing one.
@@ -781,7 +777,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     /// enabled language if the persisted value is missing or no longer enabled.
     public var currentKeyboardLanguage: KeyboardLanguage {
         get {
-            ensureLanguageSettingsMigrated()
+            ensureLanguageSettingsUpToDate()
             let enabled = enabledKeyboardLanguages
             guard let raw = sharedDefaults?.string(forKey: AppGroupCoordinator.kCurrentKeyboardLanguage),
                   let lang = KeyboardLanguage(rawValue: raw),
@@ -791,7 +787,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
             return lang
         }
         set {
-            ensureLanguageSettingsMigrated()
+            ensureLanguageSettingsUpToDate()
             sharedDefaults?.set(newValue.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
             sharedDefaults?.synchronize()
         }
@@ -840,18 +836,114 @@ public final class AppGroupCoordinator: @unchecked Sendable {
             current = .english
         }
 
-        let rawEnabled = KeyboardLanguage.allCases
-            .filter { enabled.contains($0) }
-            .map(\.rawValue)
-            .joined(separator: ",")
-        defaults.set(rawEnabled, forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
+        defaults.set(
+            AppGroupCoordinator.serializeLanguages(enabled),
+            forKey: AppGroupCoordinator.kEnabledKeyboardLanguages
+        )
         defaults.set(current.rawValue, forKey: AppGroupCoordinator.kCurrentKeyboardLanguage)
+        // This install has now been offered every language that exists today,
+        // so `ensureNewLanguagesSeeded()` has nothing left to do until a new
+        // case is added.
+        defaults.set(
+            AppGroupCoordinator.serializeLanguages(Set(KeyboardLanguage.allCases)),
+            forKey: AppGroupCoordinator.kSeededLanguages
+        )
 
         defaults.removeObject(forKey: AppGroupCoordinator.kLegacyKeyboardLayoutStyle)
         defaults.removeObject(forKey: AppGroupCoordinator.kLegacyIsRussianLayoutEnabled)
         defaults.removeObject(forKey: AppGroupCoordinator.kLegacyIsCurrentlyRussian)
         defaults.set(true, forKey: AppGroupCoordinator.kDidMigrateLanguageSettings)
         defaults.synchronize()
+    }
+
+    /// The languages that had already been offered to users before per-language
+    /// seeding existed, used to backfill `kSeededLanguages` for installs that
+    /// ran the one-shot migration under an older build.
+    ///
+    /// This is a frozen historical fact - the set that shipped on the App Store
+    /// before this key was introduced. **Do not add new cases here.** A new
+    /// language belongs in `KeyboardLanguage` only; leaving it out of this set
+    /// is precisely what lets `ensureNewLanguagesSeeded()` pick it up.
+    private static let preSeedingLanguages: Set<KeyboardLanguage> = [
+        .english, .french, .german, .spanish, .russian
+    ]
+
+    /// Runs the language-settings migration, then auto-enables any language
+    /// added since this install last looked.
+    private func ensureLanguageSettingsUpToDate() {
+        ensureLanguageSettingsMigrated()
+        ensureNewLanguagesSeeded()
+    }
+
+    /// Auto-enables any `KeyboardLanguage` case that this install has never been
+    /// offered, when it matches one of the user's iOS system languages.
+    ///
+    /// `ensureLanguageSettingsMigrated()` consults `preferredFromSystem()` only
+    /// once, behind a boolean marker, so a language shipped in a later release
+    /// would never auto-enable for anyone who had already migrated - a Czech
+    /// user updating the app would have to find the toggle by hand. This runs
+    /// on every access and closes that gap for every future language too.
+    ///
+    /// Each language is considered **exactly once**: `kSeededLanguages` records
+    /// what has been offered, whether or not it was enabled. So a language the
+    /// user deliberately switched off is never switched back on, and one that
+    /// did not match their locales is not re-evaluated if they later change
+    /// them. Seeding only ever adds, so the English floor is unaffected.
+    ///
+    /// - Parameter systemPreferred: The languages matching the user's iOS
+    ///   language list. A parameter so the seeding is testable without touching
+    ///   `Locale.preferredLanguages`, and an `@autoclosure` so that list is not
+    ///   read on the common path where there is nothing new to seed - this runs
+    ///   on every language read, including from the keyboard extension.
+    func ensureNewLanguagesSeeded(
+        systemPreferred: @autoclosure () -> Set<KeyboardLanguage> = KeyboardLanguage.preferredFromSystem()
+    ) {
+        guard let defaults = sharedDefaults else { return }
+
+        let seeded: Set<KeyboardLanguage>
+        if let raw = defaults.string(forKey: AppGroupCoordinator.kSeededLanguages) {
+            seeded = AppGroupCoordinator.parseLanguages(raw)
+        } else {
+            seeded = AppGroupCoordinator.preSeedingLanguages
+        }
+
+        let unseen = Set(KeyboardLanguage.allCases).subtracting(seeded)
+        guard !unseen.isEmpty else { return }
+
+        let toEnable = unseen.intersection(systemPreferred())
+        if !toEnable.isEmpty {
+            let enabled = AppGroupCoordinator.parseLanguages(
+                defaults.string(forKey: AppGroupCoordinator.kEnabledKeyboardLanguages)
+            )
+            let updated = (enabled.isEmpty ? [.english] : enabled).union(toEnable)
+            defaults.set(
+                AppGroupCoordinator.serializeLanguages(updated),
+                forKey: AppGroupCoordinator.kEnabledKeyboardLanguages
+            )
+            logger.logInfo("Auto-enabled new keyboard languages: \(AppGroupCoordinator.serializeLanguages(toEnable))")
+        }
+
+        defaults.set(
+            AppGroupCoordinator.serializeLanguages(Set(KeyboardLanguage.allCases)),
+            forKey: AppGroupCoordinator.kSeededLanguages
+        )
+        defaults.synchronize()
+    }
+
+    /// Parses the comma-separated raw-value list used to persist a language set.
+    /// Unknown raw values (a language removed in a later build) are dropped.
+    static func parseLanguages(_ raw: String?) -> Set<KeyboardLanguage> {
+        guard let raw, !raw.isEmpty else { return [] }
+        return Set(raw.split(separator: ",").compactMap { KeyboardLanguage(rawValue: String($0)) })
+    }
+
+    /// Serializes a language set in canonical `allCases` order, so storage is
+    /// deterministic and diffable regardless of `Set` iteration order.
+    static func serializeLanguages(_ languages: Set<KeyboardLanguage>) -> String {
+        KeyboardLanguage.allCases
+            .filter { languages.contains($0) }
+            .map(\.rawValue)
+            .joined(separator: ",")
     }
 
     // MARK: - Share Extension Audio Handling
