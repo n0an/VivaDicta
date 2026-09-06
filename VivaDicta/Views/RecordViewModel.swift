@@ -214,6 +214,21 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
     }
     
+    /// Surfaces a failed start and hands the UI back to the user.
+    ///
+    /// Both start paths flip `recordingState` to `.recording` before attempting
+    /// the capture, so a throw here has already opened - and is about to close -
+    /// the recording sheet. Parking in `.error` left nothing on screen to explain
+    /// it and kept the append-to-note actions in the detail view disabled until
+    /// the next successful recording, so go back to `.idle` and alert instead.
+    private func reportFailedStart() {
+        HapticManager.error()
+        recordError = .recordError
+        isShowingAlert = true
+        recordingState = .idle
+        appGroupBridge.updateRecordingState(false)
+    }
+
     private func requestMicrophonePermission() async -> Bool {
 #if !os(macOS)
         await withCheckedContinuation { continuation in
@@ -300,9 +315,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     })
 
                 } catch {
+                    logger.logError("🎙️ Failed to start the prewarmed capture: \(error.localizedDescription)")
                     activeRecordingDestination = .newNote
                     resetValues()
-                    recordingState = .error(.recordError)
+                    reportFailedStart()
                     return
                 }
 
@@ -397,9 +413,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     })
 
                 } catch {
+                    logger.logError("🎙️ Failed to start recording: \(error.localizedDescription)")
                     activeRecordingDestination = .newNote
                     resetValues()
-                    recordingState = .error(.recordError)
+                    reportFailedStart()
                 }
             }
         }

@@ -51,20 +51,6 @@ enum RecordError: LocalizedError, Equatable {
         }
     }
 
-    /// True for failures raised after the recording sheet has already dismissed.
-    ///
-    /// The sheet is bound to `recordingState == .recording`, so anything thrown
-    /// during transcription or AI processing arrives with no sheet left to carry
-    /// the alert. `MainView` presents these instead.
-    var isPostRecording: Bool {
-        switch self {
-        case .transcribe, .aiGuardrail, .aiRefusal, .aiEnhancement:
-            true
-        case .avInitError, .userDenied, .recordError, .other, .debugError:
-            false
-        }
-    }
-
     var failureReason: String {
         switch self {
         case .avInitError:
@@ -72,7 +58,7 @@ enum RecordError: LocalizedError, Equatable {
         case .userDenied:
             return "Microphone access is required for recording. Please go to Settings > Privacy & Security > Microphone and enable access for VivaDicta."
         case .recordError:
-            return "Failed to record audio. Check that no other app is using the microphone and try again."
+            return "Failed to start recording. Check that no other app is using the microphone and try again."
         case .transcribe(let reason):
             return "Failed to transcribe the recording: \(reason). The recording was saved - open it from the notes list to play it back or retry."
         case .aiGuardrail:

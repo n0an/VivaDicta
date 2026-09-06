@@ -329,19 +329,6 @@ struct RecordViewModelTests {
         #expect(sut.transcriptionStatus == TranscriptionStatus.completed.rawValue)
     }
 
-    @MainActor
-    @Test func postRecordingErrors_areTheOnesTheSheetCannotShow() {
-        // The recording sheet is bound to `recordingState == .recording`, so
-        // anything raised after that has to be presented by MainView instead.
-        #expect(RecordError.transcribe("boom").isPostRecording)
-        #expect(RecordError.aiEnhancement("boom").isPostRecording)
-        #expect(RecordError.aiRefusal("boom").isPostRecording)
-        #expect(RecordError.aiGuardrail.isPostRecording)
-        #expect(!RecordError.userDenied.isPostRecording)
-        #expect(!RecordError.recordError.isPostRecording)
-        #expect(!RecordError.avInitError.isPostRecording)
-    }
-
     // MARK: - Auto Share Note
 
     /// All three "Auto Share Note" cases share one SUT (and so one `AppState`)

@@ -328,8 +328,17 @@ struct MainView: View {
         } message: {
             Text(fileErrorMessage)
         }
-        .alert(isPresented: postRecordingAlertBinding, error: appState.recordViewModel?.recordError) { _ in
-            Button("OK", role: .cancel) {}
+        .alert(isPresented: recordErrorAlertBinding, error: appState.recordViewModel?.recordError) { recordError in
+            if case .userDenied = recordError {
+                Button("Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } else {
+                Button("OK", role: .cancel) {}
+            }
         } message: { recordError in
             Text(recordError.failureReason)
         }
@@ -362,19 +371,18 @@ struct MainView: View {
         )
     }
 
-    /// Presents the failures that arrive after the recording sheet has closed.
+    /// Presents every recording failure.
     ///
-    /// The sheet carries its own alert, but it is bound to
-    /// `recordingState == .recording`, so it is already gone by the time
-    /// transcription or AI processing throws. Without this binding those errors
-    /// set `isShowingAlert` against a view that no longer exists and the user
-    /// sees nothing at all.
-    private var postRecordingAlertBinding: Binding<Bool> {
+    /// The recording sheet used to carry this alert, but the sheet is bound to
+    /// `recordingState == .recording` and no failure is ever raised while that
+    /// holds: a failed start happens before or on the way out of `.recording`,
+    /// and transcription and AI errors land two states later. So the sheet was
+    /// always gone (or never opened) by the time `isShowingAlert` flipped, and
+    /// the alert presented against a view that no longer existed. The main
+    /// screen is always mounted, so it owns them all.
+    private var recordErrorAlertBinding: Binding<Bool> {
         Binding(
-            get: {
-                appState.recordViewModel?.isShowingAlert == true
-                    && appState.recordViewModel?.recordError.isPostRecording == true
-            },
+            get: { appState.recordViewModel?.isShowingAlert == true },
             set: { if !$0 { appState.recordViewModel?.isShowingAlert = false } }
         )
     }
