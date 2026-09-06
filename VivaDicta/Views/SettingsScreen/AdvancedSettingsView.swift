@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppGroup
+import CloudTranscription
 
 enum AppendWithVoiceStyle: String, CaseIterable, Identifiable {
     case toolbar
@@ -45,6 +46,9 @@ struct AdvancedSettingsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
     private var defaultAIModeId: String = ""
+
+    @AppStorage(AppGroupCoordinator.kGeminiTranscriptionThinkingLevel, store: UserDefaultsStorage.shared)
+    private var geminiThinkingLevel: GeminiTranscriptionService.ThinkingLevel = .low
 
     private var appendWithVoiceStyle: Binding<AppendWithVoiceStyle> {
         Binding(
@@ -152,6 +156,37 @@ struct AdvancedSettingsView: View {
                 }
             } header: {
                 Text("Features")
+            }
+
+            Section {
+                Picker(selection: $geminiThinkingLevel) {
+                    Text("Low").tag(GeminiTranscriptionService.ThinkingLevel.low)
+                    Text("Medium").tag(GeminiTranscriptionService.ThinkingLevel.medium)
+                    Text("High").tag(GeminiTranscriptionService.ThinkingLevel.high)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Gemini Thinking Level")
+                            .font(.body)
+                        Text("How much Gemini reasons before answering. Low is fastest and cheapest")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .onChange(of: geminiThinkingLevel) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+
+                NavigationLink(value: SettingsDestination.geminiTranscriptionPrompt) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Gemini Transcription Prompt")
+                            .font(.body)
+                        Text("Customize the instruction sent with the audio")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Transcription")
             }
 
             Section {
