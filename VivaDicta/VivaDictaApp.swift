@@ -723,6 +723,9 @@ struct VivaDictaApp: App {
             "com.alibaba.sourcing": "enalibaba://",  // one scheme database, no vendor doc
             "com.automattic.beeper": "beeper://",    // documented for Beeper Desktop, assumed shared
             "com.xiaojukeji.didi": "diditaxi://",    // long-cited legacy scheme, no primary source
+            // VK Messenger. NOT https://vk.me/ - the main VK client claims that
+            // domain with the same wildcard, so iOS picks between them.
+            "com.vk.vkme": "vkme://",
 
             // No custom scheme; universal link confirmed in the app's AASA file.
             "com.google.ios.ytcreator": "https://studio.youtube.com/",
