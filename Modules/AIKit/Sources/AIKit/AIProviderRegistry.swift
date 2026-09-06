@@ -77,10 +77,13 @@ public struct AIProviderRegistry {
         case .cloud(let provider):
             let apiKey = try requireAPIKey(for: provider)
             guard let url = URL(string: provider.baseURL) else { throw EnhancementError.notConfigured }
+            // Empty for every provider but OpenCode Zen / Go.
+            var headers = OpenCodeHeaders.headers(for: provider)
+            headers["Authorization"] = "Bearer \(apiKey)"
             return OpenAICompatibleTextProvider(
                 networkService: networkService, logger: logger,
                 url: url, modelName: model,
-                headers: ["Authorization": "Bearer \(apiKey)"],
+                headers: headers,
                 timeout: baseTimeout, errorPrefix: "\(provider.displayName) error"
             )
 
