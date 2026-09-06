@@ -32,7 +32,7 @@ struct AdvancedSettingsView: View {
     private var isChatEnabled: Bool = true
 
     @AppStorage(UserDefaultsStorage.Keys.isLiveTranslationEnabled)
-    private var isLiveTranslationEnabled: Bool = true
+    private var isLiveTranslationEnabled: Bool = false
 
     @AppStorage(UserDefaultsStorage.Keys.isAutoShareAfterRecordingEnabled)
     private var isAutoShareAfterRecordingEnabled: Bool = false

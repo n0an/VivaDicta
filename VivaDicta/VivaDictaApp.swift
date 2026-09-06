@@ -62,6 +62,14 @@ struct VivaDictaApp: App {
             UserDefaultsStorage.Keys.isICloudSyncEnabled: true
         ])
 
+        // Live Translation now defaults to off for fresh installs. Users who
+        // already had the toolbar button (any install that has launched before)
+        // keep it, unless they explicitly turned it off in Advanced settings.
+        if !AppLaunchTracker.isFirstLaunch,
+           UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isLiveTranslationEnabled) == nil {
+            UserDefaults.standard.set(true, forKey: UserDefaultsStorage.Keys.isLiveTranslationEnabled)
+        }
+
         // Initialize Persistence
         let modelContainer: ModelContainer
         let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId)!
