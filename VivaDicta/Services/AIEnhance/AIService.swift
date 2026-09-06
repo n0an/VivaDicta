@@ -1963,7 +1963,8 @@ class AIService {
             key,
             baseURL: provider.baseURL,
             defaultModel: provider.defaultModel,
-            providerName: provider.rawValue
+            providerName: provider.rawValue,
+            extraHeaders: OpenCodeHeaders.headers(for: provider)
         )
     }
     
@@ -2427,6 +2428,9 @@ class AIService {
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        for (field, value) in OpenCodeHeaders.headers(for: .opencodeZen) {
+            request.addValue(value, forHTTPHeaderField: field)
+        }
 
         do {
             let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)
@@ -2476,6 +2480,9 @@ class AIService {
         request.httpMethod = "GET"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        for (field, value) in OpenCodeHeaders.headers(for: .opencodeGo) {
+            request.addValue(value, forHTTPHeaderField: field)
+        }
 
         do {
             let (data, httpResponse) = try await networkService.send(request, acceptableStatusCodes: Set<Int>.acceptAny)

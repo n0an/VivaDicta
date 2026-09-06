@@ -350,13 +350,18 @@ public struct OpenAICompatibleService: Sendable {
         baseURL: String,
         defaultModel: String,
         providerName: String,
-        maxTokens: Int? = nil
+        maxTokens: Int? = nil,
+        extraHeaders: [String: String] = [:]
     ) async -> Bool {
         let url = URL(string: baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+
+        for (field, value) in extraHeaders {
+            request.addValue(value, forHTTPHeaderField: field)
+        }
 
         var testBody: [String: Any] = [
             "model": defaultModel,
