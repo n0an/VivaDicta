@@ -10,19 +10,27 @@ import AVFoundation
 import os
 
 struct WaveformGenerator {
-    
-    static func generateWaveformSamples(from url: URL, sampleCount: Int = 100) async -> [Float] {
+
+    struct Analysis {
+        var samples: [Float] = []
+        var duration: TimeInterval = 0
+    }
+
+    /// Reads the waveform *and* the duration straight off the file, so the player
+    /// UI can be drawn without instantiating an `AVAudioPlayer`.
+    static func analyze(url: URL, sampleCount: Int = 100) async -> Analysis {
         guard let audioFile = try? AVAudioFile(forReading: url) else {
-            return []
+            return Analysis()
         }
-        
+
         let format = audioFile.processingFormat
         let frameCount = UInt32(audioFile.length)
+        let duration = format.sampleRate > 0 ? Double(audioFile.length) / format.sampleRate : 0
         let stride = max(1, Int(frameCount) / sampleCount)
         let bufferSize = min(UInt32(4096), frameCount)
-                
-        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: bufferSize) else { 
-            return []
+
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: bufferSize) else {
+            return Analysis(duration: duration)
         }
         
         do {
@@ -44,11 +52,11 @@ struct WaveformGenerator {
             
             if let maxSample = maxValues.max(), maxSample > 0 {
                 let normalizedValues = maxValues.map { $0 / maxSample }
-                return normalizedValues
+                return Analysis(samples: normalizedValues, duration: duration)
             }
-            return maxValues
+            return Analysis(samples: maxValues, duration: duration)
         } catch {
-            return []
+            return Analysis(duration: duration)
         }
     }
 }
@@ -58,39 +66,60 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     private let logger = Logger(category: .audioPlayerManager)
     
     private var audioPlayer: AVAudioPlayer?
+    private var audioURL: URL?
+    private var didActivateSession = false
     private var timer: Timer?
     var isPlaying = false
     var currentTime: TimeInterval = 0
     var duration: TimeInterval = 0
     var waveformSamples: [Float] = []
     var isLoadingWaveform = false
-    
+
+    /// Reads the file only - no `AVAudioPlayer` is built here. Creating one, and
+    /// `prepareToPlay()` above all, acquires the audio hardware, which activates
+    /// the shared session under its default non-mixing category and pauses
+    /// whatever the user has playing in another app. Merely opening a note must
+    /// not silence Spotify, so the player is built on the first tap of play.
     func loadAudio(from url: URL) {
-        do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.delegate = self
-            audioPlayer?.prepareToPlay()
-            duration = audioPlayer?.duration ?? 0
-            isLoadingWaveform = true
-            
-            Task {
-                let samples = await WaveformGenerator.generateWaveformSamples(from: url)
-                self.waveformSamples = samples
-                self.isLoadingWaveform = false
-            }
-        } catch {
-            logger.logError("❌ Error loading audio: \(error.localizedDescription)")
+        audioURL = url
+        audioPlayer = nil
+        currentTime = 0
+        isLoadingWaveform = true
+
+        Task {
+            let analysis = await WaveformGenerator.analyze(url: url)
+            self.waveformSamples = analysis.samples
+            self.duration = analysis.duration
+            self.isLoadingWaveform = false
         }
     }
-    
+
     func play() {
-        configureAudioSession()
-        audioPlayer?.play()
+        guard let player = makePlayerIfNeeded() else { return }
+        activateSession()
+        player.currentTime = currentTime
+        player.play()
         isPlaying = true
         startTimer()
     }
 
-    private func configureAudioSession() {
+    private func makePlayerIfNeeded() -> AVAudioPlayer? {
+        if let audioPlayer { return audioPlayer }
+        guard let audioURL else { return nil }
+
+        do {
+            let player = try AVAudioPlayer(contentsOf: audioURL)
+            player.delegate = self
+            if duration == 0 { duration = player.duration }
+            audioPlayer = player
+            return player
+        } catch {
+            logger.logError("❌ Error loading audio: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    private func activateSession() {
         // Don't change session if prewarm recording is active
         if AudioPrewarmManager.shared.isSessionActive {
             logger.logDebug("Skipping audio session configuration - prewarm session active")
@@ -101,15 +130,35 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .default)
             try session.setActive(true)
+            didActivateSession = true
         } catch {
             logger.logError("❌ Error configuring audio session: \(error.localizedDescription)")
         }
     }
-    
+
+    /// Hands the session back so the app whose audio we interrupted resumes.
+    private func deactivateSession() {
+        guard didActivateSession else { return }
+        didActivateSession = false
+
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            logger.logError("❌ Error deactivating audio session: \(error.localizedDescription)")
+        }
+    }
+
     func pause() {
         audioPlayer?.pause()
         isPlaying = false
         stopTimer()
+    }
+
+    /// Pause plus session teardown, for leaving the screen or reaching the end of
+    /// the recording - a bare pause would keep other apps' audio suspended.
+    func stopPlayback() {
+        pause()
+        deactivateSession()
     }
     
     func seek(to time: TimeInterval) {
@@ -146,6 +195,7 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
         isPlaying = false
         stopTimer()
         seek(to: 0)
+        deactivateSession()
     }
 }
 
@@ -251,7 +301,7 @@ struct AudioPlayerView: View {
             }
         }
         .onDisappear {
-            playerManager.pause()
+            playerManager.stopPlayback()
         }
     }
     
