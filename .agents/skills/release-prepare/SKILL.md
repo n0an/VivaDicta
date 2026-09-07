@@ -306,25 +306,24 @@ Before shipping (Step 11):
 
 Export compliance is **not** a step - `ITSAppUsesNonExemptEncryption = false` in `VivaDicta/Info.plist` means builds arrive already `exempt` (see Step 10).
 
-#### 1. Write ExportOptions.plist to the scratchpad
+#### 1. Check ExportOptions.plist
 
-Local-build mode needs one, and the repo deliberately does not carry it. Write it to the session scratchpad so the repo stays clean - never commit it:
+`ExportOptions.plist` lives in the repo root and is committed. Local-build mode runs
+`xcodebuild -exportArchive` under the hood, which cannot run without it:
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>method</key>          <string>app-store-connect</string>
-    <key>teamID</key>          <string>358V8FBM3U</string>
-    <key>signingStyle</key>    <string>automatic</string>
-    <key>uploadSymbols</key>   <true/>
-    <key>destination</key>     <string>export</string>
-</dict>
-</plist>
+<key>method</key>          <string>app-store-connect</string>
+<key>teamID</key>          <string>358V8FBM3U</string>
+<key>signingStyle</key>    <string>automatic</string>
+<key>uploadSymbols</key>   <true/>
+<key>destination</key>     <string>export</string>
 ```
 
-Validate it with `plutil -lint` before using it.
+Nothing in it is sensitive - the team ID is already in `project.pbxproj`. It should not
+need editing; if it goes missing, recreate it with exactly these keys and `plutil -lint` it.
+
+If a run ever shows Xcode overriding the build number during export, add
+`manageAppVersionAndBuildNumber = false` and record that here.
 
 #### 2. Dry-run the publish plan
 
@@ -333,7 +332,7 @@ asc publish appstore --app 6758147238 \
   --workspace ./VivaDicta.xcodeproj/project.xcworkspace \
   --scheme VivaDicta --configuration Release \
   --version X.Y.Z --build-number NNNN \
-  --export-options "$SCRATCH/ExportOptions.plist" \
+  --export-options ./ExportOptions.plist \
   --archive-path "$SCRATCH/VivaDicta.xcarchive" --ipa-path "$SCRATCH/VivaDicta.ipa" \
   --metadata-dir ./metadata \
   --wait --timeout 45m --dry-run --output table
