@@ -298,6 +298,7 @@ Before shipping (Step 11):
 - [ ] Changes committed and pushed on release branch
 - [ ] `asc publish appstore` run with an explicit `--build-number` (dry-run first; a `Build Number` of `1` means the flag is missing)
 - [ ] After upload: build is `VALID` with `Encryption: exempt`, and `asc validate` returns 0 errors / 0 blocking (the permanent info-level App Privacy advisory is expected)
+- [ ] After submitting: merge to `main`, annotated tag `vX.Y.Z`, and `gh release create` (Step 12)
 - [ ] After the release ships: empty `whats-new-running.md` (clear items, keep the `Running What's New (next release)` header) so it only tracks the next upcoming release
 
 ### Step 11 — Ship it (create version → archive → upload → attach → validate → submit)
@@ -413,4 +414,41 @@ To upload an already-exported IPA without local-build mode: `asc publish appstor
 - Run `asc metadata apply` **without** `--allow-deletes`. With it, any locale missing locally is planned as a delete.
 - `asc builds update --uses-non-exempt-encryption=false` is only a patch for builds uploaded before the Info.plist key existed.
 - **Do not `git add -A` on a release commit.** The repo carries untracked files that are not part of the release (e.g. `.claude/skills/prcdx`); stage the changed files by name instead.
+
+### Step 12 — Merge, tag, and cut the GitHub release
+
+Runs immediately after submitting, **not** after Apple approves. `v3.9.0` was tagged the same
+day it was submitted, and the tag records what was sent to Apple - approval does not change the
+commit.
+
+```bash
+git checkout main && git pull --ff-only
+git merge --no-ff release/X.Y.Z -m "Merge branch 'release/X.Y.Z'"
+git tag -a vX.Y.Z -m "VivaDicta X.Y.Z (build NNNN)"
+git push origin main && git push origin vX.Y.Z
+```
+
+Conventions, all matching every previous release:
+- Tags are **annotated** (`-a`), never lightweight, and the message is exactly `VivaDicta X.Y.Z (build NNNN)`.
+- Tags live on `main`, so the merge comes first.
+- Merge with `--no-ff` so the release branch stays visible in history.
+
+Then the GitHub release:
+
+```bash
+gh release create vX.Y.Z --title "vX.Y.Z" --notes-file <(...) --latest
+```
+
+Body format, matching earlier releases:
+- An `## What's Changed` heading, then one `-` bullet per user-facing change. Write these from
+  the same source as the App Store notes (Step 5) so the two agree, but they can be blunter -
+  the audience is technical.
+- An optional `### Internal` section for tooling, skills and docs that shipped in the same range.
+- A closing `**Full Changelog**: https://github.com/n0an/VivaDicta/compare/vPREV...vX.Y.Z` line.
+- **Regular dashes, never em-dashes**, even though older release bodies contain them.
+- When the cycle went through PRs, `gh` appends the usual `* … by @n0an in …` list. When work was
+  committed straight to `main` there is nothing to append, so say so explicitly in one line
+  rather than leaving readers wondering where the PR list went.
+
+Only mark `--latest` when this really is the newest release.
 
