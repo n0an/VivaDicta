@@ -358,17 +358,10 @@ class ModeEditViewModel {
         }
     }
 
-    /// True if an on-device model id is downloaded, querying the right runtime
-    /// (Gemma ids = LiteRT, `-coreml` = CoreML/ANE, everything else = MLX).
+    /// True if an on-device model id is downloaded. Delegates to `AIService` so the
+    /// runtime lookup lives in one place (see `AIService.isLocalModelDownloaded`).
     static func isLocalModelDownloaded(_ id: String) -> Bool {
-        switch AIProvider.localRuntime(forModelID: id) {
-        case .coreML:
-            return CoreMLQwenVariant(modelID: id).isDownloaded
-        case .liteRT:
-            return LiteRTGemmaVariant(modelID: id).isDownloaded
-        case .mlx:
-            return LocalMLXModel(modelID: id).isDownloaded
-        }
+        AIService.isLocalModelDownloaded(id)
     }
 
     private func validateReminderExtractorModelSelection() {

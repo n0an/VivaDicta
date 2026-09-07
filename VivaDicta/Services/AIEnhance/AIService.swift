@@ -801,15 +801,8 @@ class AIService {
         } else if aiProvider == .local {
             // On-device needs no API key, but the selected model must be
             // downloaded - we don't silently download during processing. A mode
-            // whose model was deleted is not properly configured. The model id
-            // picks the runtime (Gemma = LiteRT, -coreml = CoreML, else MLX).
-            let downloaded: Bool
-            switch AIProvider.localRuntime(forModelID: mode.aiModel) {
-            case .coreML: downloaded = CoreMLQwenVariant(modelID: mode.aiModel).isDownloaded
-            case .liteRT: downloaded = LiteRTGemmaVariant(modelID: mode.aiModel).isDownloaded
-            case .mlx: downloaded = LocalMLXModel(modelID: mode.aiModel).isDownloaded
-            }
-            guard downloaded else {
+            // whose model was deleted is not properly configured.
+            guard Self.isLocalModelDownloaded(mode.aiModel) else {
                 logger.logWarning("On-device model '\(mode.aiModel)' is not downloaded")
                 return false
             }
@@ -1793,6 +1786,22 @@ class AIService {
         )
     }
 
+    // MARK: - On-device model availability
+
+    /// Whether an on-device (`.local`) model id is downloaded, querying the runtime
+    /// its id selects (Gemma = LiteRT, `-coreml` = CoreML/ANE, everything else = MLX).
+    ///
+    /// The single source of truth for "is this local model on disk" - provider
+    /// connectivity, mode validation and the model picker all route through it, so
+    /// adding a runtime cannot leave one of them behind.
+    nonisolated static func isLocalModelDownloaded(_ id: String) -> Bool {
+        switch AIProvider.localRuntime(forModelID: id) {
+        case .coreML: CoreMLQwenVariant(modelID: id).isDownloaded
+        case .liteRT: LiteRTGemmaVariant(modelID: id).isDownloaded
+        case .mlx: LocalMLXModel(modelID: id).isDownloaded
+        }
+    }
+
     // MARK: - API Keys methods
     @MainActor
     public func refreshConnectedProviders() {
@@ -1806,13 +1815,15 @@ class AIService {
         // Add Ollama provider (always available, connection checked on-demand)
         providers.append(.ollama)
 
-        // Add the unified on-device provider only when at least one model (Gemma
-        // via LiteRT, or any MLX model) is downloaded. "Connected" must match what
-        // the runtime can run: appending it unconditionally let the mode editor
-        // mark a local mode valid with no model on disk, which
-        // isProperlyConfigured(.local) then rejects.
-        let anyLocalDownloaded = LiteRTGemmaVariant.allCases.contains(where: \.isDownloaded)
-            || LocalMLXModel.allCases.contains(where: \.isDownloaded)
+        // Add the unified on-device provider only when at least one model is
+        // downloaded, across every runtime. "Connected" must match what the
+        // runtime can run: appending it unconditionally let the mode editor mark
+        // a local mode valid with no model on disk, which
+        // isProperlyConfigured(.local) then rejects - and enumerating runtimes by
+        // hand here left CoreML/ANE models out, so a downloaded Qwen3.5 CoreML
+        // model was invisible to the mode editor. Driving it off the provider's
+        // own model list keeps every runtime covered.
+        let anyLocalDownloaded = AIProvider.local.availableModels.contains(where: Self.isLocalModelDownloaded)
         if anyLocalDownloaded {
             providers.append(.local)
         }
@@ -2208,13 +2219,7 @@ class AIService {
         // never silently kicks off a multi-GB download. Manage downloads from the
         // AI Providers screen instead. The model id picks the runtime to query.
         if provider == .local {
-            return provider.availableModels.filter { id in
-                switch AIProvider.localRuntime(forModelID: id) {
-                case .coreML: CoreMLQwenVariant(modelID: id).isDownloaded
-                case .liteRT: LiteRTGemmaVariant(modelID: id).isDownloaded
-                case .mlx: LocalMLXModel(modelID: id).isDownloaded
-                }
-            }
+            return provider.availableModels.filter(Self.isLocalModelDownloaded)
         }
         return provider.availableModels
     }

@@ -207,4 +207,54 @@ struct AIProviderTests {
         // json_schema response formats.
         #expect(!AIProvider.reminderExtractorCloudProviders.contains(.opencodeGo))
     }
+
+    // MARK: - On-device runtime classification
+
+    /// The `.local` catalog is the only input to the app's "is a local model
+    /// downloaded" check, and each id's runtime is inferred purely from its
+    /// suffix. An id filed under the wrong runtime silently reports another
+    /// model's download state, so pin the whole mapping.
+    @Test func everyLocalModelIDClassifiesToItsIntendedRuntime() {
+        let expected: [String: AIProvider.LocalRuntime] = [
+            "gemma-4-E2B": .liteRT,
+            "gemma-4-E4B": .liteRT,
+            "qwen3.5-2b-coreml": .coreML,
+            "qwen3.5-0.8b-coreml": .coreML,
+            "qwen3.5-4b-mlx": .mlx,
+            "qwen3.5-2b-mlx": .mlx,
+            "qwen3.5-0.8b-mlx": .mlx,
+            "phi-4-mini-mlx": .mlx,
+            "llama-3.2-1b-mlx": .mlx,
+            "llama-3.2-3b-mlx": .mlx,
+            "ministral-3b-mlx": .mlx,
+            "falcon3-3b-mlx": .mlx,
+            "granite-3.3-2b-mlx": .mlx
+        ]
+        let ids = AIProvider.local.availableModels
+        #expect(Set(ids) == Set(expected.keys))
+        for id in ids {
+            #expect(AIProvider.localRuntime(forModelID: id) == expected[id])
+        }
+    }
+
+    /// Every runtime must be represented in the catalog: the download check is
+    /// driven off this list, so a runtime with no ids here is unreachable.
+    @Test func localCatalogCoversEveryRuntime() {
+        let runtimes = Set(AIProvider.local.availableModels.map { id -> String in
+            switch AIProvider.localRuntime(forModelID: id) {
+            case .coreML: "coreML"
+            case .liteRT: "liteRT"
+            case .mlx: "mlx"
+            }
+        })
+        #expect(runtimes == ["coreML", "liteRT", "mlx"])
+    }
+
+    @Test func onlyCoreMLRuntimeRunsOnTheNeuralEngine() {
+        // The ANE runtime is the one that keeps working while backgrounded (the
+        // keyboard path), so this split gates a user-visible capability.
+        #expect(AIProvider.localModelRunsOnNeuralEngine("qwen3.5-2b-coreml"))
+        #expect(!AIProvider.localModelRunsOnNeuralEngine("qwen3.5-2b-mlx"))
+        #expect(!AIProvider.localModelRunsOnNeuralEngine("gemma-4-E2B"))
+    }
 }
