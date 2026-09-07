@@ -159,6 +159,16 @@ The app composes a ring of local Swift Package modules (`Modules/`) under layere
 
 Solid arrow = production code dependency. `<Module>Mocks` targets always depend on their own `<Module>` + `TestUtilities` and are omitted for clarity.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="documentation/assets/module-graph-dark.svg">
+  <img src="documentation/assets/module-graph-light.svg" alt="VivaDicta module dependency graph: the app target on top, TranscriptionKit and AIKit orchestrators and seven core leaf packages below it, transcription and AI adapters below them, and TranscriptionCore, Networking and AICore at the bottom. Networking has six dependents." width="1000">
+</picture>
+
+*Collapsed view: 21 packages drawn as 9 nodes. `Core leaves ×7` = `Keychain` · `Presets` · `AudioRecording` · `Analytics` · `TextProcessing` · `AppGroup` · `DesignSystem`; `Transcription ×2` = `CloudTranscription` · `LocalTranscription`; `AI adapters ×3` = `AIProviders` · `LocalLLM` · `OAuth`. The app target also depends directly on every core package (composition root). Not drawn: `OAuth → Keychain`, `AIKit → Keychain`, `TranscriptionKit → Networking`, `AIKit → Networking`, and the external `WhisperKit / FluidAudio` and `LiteRT-LM` SDKs. Badges count dependents in the full graph.*
+
+<details>
+<summary>Full graph (Mermaid, all 21 packages)</summary>
+
 ```mermaid
 graph BT
   classDef core fill:#0e2a16,stroke:#7ee787,color:#7ee787
@@ -237,6 +247,8 @@ graph BT
   VivaDicta --> TextProcessing
   VivaDicta --> DesignSystem
 ```
+
+</details>
 
 | Layer | Modules |
 |-------|---------|

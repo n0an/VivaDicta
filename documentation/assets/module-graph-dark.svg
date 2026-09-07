@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 536" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d">
+  <title id="t">VivaDicta module dependency graph</title>
+  <desc id="d">Four ranked layers: the VivaDicta app target on top, orchestrators TranscriptionKit and AIKit plus seven core leaf packages below it, the transcription and AI adapters below them, and the core packages TranscriptionCore, Networking and AICore at the bottom. Networking is the most depended-on package with six dependents.</desc>
+  <style>
+    :root { --paper: #2d3142; --ink: #f5f5f5; --muted: #c8cbd4; --soft: #9aa0b0; --rule: rgba(245,245,245,0.12); --accent: #f08a59; --accent-tint: rgba(240,138,89,0.12); --node: #353a4f; --leaf: rgba(245,245,245,0.05); --chip: rgba(245,245,245,0.08); }
+    .bg { fill: var(--paper); }
+    .sans { font-family: "Geist", ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .mono { font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .node { fill: var(--node); stroke: var(--ink); stroke-width: 1; }
+    .leaf { fill: var(--leaf); stroke: var(--muted); stroke-width: 1; }
+    .name { font-size: 12px; font-weight: 600; fill: var(--ink); }
+    .sublabel { font-size: 9px; fill: var(--muted); }
+    .chip { fill: var(--chip); }
+    .chip-t { font-size: 8px; fill: var(--muted); text-anchor: middle; }
+    .chip-accent { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 1; }
+    .chip-accent-t { font-size: 8px; font-weight: 500; fill: var(--accent); text-anchor: middle; }
+    .rank { font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase; fill: var(--soft); text-anchor: end; }
+    .edge { fill: none; stroke: var(--ink); stroke-width: 1.25; marker-end: url(#arrow); }
+    .legend { font-size: 8px; fill: var(--soft); }
+    .arrowhead { fill: var(--ink); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path class="arrowhead" d="M0,0.5 L7,4 L0,7.5 Z"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1000" height="536" rx="12"/>
+
+  <!-- rank labels -->
+  <g class="mono">
+    <text class="rank" x="984" y="96">Rank 0 · App</text>
+    <text class="rank" x="984" y="216">Rank 1 · Orchestrators</text>
+    <text class="rank" x="984" y="336">Rank 2 · Adapters</text>
+    <text class="rank" x="984" y="456">Rank 3 · Core</text>
+  </g>
+
+  <!-- edges (arrow points at the dependency) -->
+  <g>
+    <path class="edge" d="M420,80 H104 Q96,80 96,88 V184"/>
+    <path class="edge" d="M420,92 H304 Q296,92 296,100 V184"/>
+    <path class="edge" d="M420,104 H400 Q392,104 392,112 V332 H376"/>
+    <path class="edge" d="M580,92 H696 Q704,92 704,100 V184"/>
+    <path class="edge" d="M580,104 H600 Q608,104 608,112 V332 H624"/>
+    <path class="edge" d="M296,240 V304"/>
+    <path class="edge" d="M216,212 H200 Q192,212 192,220 V424"/>
+    <path class="edge" d="M256,360 V424"/>
+    <path class="edge" d="M360,360 V384 Q360,392 368,392 H436 Q444,392 444,400 V424"/>
+    <path class="edge" d="M704,240 V304"/>
+    <path class="edge" d="M784,212 H800 Q808,212 808,220 V424"/>
+    <path class="edge" d="M744,360 V424"/>
+    <path class="edge" d="M640,360 V384 Q640,392 632,392 H564 Q556,392 556,400 V424"/>
+  </g>
+
+  <!-- rank 0 -->
+  <g>
+    <rect class="node" x="420" y="64" width="160" height="56" rx="6"/>
+    <rect class="chip" x="536" y="72" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="552" y="81">0 in</text>
+    <text class="sans name" x="432" y="96">VivaDicta</text>
+    <text class="mono sublabel" x="432" y="110">app + extensions</text>
+  </g>
+
+  <!-- rank 1 -->
+  <g>
+    <rect class="leaf" x="16" y="184" width="160" height="56" rx="6"/>
+    <rect class="chip" x="132" y="192" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="148" y="201">3 in</text>
+    <text class="sans name" x="28" y="216">Core leaves ×7</text>
+    <text class="mono sublabel" x="28" y="230">Keychain · Presets +5</text>
+
+    <rect class="node" x="216" y="184" width="160" height="56" rx="6"/>
+    <rect class="chip" x="332" y="192" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="348" y="201">1 in</text>
+    <text class="sans name" x="228" y="216">TranscriptionKit</text>
+    <text class="mono sublabel" x="228" y="230">orchestrator</text>
+
+    <rect class="node" x="624" y="184" width="160" height="56" rx="6"/>
+    <rect class="chip" x="740" y="192" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="756" y="201">1 in</text>
+    <text class="sans name" x="636" y="216">AIKit</text>
+    <text class="mono sublabel" x="636" y="230">orchestrator</text>
+  </g>
+
+  <!-- rank 2 -->
+  <g>
+    <rect class="node" x="216" y="304" width="160" height="56" rx="6"/>
+    <rect class="chip" x="332" y="312" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="348" y="321">2 in</text>
+    <text class="sans name" x="228" y="336">Transcription ×2</text>
+    <text class="mono sublabel" x="228" y="350">Cloud · Local</text>
+
+    <rect class="node" x="624" y="304" width="160" height="56" rx="6"/>
+    <rect class="chip" x="740" y="312" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="756" y="321">2 in</text>
+    <text class="sans name" x="636" y="336">AI adapters ×3</text>
+    <text class="mono sublabel" x="636" y="350">Providers · Local · OAuth</text>
+  </g>
+
+  <!-- rank 3 -->
+  <g>
+    <rect class="leaf" x="176" y="424" width="160" height="56" rx="6"/>
+    <rect class="chip" x="292" y="432" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="308" y="441">4 in</text>
+    <text class="sans name" x="188" y="456">TranscriptionCore</text>
+    <text class="mono sublabel" x="188" y="470">protocols + models</text>
+
+    <rect class="leaf" x="420" y="424" width="160" height="56" rx="6"/>
+    <rect class="chip-accent" x="536" y="432" width="32" height="12" rx="2"/>
+    <text class="mono chip-accent-t" x="552" y="441">6 in</text>
+    <text class="sans name" x="432" y="456">Networking</text>
+    <text class="mono sublabel" x="432" y="470">shared HTTP layer</text>
+
+    <rect class="leaf" x="664" y="424" width="160" height="56" rx="6"/>
+    <rect class="chip" x="780" y="432" width="32" height="12" rx="2"/>
+    <text class="mono chip-t" x="796" y="441">4 in</text>
+    <text class="sans name" x="676" y="456">AICore</text>
+    <text class="mono sublabel" x="676" y="470">protocols + models</text>
+  </g>
+
+  <!-- legend -->
+  <g class="mono legend">
+    <rect class="node" x="16" y="508" width="12" height="8" rx="2"/>
+    <text x="36" y="515">package</text>
+    <rect class="leaf" x="92" y="508" width="12" height="8" rx="2"/>
+    <text x="112" y="515">leaf · no module deps</text>
+    <rect class="chip" x="236" y="506" width="24" height="12" rx="2"/>
+    <text class="chip-t" x="248" y="515">n in</text>
+    <text x="268" y="515">dependents in the full 21-package graph · Mocks / TestUtilities / external SDKs omitted</text>
+  </g>
+</svg>
