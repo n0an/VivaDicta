@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.10": release_3_10,
         "3.9": release_3_9,
         "3.8": release_3_8,
         "3.7": release_3_7,
@@ -46,6 +47,57 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
+    // 2026-09-07
+    private static let release_3_10 = WhatsNewRelease(
+        id: "3.10",
+        headline: "What's New in VivaDicta 3.10.0",
+        features: [
+            WhatsNewFeature(
+                icon: "text.badge.xmark",
+                iconColors: [.red, .orange],
+                title: "No More Phantom Text",
+                description: "On-device Whisper used to answer a silent moment with a line you never said. Those hallucinations are now caught and removed."
+            ),
+            WhatsNewFeature(
+                icon: "checkmark.shield.fill",
+                iconColors: [.green, .teal],
+                title: "Your Recording Survives",
+                description: "A call, alarm, or Siri no longer costs you the audio, and a failed transcription keeps the recording so you can play it back and retry."
+            ),
+            WhatsNewFeature(
+                icon: "music.note",
+                iconColors: [.pink, .purple],
+                title: "Your Music Keeps Playing",
+                description: "Opening a note no longer pauses Spotify, YouTube, or a podcast. Playback now stops only when you actually tap play."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.indigo, .blue],
+                title: "The Newest Models",
+                description: "GPT-6 Astra, Claude Fable 5.1, Gemini 3.8 Flash, and GLM-5.3 join the lineup, and Cartesia Ink-2 transcribes in real time."
+            ),
+            WhatsNewFeature(
+                icon: "keyboard.fill",
+                iconColors: [.blue, .cyan],
+                title: "Czech Keyboard",
+                description: "A proper Czech QWERTZ layout with Czech-only callouts. A newly added language now switches itself on if you already use it in iOS."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.indigo, .purple],
+                title: "Back to 30 More Apps",
+                description: "The keyboard knows the way back to thirty more host apps, VK Messenger among them, instead of falling back to the manual prompt."
+            ),
+            WhatsNewFeature(
+                icon: "slider.horizontal.3",
+                iconColors: [.teal, .mint],
+                title: "A Calmer Settings Screen",
+                description: "Rarely used rows moved down into Advanced, and the Live Translation button is now off by default on fresh installs."
+            )
+        ],
+        tagline: "Nothing you said goes missing."
+    )
+
     // 2026-08-30
     private static let release_3_9 = WhatsNewRelease(
         id: "3.9",
