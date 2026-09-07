@@ -22,7 +22,7 @@ The **only** place short `X.Y` form survives is the internal `WhatsNewCatalog.re
 
 ## Related Skills
 
-- `asc-release-flow` — drive the App Store Connect submission flow (Step 11 covers the normal upload-and-submit path; reach for this skill when a submission needs unpicking)
+- `asc-release-flow` — drive the App Store Connect submission flow (Step 11 covers the normal archive-upload-and-submit path; reach for this skill when a submission needs unpicking)
 - `asc-whats-new-writer` — generate App Store release notes
 - `asc-metadata-sync` — sync and validate App Store metadata
 - `asc-localize-metadata` — sync metadata across localizations (used for ASO, not actual translation)
@@ -78,6 +78,8 @@ Before editing, check the current value:
 grep -E "CURRENT_PROJECT_VERSION" VivaDicta.xcodeproj/project.pbxproj | head -1
 ```
 Then use `current + 1` as the new value across all targets.
+
+The same number must be passed to `asc publish appstore --build-number` in Step 11 - local-build mode does **not** read it from the pbxproj.
 
 > **Legacy note**: earlier releases up through `3.0.0` used a packed `XYZN` scheme (e.g. `1.1.0 → 1101`, `3.0.0 → 3001`), which is why the counter currently sits at a value like `3001`-ish. That scheme is abandoned because it caps each segment at 9. Going forward, just `+1` from the last build number - do NOT try to re-pack based on the marketing version.
 
@@ -294,47 +296,91 @@ Before shipping (Step 11):
 - [ ] CloudKit schema deployed if SwiftData models changed
 - [ ] Review Notes: testing instructions only (remove any rejection-specific notes from previous submissions)
 - [ ] Changes committed and pushed on release branch
-- [ ] After build upload: `asc metadata apply` + `asc validate` returns 0 errors / 0 blocking (the permanent info-level App Privacy advisory is expected)
+- [ ] `asc publish appstore` run with an explicit `--build-number` (dry-run first; a `Build Number` of `1` means the flag is missing)
+- [ ] After upload: build is `VALID` with `Encryption: exempt`, and `asc validate` returns 0 errors / 0 blocking (the permanent info-level App Privacy advisory is expected)
 - [ ] After the release ships: empty `whats-new-running.md` (clear items, keep the `Running What's New (next release)` header) so it only tracks the next upcoming release
 
-### Step 11 — Ship it (upload → attach → validate → submit)
+### Step 11 — Ship it (create version → archive → upload → attach → validate → submit)
 
-The proven sequence, exactly as run for 3.8.0. **Anton archives and uploads in Xcode; the agent does everything after that with `asc`.**
+**The agent drives the whole thing with `asc`, including the archive and upload.** Anton does not touch Xcode. The one thing that still needs an explicit yes is the final submit.
 
 Export compliance is **not** a step - `ITSAppUsesNonExemptEncryption = false` in `VivaDicta/Info.plist` means builds arrive already `exempt` (see Step 10).
 
-#### 1. Anton: archive + upload (Xcode)
+#### 1. Write ExportOptions.plist to the scratchpad
 
-Product > Archive, then Organizer > Distribute App > **App Store Connect > Upload**.
+Local-build mode needs one, and the repo deliberately does not carry it. Write it to the session scratchpad so the repo stays clean - never commit it:
 
-Use **Upload**, not Export. Upload goes straight to ASC; Export writes an `.ipa` to disk that nothing here needs. This is also why the repo has no `ExportOptions.plist` - only headless `xcodebuild -exportArchive` needs one, and we do not use that path.
-
-Also create the version in App Store Connect (or let the agent: `asc versions create --app 6758147238 --version X.Y.Z --platform IOS`).
-
-#### 2. Agent: find the build and version IDs
-
-```bash
-asc builds list --app 6758147238 --limit 5 --output table       # confirm the new build is VALID
-asc versions list --app 6758147238 --platform IOS --output table
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>          <string>app-store-connect</string>
+    <key>teamID</key>          <string>358V8FBM3U</string>
+    <key>signingStyle</key>    <string>automatic</string>
+    <key>uploadSymbols</key>   <true/>
+    <key>destination</key>     <string>export</string>
+</dict>
+</plist>
 ```
 
-Check the build's `Encryption` column reads `exempt`. If it reads `n/a`, the Info.plist key went missing - fix the plist, do not patch the build.
+Validate it with `plutil -lint` before using it.
 
-#### 3. Agent: apply metadata, attach, validate
+#### 2. Dry-run the publish plan
 
 ```bash
-asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata --dry-run
-asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
+asc publish appstore --app 6758147238 \
+  --workspace ./VivaDicta.xcodeproj/project.xcworkspace \
+  --scheme VivaDicta --configuration Release \
+  --version X.Y.Z --build-number NNNN \
+  --export-options "$SCRATCH/ExportOptions.plist" \
+  --archive-path "$SCRATCH/VivaDicta.xcarchive" --ipa-path "$SCRATCH/VivaDicta.ipa" \
+  --metadata-dir ./metadata \
+  --wait --timeout 45m --dry-run --output table
+```
 
-asc versions attach-build --version-id VERSION_ID --build BUILD_ID
+**`--build-number` is mandatory, not optional.** Without it local-build mode does *not* read `CURRENT_PROJECT_VERSION` from the pbxproj - it auto-resolves and falls back to `--initial-build-number`, whose default is **1**. The dry-run's `Build Number` column is how you catch this: if it reads `1` instead of the value bumped in Step 2, the flag is missing. Caught on the 3.10.0 release before it reached Apple.
 
+Confirm the plan lists these seven steps, and that `Will Submit` is `false`:
+
+```
+archive_local_build → export_local_build → upload_build → wait_for_build_processing
+→ ensure_version → apply_metadata → attach_build
+```
+
+`ensure_version` creates the App Store version if it does not exist, so a separate `asc versions create` is unnecessary. `apply_metadata` runs `metadata apply` against `metadata/version/X.Y.Z/` from Step 7.
+
+#### 3. Run it for real
+
+Drop `--dry-run`. **Run it in the background** - a full Release archive of the app plus 7 embedded targets, the upload, and ASC processing take a long time. Poll the output file rather than blocking.
+
+```bash
+# same command, minus --dry-run, with --output json --pretty
+```
+
+The weak point is signing: automatic signing has to fetch distribution profiles for all 7 bundle IDs headlessly. If the login keychain prompts, the run **stalls rather than failing cleanly**. If it hangs with no output progress, that is the first thing to check.
+
+Verify before running that signing is actually automatic and on one team - three stray `DEVELOPMENT_TEAM = TDX2FNZ56U` entries exist in the pbxproj but are overridden. `grep` alone will mislead you; `xcodebuild -showBuildSettings -project VivaDicta.xcodeproj -target ActionExtension -configuration Release` is authoritative and resolves to `358V8FBM3U`.
+
+#### 4. Verify the result
+
+```bash
+asc builds list --app 6758147238 --limit 5 --output table       # new build VALID, Encryption exempt
 asc validate --app 6758147238 --version X.Y.Z --platform IOS --output table
 asc review doctor --app 6758147238 --output table
 ```
 
+Check the build's `Encryption` column reads `exempt`. If it reads `n/a`, the Info.plist key went missing - fix the plist, do not patch the build.
+
 Target state: `asc validate` = 0 errors / 0 blocking, `asc review doctor` = `blockingCount 0` with `nextAction: No submission blockers detected`.
 
-#### 4. Submit
+Also read the review notes once per release and confirm they are testing instructions only, with nothing left over from a previous rejection:
+
+```bash
+asc review details-for-version --version-id VERSION_ID     # or details-get --id DETAIL_ID
+```
+
+#### 5. Submit
 
 ```bash
 asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --dry-run
@@ -343,20 +389,29 @@ asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --co
 
 Or click **Add for Review** in App Store Connect.
 
-The dry-run reports `wouldSubmit` and whether the build is `alreadyAttached`, so it is worth running even when step 3 already attached it.
+The dry-run reports `wouldSubmit` and whether the build is `alreadyAttached`, so it is worth running even though step 3 already attached it.
 
 **Always ask before submitting**, every time. Everything up to attaching the build is reversible; submission is not (only cancellable).
 
+#### Fallback: Anton archives in Xcode
+
+If headless signing fails and is not worth debugging mid-release, fall back to Product > Archive, then Organizer > Distribute App > **App Store Connect > Upload** (Upload, not Export). Then pick up from step 4 above, adding the attach that `asc publish` would have done:
+
+```bash
+asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata --dry-run
+asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
+asc versions attach-build --version-id VERSION_ID --build BUILD_ID
+```
+
+To upload an already-exported IPA without local-build mode: `asc publish appstore --ipa path/to.ipa` - no `ExportOptions.plist` required.
+
 #### Gotchas found in practice
 
+- **`--build-number` must be passed explicitly** to `asc publish appstore` in local-build mode, or the build uploads as `1`. See step 2.
 - `asc metadata push` **does not exist** - the subcommand is `asc metadata apply`.
 - `asc versions view` shows **empty Build ID / Build Version columns even when a build is correctly attached** - ASC omits relationship linkage unless `?include=` is passed, and the command does not. Do **not** read that as a missing build. `asc validate` is authoritative: its `build.required.missing` error clears the moment the build is attached.
 - `asc metadata apply` reports `add` for `whatsNew` on a fresh version (the field does not exist yet) and `update` for `description`. Seeing zero `keywords` rows is the signal the per-locale ASO keyword sets were preserved - if keywords ever appear in the plan, stop and investigate.
 - Run `asc metadata apply` **without** `--allow-deletes`. With it, any locale missing locally is planned as a delete.
 - `asc builds update --uses-non-exempt-encryption=false` is only a patch for builds uploaded before the Info.plist key existed.
+- **Do not `git add -A` on a release commit.** The repo carries untracked files that are not part of the release (e.g. `.claude/skills/prcdx`); stage the changed files by name instead.
 
-#### If you ever want unattended releases
-
-`asc publish appstore` can drive the archive itself (`--workspace` + `--scheme` + `--export-options`), collapsing all of the above into one command. That is the only scenario needing an `ExportOptions.plist` (`method = app-store-connect`, `teamID = 358V8FBM3U`, `signingStyle = automatic`).
-
-**Not the default, deliberately.** It trades one reliable Xcode GUI action for a long headless run whose weakest point is automatic signing fetching distribution profiles for all 7 bundle IDs without a keychain prompt. Only worth it for CI or cron. To upload an already-exported IPA without local-build mode, use `asc publish appstore --ipa path/to.ipa` - no `ExportOptions.plist` required.
