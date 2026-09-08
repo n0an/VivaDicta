@@ -124,9 +124,26 @@ mkdir -p logs
 LOGFILE="logs/device-$(date +%Y%m%d-%H%M%S).log"
 echo "Logging: $LOGFILE"
 
+# Record the STREAMING process, not this shell - see the same block in launch_simulator.sh for why.
+# Process substitution keeps `$!` pointing at devicectl rather than at `tee`, and the marker lets
+# logs-stop end this exact capture instead of pattern-matching every devicectl on the machine.
+PIDFILE="logs/.device-capture.pid"
+
+cleanup() {
+    trap - EXIT INT TERM
+    if [ -n "${STREAM_PID:-}" ]; then
+        kill "$STREAM_PID" 2>/dev/null || true
+    fi
+    rm -f "$PIDFILE"
+}
+trap cleanup EXIT INT TERM
+
 xcrun devicectl device process launch \
     --console \
     --terminate-existing \
     --device "$DEVICE" \
     --environment-variables '{"ENABLE_PRINT_LOGS": "1"}' \
-    "$BUNDLE_ID" 2>&1 | tee "$LOGFILE"
+    "$BUNDLE_ID" > >(tee "$LOGFILE") 2>&1 &
+STREAM_PID=$!
+printf '%s\n' "$STREAM_PID" > "$PIDFILE"
+wait "$STREAM_PID" || true

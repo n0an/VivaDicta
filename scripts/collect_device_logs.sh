@@ -54,21 +54,23 @@ if [ $? -eq 0 ]; then
 
   # Show summary
   TOTAL_LINES=$(wc -l < "${LOGFILE}")
-  # grep -c prints the count AND exits 1 when it is zero, so a `|| echo 0`
-  # fallback appends a second line and yields "0\n0". Let grep's own output
-  # stand and neutralize only the exit status.
-  ERRORS=$(grep -ic "error" "${LOGFILE}"; true)
-  WARNINGS=$(grep -ic "warning" "${LOGFILE}"; true)
+  # Count by the unified log's own type column, not by the word "error" appearing anywhere on the
+  # line. `grep -ic "error"` counts every URL, payload field and identifier that happens to contain
+  # the substring, then reports it as if it were a level count - so a healthy capture can report
+  # dozens of "errors". In `--style compact` the third field is the type: E = error, F = fault.
+  #
+  # grep -c prints the count AND exits 1 when it is zero, so a `|| echo 0` fallback appends a second
+  # line and yields "0\n0". Let grep's own output stand and neutralize only the exit status.
+  ERRORS=$(grep -cE '^[0-9-]+ [0-9:.]+ +(E|F) ' "${LOGFILE}"; true)
 
   echo "Summary:"
   echo "  Total log entries: ${TOTAL_LINES}"
-  echo "  Errors: ${ERRORS}"
-  echo "  Warnings: ${WARNINGS}"
+  echo "  error/fault lines: ${ERRORS}"
   echo ""
 
-  if [ "${ERRORS}" -gt 0 ] || [ "${WARNINGS}" -gt 0 ]; then
-    echo "Recent errors/warnings:"
-    grep -iE "error|warning" "${LOGFILE}" | tail -20
+  if [ "${ERRORS}" -gt 0 ]; then
+    echo "Recent errors/faults:"
+    grep -aE '^[0-9-]+ [0-9:.]+ +(E|F) ' "${LOGFILE}" | tail -20
   fi
 
   # Clean up temp files
