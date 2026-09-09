@@ -127,6 +127,17 @@ public extension Logger {
         calendar: .current
     )
 
+    // Why no `isEnabled(type:)` level check before logging
+    //
+    // `Logger.isEnabled(type:)` only appeared in the iOS 26 SDK, but Apple
+    // annotated it with `Logger`'s own `@available(iOS 14.0, *)`. The compiler
+    // therefore binds it strongly instead of weak-importing it, and iOS 18's
+    // `libswiftos.dylib` does not export it - dyld aborts the process at launch
+    // with "Symbol not found: os.Logger.isEnabled(type:)". An `#available`
+    // guard does not help: the bind happens before any of our code runs.
+    // `os_log` performs its own level check internally, so the only cost of
+    // dropping the guard is building the message string.
+
     /// Mirrors one message to stdout so a device console capture can read it.
     ///
     /// Unified logging records the subsystem but not the call site, and stdout
@@ -148,8 +159,6 @@ public extension Logger {
         line: Int = #line
     ) {
         let mirroring = Self.printLogsEnabled
-        guard mirroring || isEnabled(type: .info) else { return }
-
         let text = message()
         self.info("\(text, privacy: .public)")
 
@@ -165,8 +174,6 @@ public extension Logger {
         line: Int = #line
     ) {
         let mirroring = Self.printLogsEnabled
-        guard mirroring || isEnabled(type: .debug) else { return }
-
         let text = message()
         self.debug("\(text, privacy: .public)")
 
@@ -182,8 +189,6 @@ public extension Logger {
         line: Int = #line
     ) {
         let mirroring = Self.printLogsEnabled
-        guard mirroring || isEnabled(type: .error) else { return }
-
         let text = message()
         self.error("\(text, privacy: .public)")
 
@@ -199,8 +204,6 @@ public extension Logger {
         line: Int = #line
     ) {
         let mirroring = Self.printLogsEnabled
-        guard mirroring || isEnabled(type: .error) else { return }
-
         let text = message()
         self.warning("\(text, privacy: .public)")
 
@@ -216,8 +219,6 @@ public extension Logger {
         line: Int = #line
     ) {
         let mirroring = Self.printLogsEnabled
-        guard mirroring || isEnabled(type: .default) else { return }
-
         let text = message()
         self.notice("\(text, privacy: .public)")
 

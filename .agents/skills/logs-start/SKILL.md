@@ -46,7 +46,9 @@ Only mention the alternatives after the capture is already running.
 
 1. `mkdir -p logs`
 2. Run `./scripts/launch_simulator.sh` in a **background/long-lived** shell so
-   `log stream` keeps running.
+   `log stream` keeps running. It also writes `logs/.sim-capture.pid` naming the
+   streaming process, which is what `logs-stop` reads to end this capture and
+   nothing else.
 3. Report the `logs/sim-YYYYMMDD-HHMMSS.log` path the script prints.
 
 Attaches to the already-booted Simulator; it does not relaunch the app, and it
@@ -58,7 +60,9 @@ fails if none is booted. Captures `Logger` output filtered to
 1. `./scripts/launch_device.sh --check` first - it resolves device and bundle id
    without launching. Fix whatever it reports before continuing.
 2. `mkdir -p logs`
-3. Run `./scripts/launch_device.sh` in a **background/long-lived** shell.
+3. Run `./scripts/launch_device.sh` in a **background/long-lived** shell. It
+   writes `logs/.device-capture.pid` naming the `devicectl` process, which is
+   what `logs-stop` reads.
 4. Report the `logs/device-YYYYMMDD-HHMMSS.log` path.
 
 Uses `xcrun devicectl device process launch --console` with
@@ -121,9 +125,14 @@ bundle id, it disappears from these captures silently.
 
 ## Concurrent captures
 
-`sim` and `device` can run at once; `logs-stop` handles all active tiers. Do not
-start a second capture of the *same* tier - the first one's file stops receiving
-the lines you expect.
+`sim` and `device` can run at once; `logs-stop` handles all active tiers, reading
+one marker file per tier. Do not start a second capture of the *same* tier - the
+marker is overwritten, so the first stream is orphaned and its file stops
+receiving the lines you expect.
+
+The markers are why `logs-stop` never has to guess. It ends the tier that was
+actually started, instead of matching `simctl spawn.*log stream` against the
+machine and catching an unrelated log stream someone else is running.
 
 ## Manual analysis
 

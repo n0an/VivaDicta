@@ -117,4 +117,62 @@ struct TranscriptionHallucinationFilterTests {
 
         #expect(sut == input)
     }
+
+    // MARK: Whisper special / timestamp tokens
+
+    /// Regression: 3.10.0 switched the WhisperKit transcript from
+    /// `TranscriptionResult.text` (hard-filtered) to per-segment text (gated on
+    /// `skipSpecialTokens`, which WhisperKit defaults to false), so users saw
+    /// raw token markup. The decoder flag is the real fix; this is the net.
+    @Test func filter_whisperSpecialTokens_stripped() {
+        let sut = TranscriptionOutputFilter.filter(
+            "<|startoftranscript|><|ru|><|transcribe|><|2.88|> Тестирую раз, два, три.<|4.80|><|endoftext|>",
+            language: "ru",
+            removeFillers: false
+        )
+
+        #expect(sut == "Тестирую раз, два, три.")
+    }
+
+    @Test(arguments: [
+        "<|startoftranscript|>",
+        "<|en|>",
+        "<|transcribe|>",
+        "<|translate|>",
+        "<|nospeech|>",
+        "<|notimestamps|>",
+        "<|endoftext|>",
+        "<|0.00|>",
+        "<|29.98|>"
+    ])
+    func filter_individualWhisperToken_stripped(_ token: String) {
+        let sut = TranscriptionOutputFilter.filter(
+            "\(token) Hello there.",
+            language: "en",
+            removeFillers: false
+        )
+
+        #expect(sut == "Hello there.", "expected \(token) to be stripped, got \(sut)")
+    }
+
+    /// Multi-segment recordings leak timestamps between sentences rather than a
+    /// full `sot` prefix, so the mid-string case needs covering too.
+    @Test func filter_timestampTokensBetweenSegments_leaveSpeechJoined() {
+        let sut = TranscriptionOutputFilter.filter(
+            "<|0.00|> First sentence.<|3.80|><|3.80|> Second sentence.<|7.20|>",
+            language: "en",
+            removeFillers: false
+        )
+
+        #expect(sut == "First sentence. Second sentence.")
+    }
+
+    /// The pattern must not eat ordinary dictated text that happens to contain
+    /// a pipe or an angle bracket.
+    @Test func filter_pipesAndAnglesInRealSpeech_unchanged() {
+        let input = "Run a < b and pipe it with cat | grep foo"
+        let sut = TranscriptionOutputFilter.filter(input, language: "en", removeFillers: false)
+
+        #expect(sut == input)
+    }
 }

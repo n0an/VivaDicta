@@ -14,7 +14,13 @@ public struct TranscriptionOutputFilter {
     private static let hallucinationPatterns = [
         #"\[.*?\]"#,     // []
         #"\(.*?\)"#,     // ()
-        #"\{.*?\}"#      // {}
+        #"\{.*?\}"#,     // {}
+        // Whisper's own special and timestamp tokens: `<|startoftranscript|>`,
+        // `<|ru|>`, `<|transcribe|>`, `<|2.88|>`, `<|endoftext|>`. The decoder
+        // is asked to drop these at the source, but this path also serves the
+        // keyboard, Share and Action extensions, so a single missed flag should
+        // not be able to put raw token text in front of a user again.
+        #"<\|[^|>]{0,32}\|>"#
     ]
 
     /// Memorized subtitle-credit strings Whisper emits when it is handed

@@ -378,11 +378,14 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .apple:
             return "foundation-model"
         case .cerebras:
-            // Measured 2026-08-27: gemma-4-31b scored 9.6 at 0.29s against
-            // gpt-oss-120b's 9.5 at 0.31s, and unlike it never ignored the
-            // no-"ё" rule or fumbled list formatting. Fastest model in the whole
-            // benchmark.
-            return "gemma-4-31b"
+            // Cerebras pulled gemma-4-31b from its public endpoints on
+            // 2026-09-03 and names qwen-3.8-27b as the replacement, so the
+            // default moves ahead of the removal rather than after it.
+            // Measured 2026-09-08: qwen-3.8-27b scored 9.1 at 0.32s against
+            // gpt-oss-120b's 8.8 at 0.31s, winning on list formatting and
+            // losing only the no-"ё" rule, which gpt-oss-120b also drops.
+            // gemma-4-31b stays selectable while it keeps answering.
+            return "qwen-3.8-27b"
         case .groq:
             return "openai/gpt-oss-120b"
         case .gemini:
@@ -547,9 +550,11 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .cerebras:
             // zai-glm-4.7 is deprecated on Cerebras from 2026-08-17; legacy
             // selections are mapped forward via `retiredModelReplacements`.
-            // Default first: gemma-4-31b outscored gpt-oss-120b on the
-            // cleanup eval and is marginally faster.
+            // Default first: qwen-3.8-27b is Cerebras' own replacement for
+            // gemma-4-31b, which left the public endpoints on 2026-09-03 but
+            // still answers, so it stays listed until it stops.
             return [
+                "qwen-3.8-27b",
                 "gemma-4-31b",
                 "gpt-oss-120b"
             ]

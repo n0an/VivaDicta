@@ -62,6 +62,15 @@ public struct ReasoningConfig {
         "gpt-oss-120b"
     ]
 
+    /// qwen-3.8-27b reasons at "high" unless told otherwise: measured 2026-09-08,
+    /// "none" took a grammar fix from 124 reasoning tokens to 0 and 0.58s server
+    /// time to 0.16s, with no loss on the cleanup eval. Unlike gpt-oss-120b it
+    /// rejects `reasoning_format: "hidden"`, but it returns reasoning in its own
+    /// field rather than inline, so nothing leaks into the enhanced text.
+    static let cerebrasNoneReasoningModels: Set<String> = [
+        "qwen-3.8-27b"
+    ]
+
     // zai-glm-4.7 doesn't use reasoning_effort — needs "disable_reasoning" in the body instead
     static let cerebrasDisableReasoningModels: Set<String> = [
         "zai-glm-4.7"
@@ -163,6 +172,7 @@ public struct ReasoningConfig {
         else if openAIMinimalReasoningModels.contains(modelName) { return "minimal" }
         else if openAILowReasoningModels.contains(modelName) { return "low" }
         else if cerebrasReasoningModels.contains(modelName) { return "low" }
+        else if cerebrasNoneReasoningModels.contains(modelName) { return "none" }
         else if groqLowReasoningModels.contains(modelName) { return "low" }
         else if groqQwenReasoningModels.contains(modelName) { return "none" }
         else if grokMinimalReasoningModels.contains(modelName) { return "minimal" }
