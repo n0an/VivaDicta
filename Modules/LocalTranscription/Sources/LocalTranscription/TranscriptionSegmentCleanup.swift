@@ -43,7 +43,23 @@ enum TranscriptionSegmentCleanup {
     /// Hallucinated tails are short. A long segment is left alone even when it
     /// trips both thresholds, so the blast radius stays small when the numbers
     /// are wrong.
-    static let maximumWordCount = 6
+    ///
+    /// 5 rather than 6, for two reasons that agree.
+    ///
+    /// It is the threshold this rule was actually validated at. Until the
+    /// `skipSpecialTokens` fix in 3.10.1, every `segment.text` carried a leading
+    /// `<|0.00|>`-style token followed by a space, and the word filter admits
+    /// anything containing a letter *or a number*, so that prefix counted.
+    /// Segments measured exactly one word longer than they read - confirmed on a
+    /// real WhisperKit run, 7 raw against 6 clean - so a nominal 6 behaved as 5.
+    /// Cleaning the text silently widened the trim; this puts it back.
+    ///
+    /// It also covers the whole known corpus. The longest hallucination the app
+    /// has ever seen is 5 words ("Субтитры и перевод сделал DimaTorzok", and the
+    /// "Редактор субтитров ... Корректор ..." credit line); the English case this
+    /// rule exists for, "Thank you.", is 2. 6 buys no additional catch and only
+    /// costs a word of real speech.
+    static let maximumWordCount = 5
 
     /// Removes trailing segments that look hallucinated, stopping at the first
     /// one that does not.
