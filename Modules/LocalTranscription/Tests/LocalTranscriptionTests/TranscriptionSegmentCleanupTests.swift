@@ -159,4 +159,69 @@ struct TranscriptionSegmentCleanupTests {
 
         #expect(sut == "Only this.")
     }
+
+    // MARK: - The word-count boundary
+
+    /// Until 3.10.1 these tests could not have been written honestly: WhisperKit
+    /// was left at its default `skipSpecialTokens: false`, so every
+    /// `segment.text` arrived with a leading `<|0.00|>`-style token followed by
+    /// a space, while the trailing token merged onto the last word
+    /// (`Tuesday.<|2.00|>`). The word filter admits anything containing a letter
+    /// *or a number*, so that prefix counted, and every segment measured exactly
+    /// one word longer than it read. `maximumWordCount = 6` therefore behaved as
+    /// 5 against real audio. Verified against a real WhisperKit run: the raw
+    /// segment split into 7 words where the clean text splits into 6.
+    ///
+    /// These pin the threshold at its designed value so it cannot drift back.
+
+    @Test func hallucination_atExactlyMaximumWordCount_isDropped() {
+        let text = "One two three four five six"
+        #expect(text.split(separator: " ").count == TranscriptionSegmentCleanup.maximumWordCount)
+
+        let segments: [StubSegment] = [
+            .speech("Real dictated content that runs on for a while."),
+            .hallucination(text)
+        ]
+
+        let sut = TranscriptionSegmentCleanup.droppingTrailingHallucinations(segments)
+
+        #expect(sut.count == 1)
+    }
+
+    @Test func hallucination_oneWordOverMaximum_isKept() {
+        let text = "One two three four five six seven"
+        #expect(text.split(separator: " ").count == TranscriptionSegmentCleanup.maximumWordCount + 1)
+
+        let segments: [StubSegment] = [
+            .speech("Real dictated content that runs on for a while."),
+            .hallucination(text)
+        ]
+
+        let sut = TranscriptionSegmentCleanup.droppingTrailingHallucinations(segments)
+
+        #expect(sut.count == 2)
+    }
+
+    /// The regression guard: a six-word trailing segment must be judged on its
+    /// clean text. If special tokens ever leak back in, the same segment counts
+    /// seven and silently stops being trimmed.
+    @Test func hallucination_sixWordsCarryingSpecialTokens_countsAsSeven() {
+        let leaked = "<|0.00|> One two three four five six<|2.00|><|endoftext|>"
+
+        #expect(TranscriptionSegmentCleanup.isLikelyHallucination(StubSegment.hallucination("One two three four five six")))
+        #expect(TranscriptionSegmentCleanup.isLikelyHallucination(StubSegment.hallucination(leaked)) == false)
+    }
+
+    /// Quiet real speech at exactly the boundary stays, because the confidence
+    /// gate rejects it before the word count is ever consulted.
+    @Test func quietSpeech_atExactlyMaximumWordCount_isKept() {
+        let segments: [StubSegment] = [
+            .speech("Real dictated content that runs on for a while."),
+            .quietSpeech("One two three four five six")
+        ]
+
+        let sut = TranscriptionSegmentCleanup.droppingTrailingHallucinations(segments)
+
+        #expect(sut.count == 2)
+    }
 }
