@@ -100,6 +100,13 @@ public final class WhisperKitTranscriptionService: @unchecked Sendable {
             let decodingOptions = DecodingOptions(
                 language: (options.language == "auto" ? nil : options.language),
                 detectLanguage: (options.language == "auto" ? true : nil),
+                // Required because the transcript is assembled from per-segment
+                // text below. `TranscriptionResult.text` hard-filters tokens
+                // above `specialTokenBegin` and can never leak, but
+                // `TranscriptionSegment.text` only drops them when this flag is
+                // set, and WhisperKit defaults it to false - so without it every
+                // segment arrives as `<|startoftranscript|><|ru|>…<|endoftext|>`.
+                skipSpecialTokens: true,
                 wordTimestamps: options.isSpeakerDiarizationEnabled,
                 suppressBlank: Self.suppressBlank,
                 logProbThreshold: Self.logProbThreshold,
