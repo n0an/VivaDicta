@@ -407,6 +407,19 @@ To upload an already-exported IPA without local-build mode: `asc publish appstor
 
 #### Gotchas found in practice
 
+- **`asc publish appstore` silently drops `whatsNew` on a brand-new version.** `apply_metadata`
+  runs *before* `attach_build`, and ASC rejects the field until a build is attached, logging
+  `'whatsNew' cannot be set for this version (initial releases have no What's New section).
+  Retrying without it.` once per locale. The run still exits 0 and reports `attached: true`, so
+  it looks clean. **Always re-run `asc metadata apply` after the publish finishes**, then confirm
+  with `asc metadata pull` into a scratch dir and check `whatsNew` is non-empty in all 10 locales.
+  Hit on 3.10.1; the release notes would have shipped blank.
+- **Apple rejects `<|...|>` in `whatsNew` as markup**: `An attribute value has invalid characters.:
+  What's New In This Version in <locale> must not contain markup language (for example, HTML tags).`
+  Anything angle-bracketed reads as an HTML tag to the validator. This bit when the 3.10.1 notes
+  quoted Whisper's `<|startoftranscript|>` token literally - describe such text in words instead.
+  The failure names only the first locale (ar-SA), so it looks locale-specific and is not.
+
 - **`--build-number` must be passed explicitly** to `asc publish appstore` in local-build mode, or the build uploads as `1`. See step 2.
 - `asc metadata push` **does not exist** - the subcommand is `asc metadata apply`.
 - `asc versions view` shows **empty Build ID / Build Version columns even when a build is correctly attached** - ASC omits relationship linkage unless `?include=` is passed, and the command does not. Do **not** read that as a missing build. `asc validate` is authoritative: its `build.required.missing` error clears the moment the build is attached.
