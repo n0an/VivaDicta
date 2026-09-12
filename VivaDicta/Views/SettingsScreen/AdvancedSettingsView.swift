@@ -45,7 +45,7 @@ struct AdvancedSettingsView: View {
     private var isFillerRemovalEnabled: Bool = true
 
     @AppStorage(UserDefaultsStorage.Keys.isSkipStateLosingHostReturnEnabled)
-    private var isSkipStateLosingHostReturnEnabled: Bool = true
+    private var isSkipStateLosingHostReturnEnabled: Bool = false
 
     @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
     private var defaultAIModeId: String = ""
@@ -222,7 +222,7 @@ struct AdvancedSettingsView: View {
                         .onChange(of: isSkipStateLosingHostReturnEnabled) { _, _ in
                             HapticManager.selectionChanged()
                         }
-                    Text("Safari, Messages and a few other apps open a new tab, chat or message when VivaDicta sends you back. With this on, VivaDicta asks you to swipe back instead, so you return exactly where you were.")
+                    Text("Safari, Messages and Claude open a new tab, chat or message when VivaDicta sends you back. Turn this on and VivaDicta asks you to swipe back instead, so you return exactly where you were.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

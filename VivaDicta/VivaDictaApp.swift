@@ -35,7 +35,7 @@ struct VivaDictaApp: App {
     /// `StateLosingHostApps` the manual return puts the user back where they
     /// were, and the automatic one does not.
     @AppStorage(UserDefaultsStorage.Keys.isSkipStateLosingHostReturnEnabled)
-    private var isSkipStateLosingHostReturnEnabled = true
+    private var isSkipStateLosingHostReturnEnabled = false
     
     private let logger = Logger(category: .app)
 
