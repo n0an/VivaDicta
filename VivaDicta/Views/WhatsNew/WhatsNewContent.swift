@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.11": release_3_11,
         "3.10": release_3_10,
         "3.9": release_3_9,
         "3.8": release_3_8,
@@ -47,6 +48,45 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
+    // 2026-09-12
+    private static let release_3_11 = WhatsNewRelease(
+        id: "3.11",
+        headline: "What's New in VivaDicta 3.11.0",
+        features: [
+            WhatsNewFeature(
+                icon: "person.2.wave.2.fill",
+                iconColors: [.purple, .indigo],
+                title: "Speaker Labels Per Mode",
+                description: "Speaker labels used to be one switch for the whole app. Each mode now carries its own, so a meeting mode can label who said what while a note mode stays clean prose."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.indigo, .blue],
+                title: "Back to 19 More Apps",
+                description: "The keyboard knows the way back to nineteen more host apps. Sixteen more that publish no way back now go straight to the manual return instead of trying first."
+            ),
+            WhatsNewFeature(
+                icon: "hand.raised.fill",
+                iconColors: [.teal, .mint],
+                title: "Apps That Lose Your Place",
+                description: "Safari, Messages and Claude open a new tab, chat or message when sent back. A new Advanced setting asks you to swipe back for just those, so you land where you were."
+            ),
+            WhatsNewFeature(
+                icon: "scissors",
+                iconColors: [.red, .orange],
+                title: "Cleaner Endings",
+                description: "The filter that removes phantom phrases from silence had become slightly too eager and could clip a short real phrase off the end. It is back at the length it was tuned for."
+            ),
+            WhatsNewFeature(
+                icon: "cpu.fill",
+                iconColors: [.blue, .cyan],
+                title: "Model Housekeeping",
+                description: "Groq's Qwen 3.6 rate-limited every request, and Cerebras retired Gemma 4. Both now move you forward automatically, and the top ten list has been remeasured."
+            )
+        ],
+        tagline: "Labels where you want them, clean prose where you don't."
+    )
+
     // 2026-09-07
     private static let release_3_10 = WhatsNewRelease(
         id: "3.10",
