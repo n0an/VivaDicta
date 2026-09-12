@@ -329,6 +329,24 @@ struct VivaDictaApp: App {
         // handoff, which is exactly when a wrong host needs explaining.
         logger.logNotice("🔄 Attempting to return to host: \(hostId)")
 
+#if DEBUG
+        // The experiment outranks both the skip list and the table: its whole
+        // point is to try a different URL for exactly the hosts the skip list
+        // would otherwise decline.
+        switch ReturnURLExperiment.override(forHostId: hostId) {
+        case .url(let url):
+            logger.logNotice("🧪 Return URL experiment: host=\(hostId) url=\(url.absoluteString) - overriding the return URL table")
+            startRecordingThenReturn(to: url, hostId: hostId, isExperiment: true)
+            return
+        case .skip:
+            logger.logNotice("🧪 Return URL experiment: host=\(hostId) url=none candidate=skip - taking the manual return")
+            startRecordingAndShowReturnPrompt()
+            return
+        case .unset:
+            break
+        }
+#endif
+
         // Declining a scheme we *do* hold, on purpose - so no unrecognized-host
         // report, and a distinct line in the log to explain the choice.
         if StateLosingHostApps.shouldDeclineReturnURL(
@@ -342,40 +360,7 @@ struct VivaDictaApp: App {
 
         if let url = returnURL(forHostId: hostId) {
             logger.logNotice("🚀 Found return URL, attempting to open: \(url.absoluteString)")
-
-            Task {
-                // Check if we have a transcription model selected
-                guard let vm = appState.recordViewModel else {
-                    logger.logError("❌ RecordViewModel not available")
-                    appState.showKeyboardReturnPrompt = true
-                    return
-                }
-
-                if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
-                    logger.logWarning("⚠️ No transcription model selected - showing keyboard return prompt")
-                    appState.showKeyboardReturnPrompt = true
-                    return
-                }
-
-                // Recording starts before the open is known to have succeeded.
-                // `open` only reports failure once it has already tried, and the
-                // user arrives in the host app expecting to be recording
-                // already, so waiting for the answer would cost the head of the
-                // recording. A failure falls back to the prompt below.
-                logger.logInfo("🎙️ Starting recording before returning to host app")
-                vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
-
-                // Small delay to ensure recording is fully started
-                try? await Task.sleep(for: .milliseconds(200))
-
-                // Now return to the host app
-                if await UIApplication.shared.open(url) {
-                    logger.logNotice("✅ Successfully opened host app: \(hostId) with recording started")
-                } else {
-                    logger.logError("❌ Failed to open host app: \(hostId)")
-                    appState.showKeyboardReturnPrompt = true
-                }
-            }
+            startRecordingThenReturn(to: url, hostId: hostId)
         } else {
             logger.logNotice("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - start recording and show keyboard return prompt
@@ -383,6 +368,54 @@ struct VivaDictaApp: App {
             startRecordingAndShowReturnPrompt()
 
             trackUnrecognizedHostIfNeeded(hostId)
+        }
+    }
+
+    /// Starts recording, then hands the user back to `url`.
+    ///
+    /// `isExperiment` only changes what is logged: the debug return URL
+    /// experiment needs its candidate and the `open` result on one
+    /// self-describing line, because a scheme no app claims and a scheme that
+    /// opens the wrong screen look identical from the outside otherwise.
+    private func startRecordingThenReturn(to url: URL, hostId: String, isExperiment: Bool = false) {
+        Task {
+            // Check if we have a transcription model selected
+            guard let vm = appState.recordViewModel else {
+                logger.logError("❌ RecordViewModel not available")
+                appState.showKeyboardReturnPrompt = true
+                return
+            }
+
+            if vm.transcriptionManager.getCurrentTranscriptionModel() == nil {
+                logger.logWarning("⚠️ No transcription model selected - showing keyboard return prompt")
+                appState.showKeyboardReturnPrompt = true
+                return
+            }
+
+            // Recording starts before the open is known to have succeeded.
+            // `open` only reports failure once it has already tried, and the
+            // user arrives in the host app expecting to be recording
+            // already, so waiting for the answer would cost the head of the
+            // recording. A failure falls back to the prompt below.
+            logger.logInfo("🎙️ Starting recording before returning to host app")
+            vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
+
+            // Small delay to ensure recording is fully started
+            try? await Task.sleep(for: .milliseconds(200))
+
+            // Now return to the host app
+            let didOpen = await UIApplication.shared.open(url)
+
+            if isExperiment {
+                logger.logNotice("🧪 Return URL experiment: host=\(hostId) url=\(url.absoluteString) opened=\(didOpen)")
+            }
+
+            if didOpen {
+                logger.logNotice("✅ Successfully opened host app: \(hostId) with recording started")
+            } else {
+                logger.logError("❌ Failed to open host app: \(hostId)")
+                appState.showKeyboardReturnPrompt = true
+            }
         }
     }
 
@@ -713,6 +746,148 @@ struct VivaDictaApp: App {
             isSkipEnabled && bundleIds.contains(hostId)
         }
     }
+
+#if DEBUG
+    /// A debug-only harness for finding a return URL that *foregrounds* a host
+    /// app instead of asking it to do something.
+    ///
+    /// The three apps in `StateLosingHostApps` do not misbehave because iOS
+    /// relaunches them - they misbehave because the URL we hand them carries a
+    /// verb. `x-web-search://` means "run a web search", `sms://` means
+    /// "compose a message". Notes and Mail return perfectly and the only thing
+    /// special about their URLs is that they are no-ops: the app comes to the
+    /// front and stays on the screen it was already on.
+    ///
+    /// So the fix may well be a no-op URL per app, with the skip list demoted
+    /// to a fallback. Which URL that is has to be found on a device, which is
+    /// what this is for: pick a candidate in Settings -> Advanced, run a real
+    /// keyboard round trip, and read the 🧪 line off the device log.
+    ///
+    /// Compiled out of Release entirely - shipping builds only ever run the
+    /// skip list and `returnURL(forHostId:)`.
+    enum ReturnURLExperiment {
+        /// One option in a host's picker.
+        ///
+        /// `id` doubles as the stored value and the picker tag: empty means
+        /// "no override", `skipRawValue` means "take the manual return", and
+        /// anything else is the candidate URL itself - so a device log line
+        /// and the stored default read the same.
+        struct Candidate: Identifiable, Hashable {
+            static let defaultRawValue = ""
+            static let skipRawValue = "skip"
+
+            let id: String
+            let label: String
+
+            /// Leaves the host on its normal path: skip list, then the table.
+            static func standard(_ urlString: String) -> Candidate {
+                Candidate(id: defaultRawValue, label: "Default (\(urlString))")
+            }
+
+            static func url(_ urlString: String) -> Candidate {
+                Candidate(id: urlString, label: urlString)
+            }
+
+            static let skip = Candidate(id: skipRawValue, label: "Skip (manual return)")
+        }
+
+        struct Host: Identifiable {
+            let bundleId: String
+            let displayName: String
+            /// App-private, one key per host, so candidates can be switched
+            /// per app without disturbing the others.
+            let storageKey: String
+            let candidates: [Candidate]
+
+            var id: String { bundleId }
+
+            static let safari = Host(
+                bundleId: "com.apple.mobilesafari",
+                displayName: "Safari",
+                storageKey: "debug.returnURLExperiment.safari",
+                candidates: [
+                    .standard("x-web-search://"),
+                    // Safari's own tab scheme, read off the shipping binary by
+                    // others - the closest thing to "just come back".
+                    .url("com-apple-mobilesafari-tab://"),
+                    .url("webclip://"),
+                    // Safari claims ftp:// and has nothing to do with it since
+                    // FTP support was removed, so it may foreground and stop.
+                    .url("ftp://"),
+                    .skip
+                ]
+            )
+
+            static let messages = Host(
+                bundleId: "com.apple.MobileSMS",
+                displayName: "Messages",
+                storageKey: "debug.returnURLExperiment.messages",
+                candidates: [
+                    .standard("sms://"),
+                    // iChat is the app's original name and the scheme is still
+                    // claimed; no documented verb hangs off it.
+                    .url("ichat://"),
+                    .url("messages://"),
+                    .url("imessage://"),
+                    .skip
+                ]
+            )
+
+            static let claude = Host(
+                bundleId: "com.anthropic.claude",
+                displayName: "Claude",
+                storageKey: "debug.returnURLExperiment.claude",
+                candidates: [
+                    .standard("claude://"),
+                    // An unrouted host: most routers ignore what they cannot
+                    // match and simply come to the front.
+                    .url("claude://return"),
+                    .url("claude://code"),
+                    .skip
+                ]
+            )
+        }
+
+        /// What the stored candidate says to do for a host.
+        enum Override: Equatable {
+            /// Nothing picked - the host keeps its normal behavior.
+            case unset
+            case url(URL)
+            case skip
+        }
+
+        static let hosts: [Host] = [.safari, .messages, .claude]
+
+        /// The candidate currently picked for `bundleId`, if this host is part
+        /// of the experiment at all.
+        static func override(forHostId bundleId: String) -> Override {
+            guard let host = hosts.first(where: { $0.bundleId == bundleId }) else { return .unset }
+            let rawValue = UserDefaultsStorage.appPrivate.string(forKey: host.storageKey) ?? Candidate.defaultRawValue
+            return override(forRawValue: rawValue)
+        }
+
+        /// A candidate that is not a usable URL is treated as unset, so a typo
+        /// in the table degrades to the shipping behavior rather than to a
+        /// silent dead end.
+        ///
+        /// "Usable" means it carries a scheme. `URL(string:)` accepts almost
+        /// any string since iOS 17 - it percent-encodes the spaces in "not a
+        /// url" and hands back a relative URL - and a URL with no scheme can
+        /// never open an app.
+        static func override(forRawValue rawValue: String) -> Override {
+            switch rawValue {
+            case Candidate.defaultRawValue: .unset
+            case Candidate.skipRawValue: .skip
+            default:
+                if let url = URL(string: rawValue), url.scheme != nil {
+                    .url(url)
+                } else {
+                    .unset
+                }
+            }
+        }
+    }
+#endif
 
     /// Reports a host app we could not return to, so its URL scheme can be
     /// looked up and added to `returnURL(forHostId:)` later.

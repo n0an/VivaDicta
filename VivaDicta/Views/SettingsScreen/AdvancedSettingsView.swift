@@ -237,6 +237,10 @@ struct AdvancedSettingsView: View {
             } header: {
                 Text("Return to App")
             }
+
+#if DEBUG
+            ReturnURLExperimentSection()
+#endif
         }
         .navigationTitle("Advanced")
         .navigationBarTitleDisplayMode(.inline)
@@ -244,6 +248,47 @@ struct AdvancedSettingsView: View {
 }
 
 #if DEBUG
+/// Debug-only harness for finding a return URL that just foregrounds a host app
+/// instead of asking it to do something. See `VivaDictaApp.ReturnURLExperiment`.
+private struct ReturnURLExperimentSection: View {
+    @AppStorage(VivaDictaApp.ReturnURLExperiment.Host.safari.storageKey, store: UserDefaultsStorage.appPrivate)
+    private var safariCandidate: String = ""
+
+    @AppStorage(VivaDictaApp.ReturnURLExperiment.Host.messages.storageKey, store: UserDefaultsStorage.appPrivate)
+    private var messagesCandidate: String = ""
+
+    @AppStorage(VivaDictaApp.ReturnURLExperiment.Host.claude.storageKey, store: UserDefaultsStorage.appPrivate)
+    private var claudeCandidate: String = ""
+
+    var body: some View {
+        Section {
+            ReturnURLCandidatePicker(host: .safari, candidate: $safariCandidate)
+            ReturnURLCandidatePicker(host: .messages, candidate: $messagesCandidate)
+            ReturnURLCandidatePicker(host: .claude, candidate: $claudeCandidate)
+        } header: {
+            Text("Return URL Experiment (Debug)")
+        } footer: {
+            Text("Pick a candidate, then run the real keyboard round trip from that app and see where you land. A candidate overrides both the return URL and the skip above. Debug builds only.")
+        }
+    }
+}
+
+private struct ReturnURLCandidatePicker: View {
+    let host: VivaDictaApp.ReturnURLExperiment.Host
+    @Binding var candidate: String
+
+    var body: some View {
+        Picker(host.displayName, selection: $candidate) {
+            ForEach(host.candidates) { candidate in
+                Text(candidate.label).tag(candidate.id)
+            }
+        }
+        .onChange(of: candidate) { _, _ in
+            HapticManager.selectionChanged()
+        }
+    }
+}
+
 #Preview {
     NavigationStack {
         AdvancedSettingsView()
