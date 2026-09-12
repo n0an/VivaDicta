@@ -501,9 +501,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
     /// Ollama, ...) are never rewritten - an id retired on one provider can be
     /// legitimately served by a user-configured endpoint.
     public static let retiredModelReplacements: [AIProvider: [String: String]] = [
-        // qwen3-32b shut down 2026-07-17; Llama 3.x shut down 2026-08-16
+        // qwen3-32b shut down 2026-07-17; Llama 3.x shut down 2026-08-16.
+        // qwen3.6-27b is still served, but its on-demand output cap is 1000
+        // tokens per minute - below what a single enhancement requests - so
+        // every call 429s. Measured 2026-09-12; qwen3.8-27b has no such cap.
         .groq: [
             "qwen/qwen3-32b": "openai/gpt-oss-120b",
+            "qwen/qwen3.6-27b": "qwen/qwen3.8-27b",
             "llama-3.1-8b-instant": "openai/gpt-oss-20b",
             "llama-3.3-70b-versatile": "openai/gpt-oss-120b"
         ],
@@ -558,12 +562,13 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gpt-oss-120b"
             ]
         case .groq:
-            // Groq retired the Llama 3.x and qwen3-32b models in mid-2026;
-            // legacy selections are mapped forward via `retiredModelReplacements`.
+            // Groq retired the Llama 3.x and qwen3-32b models in mid-2026, and
+            // qwen3.6-27b is unusable on the on-demand tier; legacy selections
+            // are mapped forward via `retiredModelReplacements`.
             return [
                 "openai/gpt-oss-120b",
                 "openai/gpt-oss-20b",
-                "qwen/qwen3.6-27b"
+                "qwen/qwen3.8-27b"
             ]
         case .gemini:
             return [
