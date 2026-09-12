@@ -281,8 +281,10 @@ struct SettingsView: View {
                         Picker("Session Timeout", selection: $audioSessionTimeout) {
                             #if DEBUG
                             Text("15 seconds").tag(15)
+                            #endif
                             Text("30 seconds").tag(30)
-                            Text("60 seconds").tag(60)
+                            Text("1 minute").tag(60)
+                            #if DEBUG
                             Text("90 seconds").tag(90)
                             Text("2 minutes").tag(120)
                             #endif
