@@ -69,8 +69,7 @@ final class RealtimeDictationCoordinator {
         let translationTarget = mode.translationTargetLanguage ?? ""
         guard translationTarget.isEmpty else { return false }
 
-        // Speaker labels are a global setting rather than a mode property.
-        guard !AppGroupCoordinator.shared.isSpeakerDiarizationEnabled else { return false }
+        guard !mode.speakerLabelsEnabled else { return false }
 
         return true
     }

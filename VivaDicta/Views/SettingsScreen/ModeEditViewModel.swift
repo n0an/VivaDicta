@@ -34,6 +34,7 @@ class ModeEditViewModel {
     var useClipboardContext: Bool = false
     var isAutoTextFormattingEnabled: Bool = false
     var isSmartInsertEnabled: Bool = false
+    var speakerLabelsEnabled: Bool = false
 
     var obsidianEnabled: Bool = true
     var folderExportEnabled: Bool = true
@@ -198,6 +199,7 @@ class ModeEditViewModel {
             useClipboardContext = existingMode.useClipboardContext
             isAutoTextFormattingEnabled = existingMode.isAutoTextFormattingEnabled
             isSmartInsertEnabled = existingMode.isSmartInsertEnabled
+            speakerLabelsEnabled = existingMode.speakerLabelsEnabled
             obsidianEnabled = existingMode.obsidianEnabled
             folderExportEnabled = existingMode.folderExportEnabled
 
@@ -247,6 +249,7 @@ class ModeEditViewModel {
             useClipboardContext: aiEnhanceEnabled ? useClipboardContext : false,
             isAutoTextFormattingEnabled: isAutoTextFormattingEnabled,
             isSmartInsertEnabled: isSmartInsertEnabled,
+            speakerLabelsEnabled: isSpeakerLabelsAvailable() ? speakerLabelsEnabled : false,
             obsidianEnabled: obsidianEnabled,
             folderExportEnabled: folderExportEnabled
         )
@@ -465,6 +468,25 @@ class ModeEditViewModel {
             .sorted { $0.value < $1.value }
 
         return GroupedLanguages(recommended: recommended, other: other)
+    }
+
+    // MARK: - Speaker Labels
+
+    /// Whether the speaker-labels toggle applies to the mode's current model.
+    ///
+    /// Provider-wide for most services; OpenAI and Gemini each diarize on one
+    /// dedicated model only, so the answer is per model rather than per provider.
+    public func isSpeakerLabelsAvailable() -> Bool {
+        guard isTranscriptionProviderConfigured(transcriptionProvider) else { return false }
+
+        switch transcriptionProvider {
+        case .openAI:
+            return transcriptionModel == "gpt-4o-transcribe-diarize"
+        case .gemini:
+            return transcriptionModel == "gemini-3.5-transcribe"
+        default:
+            return transcriptionProvider.supportsSpeakerDiarization
+        }
     }
 
     // MARK: - Translation Settings

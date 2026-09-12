@@ -27,6 +27,7 @@ import AICore
 /// - ``transcriptionProvider``: Which provider (WhisperKit, Parakeet, or cloud)
 /// - ``transcriptionModel``: The specific model name
 /// - ``transcriptionLanguage``: Source audio language (or "auto" for detection)
+/// - ``speakerLabelsEnabled``: Whether to return a speaker-attributed transcript
 ///
 /// ### Enhancement Settings
 /// - ``aiEnhanceEnabled``: Whether to apply AI processing
@@ -85,6 +86,12 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// Whether smart insert (auto-adjust spacing and capitalization) is applied when inserting text via keyboard.
     let isSmartInsertEnabled: Bool
 
+    /// Whether the transcript is speaker-attributed ("Speaker 1: ...").
+    ///
+    /// Only effective on providers and models that can diarize - see
+    /// `TranscriptionModel.supportsSpeakerDiarization`. Everything else ignores it.
+    let speakerLabelsEnabled: Bool
+
     /// Whether this mode opts in to saving transcriptions to Obsidian.
     /// Only effective when the global Obsidian integration is enabled in
     /// Settings → Integrations.
@@ -111,6 +118,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
          useClipboardContext: Bool = false,
          isAutoTextFormattingEnabled: Bool = false,
          isSmartInsertEnabled: Bool = false,
+         speakerLabelsEnabled: Bool = false,
          obsidianEnabled: Bool = true,
          folderExportEnabled: Bool = true) {
         self.id = id
@@ -128,6 +136,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.useClipboardContext = useClipboardContext
         self.isAutoTextFormattingEnabled = isAutoTextFormattingEnabled
         self.isSmartInsertEnabled = isSmartInsertEnabled
+        self.speakerLabelsEnabled = speakerLabelsEnabled
         self.obsidianEnabled = obsidianEnabled
         self.folderExportEnabled = folderExportEnabled
     }
@@ -161,6 +170,13 @@ struct VivaMode: Identifiable, Hashable, Codable {
         useClipboardContext = try container.decodeIfPresent(Bool.self, forKey: .useClipboardContext) ?? false
         isAutoTextFormattingEnabled = try container.decodeIfPresent(Bool.self, forKey: .isAutoTextFormattingEnabled) ?? true
         isSmartInsertEnabled = try container.decodeIfPresent(Bool.self, forKey: .isSmartInsertEnabled) ?? true
+        // Speaker labels used to be one global switch. A mode saved before the
+        // move has no key of its own, so it inherits that switch - which keeps
+        // upgrading users' transcripts labeled exactly as they were. The
+        // inherited value becomes explicit the first time any mode is saved,
+        // because every mode is re-encoded together.
+        speakerLabelsEnabled = try container.decodeIfPresent(Bool.self, forKey: .speakerLabelsEnabled)
+            ?? AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? true
         folderExportEnabled = try container.decodeIfPresent(Bool.self, forKey: .folderExportEnabled) ?? true
 
@@ -217,6 +233,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case aiProvider, aiModel, reminderExtractorProvider, reminderExtractorModel, aiEnhanceEnabled
         case useClipboardContext
         case isAutoTextFormattingEnabled, isSmartInsertEnabled
+        case speakerLabelsEnabled
         case obsidianEnabled
         case folderExportEnabled
     }
@@ -239,6 +256,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(useClipboardContext, forKey: .useClipboardContext)
         try container.encode(isAutoTextFormattingEnabled, forKey: .isAutoTextFormattingEnabled)
         try container.encode(isSmartInsertEnabled, forKey: .isSmartInsertEnabled)
+        try container.encode(speakerLabelsEnabled, forKey: .speakerLabelsEnabled)
         try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
         try container.encode(folderExportEnabled, forKey: .folderExportEnabled)
     }

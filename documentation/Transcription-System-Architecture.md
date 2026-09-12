@@ -196,7 +196,7 @@ Either way a socket that will not open falls back to an ordinary capture rather 
 
 - the model is not a streaming model, or its provider has no API key
 - the mode has an inline translation target
-- Speaker Labels is enabled (a global setting, not a mode property)
+- the mode has Speaker Labels enabled
 
 The last two are not arbitrary: the socket is opened in transcription-only mode, and a successful stream bypasses the provider's batch job entirely, so streaming those modes would quietly save untranslated text with no speaker attribution - worse than simply being slower.
 

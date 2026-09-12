@@ -35,7 +35,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// per model - see `TranscriptionModel.supportsSpeakerDiarization`.
     var supportsSpeakerDiarization: Bool {
         switch self {
-        case .deepgram, .elevenLabs, .mistral, .soniox, .gladia, .speechmatics, .assemblyAI, .xai:
+        case .whisperKit, .deepgram, .elevenLabs, .mistral, .soniox, .gladia, .speechmatics, .assemblyAI, .xai:
             true
         default:
             false

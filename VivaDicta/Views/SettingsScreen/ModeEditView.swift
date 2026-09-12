@@ -243,6 +243,21 @@ struct ModeEditView: View {
                         }
                         .popoverTip(NativeTranslationTip())
                     }
+
+                    if viewModel.isSpeakerLabelsAvailable() {
+                        Toggle(isOn: $viewModel.speakerLabelsEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Speaker Labels")
+                                    .font(.body)
+                                Text("Identify and label each speaker in the transcript")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .onChange(of: viewModel.speakerLabelsEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    }
                 } else {
                     if viewModel.transcriptionProvider == .parakeet ||
                         viewModel.transcriptionProvider == .whisperKit {

@@ -23,8 +23,6 @@ struct SettingsView: View {
     @State var navigationPath = NavigationPath()
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
-    @AppStorage(AppGroupCoordinator.kIsSpeakerDiarizationEnabled, store: UserDefaultsStorage.shared)
-    private var isSpeakerDiarizationEnabled = false
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
     private var isAutoCopyAfterRecordingEnabled = false
     @AppStorage("preferredChineseScript") private var chineseScriptPreference: ChineseScriptPreference = .auto
@@ -167,19 +165,6 @@ struct SettingsView: View {
                         }
                     }
                     .onChange(of: isVADEnabled) { _, _ in
-                        HapticManager.selectionChanged()
-                    }
-
-                    Toggle(isOn: $isSpeakerDiarizationEnabled) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Speaker Labels")
-                                .font(.body)
-                            Text("Identify and label different speakers for local Whisper, Deepgram, Mistral, Soniox, Gladia, Speechmatics, AssemblyAI, ElevenLabs, and xAI")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isSpeakerDiarizationEnabled) { _, _ in
                         HapticManager.selectionChanged()
                     }
 

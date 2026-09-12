@@ -662,8 +662,12 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         }
     }
 
-    /// Whether speaker diarization is enabled for supported transcription providers
-    /// Defaults to false if not set
+    /// Legacy global speaker-label switch, superseded by `VivaMode.speakerLabelsEnabled`.
+    ///
+    /// Nothing writes it any more - it survives only as the value a mode saved
+    /// before the per-mode move inherits when it decodes. Once every mode has
+    /// been re-encoded with its own flag this is dead and can go.
+    /// Defaults to false if not set.
     public var isSpeakerDiarizationEnabled: Bool {
         get {
             sharedDefaults?.bool(forKey: AppGroupCoordinator.kIsSpeakerDiarizationEnabled) ?? false

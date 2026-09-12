@@ -271,7 +271,7 @@ class TranscriptionManager: Transcriber {
     ) async throws -> TranscriptionProvider {
         let selectedLanguage = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kSelectedLanguageKey) ?? "auto"
         let isVADEnabled = UserDefaultsStorage.shared.object(forKey: AppGroupCoordinator.kIsVADEnabled) as? Bool ?? true
-        let diarizationEnabled = AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
+        let diarizationEnabled = currentMode.speakerLabelsEnabled
         let translationTarget = UserDefaultsStorage.shared.string(forKey: AppGroupCoordinator.kTranslationTargetLanguageKey) ?? ""
 
         switch model.provider {
