@@ -614,7 +614,29 @@ struct VivaDictaApp: App {
         "com.rivetrune.cognilog",       // CogniLog - no AASA, no known scheme
         "com.t3tools.t3code",           // T3 Code - t3.codes serves no AASA
         "com.davetech.todo",            // MinimaList to-do - no AASA, no known scheme
-        "cc.calacatta.happiest"         // Not on any App Store storefront; calacatta.cc does not resolve
+        "cc.calacatta.happiest",        // Not on any App Store storefront; calacatta.cc does not resolve
+        "tech.baye.OpenCat",            // OpenCat - no AASA, no documented scheme
+        "xyz.block.buzz.mobile",        // Buzz - no AASA on block.xyz or cash.app
+        "Mailroom.Canary-iOS",          // Canary Mail - canarymail.io serves no AASA
+        "4GU63N96WE.com.p5sys.jumpdesktop", // Jump Desktop - no AASA, no known scheme
+        "org.kodiakgaming.Whisper-Secrets", // Whisper Secrets - no AASA
+        "ch.migrosbank.iphonebanking",  // Migros Bank - no AASA
+        "com.tencent.workbuddy.app",    // Not on any App Store storefront
+        "com.whisper.social",           // Whisper Social - no AASA
+        "com.yottagames.gameofmafia",   // The Grand Mafia - no AASA
+        "cz.mobilcomm.askwatch",        // Ask Watch AI - no AASA
+        "ru.kwork.messenger",           // Kwork - no AASA
+        "com.t3tools.t3code.swiftui",   // Sibling bundle of com.t3tools.t3code
+        "com.apple.siri",               // Siri.app registers no CFBundleURLTypes
+
+        // Telegram forks. They share tg:// with official Telegram, so mapping
+        // it would let iOS hand the user to whichever claimant it picks.
+        "org.denshe.telegramdev",       // Telegram dev build, not on the App Store
+        "com.olcorporation.olai",       // iMe: Telegram AI Messenger
+
+        // Share and compose extensions. The surface the user typed into is torn
+        // down on return, and the parent app is not where they were.
+        "net.whatsapp.WhatsApp.ShareExtension"
     ]
 
     /// Reports a host app we could not return to, so its URL scheme can be
@@ -711,6 +733,15 @@ struct VivaDictaApp: App {
             "com.agiletortoise.Drafts5": "drafts://",
             "com.ubercab.UberClient": "uber://",
             "com.tinyspeck.chatlyio": "slack://open", // this bundle id is Slack
+            "com.logseq.logseq": "logseq://",        // official build; own ios Info.plist
+            "io.element.elementx": "io.element.elementx://", // NOT matrix://, shared with other Matrix clients
+            "ai.openclawfoundation.app": "openclaw://",
+            "com.apple.shortcuts": "shortcuts://",   // read from Shortcuts.app
+            "com.apple.Maps": "maps://",             // read from Maps.app
+            "com.google.Maps": "comgooglemaps://",   // Google's published URL-scheme doc
+            // The inline Notes editor shown inside other apps. The note itself
+            // lives in Notes, so that is where the user came from.
+            "com.apple.mobilenotes.EditorExtension": "mobilenotes://",
 
             // Corroborated across independent sources but not read from the
             // shipping app, so a miss is possible - it degrades to the prompt.
@@ -724,6 +755,12 @@ struct VivaDictaApp: App {
             "com.google.Docs": "googledocs://",
             "com.taobao.taobao4iphone": "taobao://",
             "company.thebrowser.ArcMobile2": "arcmobile2://",
+            "com.linear.ios": "linear://",
+            "com.iwilab.KakaoTalk": "kakaotalk://",
+            "com.apple.AppStore": "itms-apps://",
+            "com.xingin.discover": "xhsdiscover://",   // rednote / Xiaohongshu
+            "doordash.DoorDashConsumer": "doordash://",
+            "pinterest": "pinterest://",
 
             // Single-source or inferred from a sibling platform. Weaker still,
             // and kept only because a miss costs nothing beyond the prompt the
@@ -745,7 +782,13 @@ struct VivaDictaApp: App {
             "com.amazon.Amazon": "https://www.amazon.com/",
             "com.ClassDojo": "https://www.classdojo.com/ul/home",
             "com.kouzoh.ios.mercari": "https://jp.mercari.com/",
-            "com.ubercab.UberEats": "https://www.ubereats.com/"
+            "com.ubercab.UberEats": "https://www.ubereats.com/",
+            "com.zhiliaoapp.musically": "https://www.tiktok.com/",
+            "com.google.NotebookLM": "https://notebooklm.google/app",
+            "com.360buy.jdmobile": "https://m.jd.com/",
+            "com.waze.iphone": "https://www.waze.com/ul",
+            "ru.avito.app": "https://www.avito.ru/",
+            "vn.com.vng.zingalo": "https://zalo.me/"
         ]
 
         return knownURLs[bundleId].flatMap(URL.init(string:))
