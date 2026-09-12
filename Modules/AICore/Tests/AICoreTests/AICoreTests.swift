@@ -101,6 +101,7 @@ struct AIProviderTests {
         #expect(AIProvider.normalizedModel("llama-3.1-8b-instant", for: .groq) == "openai/gpt-oss-20b")
         #expect(AIProvider.normalizedModel("gpt-5.1", for: .openAI) == "gpt-5.5")
         #expect(AIProvider.normalizedModel("llama3.1-8b", for: .cerebras) == "gpt-oss-120b")
+        #expect(AIProvider.normalizedModel("gemma-4-31b", for: .cerebras) == "qwen-3.8-27b")
         // Unknown ids pass through untouched.
         #expect(AIProvider.normalizedModel("gpt-5.6-terra", for: .openAI) == "gpt-5.6-terra")
         // Retirement is provider-scoped: another provider legitimately serving

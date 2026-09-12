@@ -384,7 +384,6 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // Measured 2026-09-08: qwen-3.8-27b scored 9.1 at 0.32s against
             // gpt-oss-120b's 8.8 at 0.31s, winning on list formatting and
             // losing only the no-"ё" rule, which gpt-oss-120b also drops.
-            // gemma-4-31b stays selectable while it keeps answering.
             return "qwen-3.8-27b"
         case .groq:
             return "openai/gpt-oss-120b"
@@ -515,10 +514,14 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "gpt-4.1-nano": "gpt-5.4-nano"
         ],
         // llama3.1-8b was removed from the public catalog;
-        // zai-glm-4.7 is deprecated from 2026-08-17
+        // zai-glm-4.7 is deprecated from 2026-08-17;
+        // gemma-4-31b left the public endpoints on 2026-09-03 and stopped
+        // answering entirely by 2026-09-12 - Cerebras names qwen-3.8-27b as
+        // its replacement, which is also our default for this provider.
         .cerebras: [
             "llama3.1-8b": "gpt-oss-120b",
-            "zai-glm-4.7": "gpt-oss-120b"
+            "zai-glm-4.7": "gpt-oss-120b",
+            "gemma-4-31b": "qwen-3.8-27b"
         ],
         // kimi-k2.5 is closed to new users and sunsets 2026-08-31
         .kimi: [
@@ -548,14 +551,10 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .apple:
             return ["foundation-model"]
         case .cerebras:
-            // zai-glm-4.7 is deprecated on Cerebras from 2026-08-17; legacy
+            // zai-glm-4.7 and gemma-4-31b are both retired here; legacy
             // selections are mapped forward via `retiredModelReplacements`.
-            // Default first: qwen-3.8-27b is Cerebras' own replacement for
-            // gemma-4-31b, which left the public endpoints on 2026-09-03 but
-            // still answers, so it stays listed until it stops.
             return [
                 "qwen-3.8-27b",
-                "gemma-4-31b",
                 "gpt-oss-120b"
             ]
         case .groq:
