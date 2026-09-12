@@ -30,6 +30,12 @@ struct VivaDictaApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(UserDefaultsStorage.Keys.hasCompletedOnboarding, store: UserDefaultsStorage.appPrivate)
     private var hasCompletedOnboarding = false
+
+    /// Settings -> Advanced -> Return to App. On by default: for the hosts in
+    /// `StateLosingHostApps` the manual return puts the user back where they
+    /// were, and the automatic one does not.
+    @AppStorage(UserDefaultsStorage.Keys.isSkipStateLosingHostReturnEnabled)
+    private var isSkipStateLosingHostReturnEnabled = true
     
     private let logger = Logger(category: .app)
 
@@ -323,6 +329,17 @@ struct VivaDictaApp: App {
         // handoff, which is exactly when a wrong host needs explaining.
         logger.logNotice("🔄 Attempting to return to host: \(hostId)")
 
+        // Declining a scheme we *do* hold, on purpose - so no unrecognized-host
+        // report, and a distinct line in the log to explain the choice.
+        if StateLosingHostApps.shouldDeclineReturnURL(
+            hostId: hostId,
+            isSkipEnabled: isSkipStateLosingHostReturnEnabled
+        ) {
+            logger.logNotice("🙅 Skipping URL scheme for state-losing host: \(hostId) - it would open a new tab/chat/message, so asking for a manual return instead")
+            startRecordingAndShowReturnPrompt()
+            return
+        }
+
         if let url = returnURL(forHostId: hostId) {
             logger.logNotice("🚀 Found return URL, attempting to open: \(url.absoluteString)")
 
@@ -363,16 +380,22 @@ struct VivaDictaApp: App {
             logger.logNotice("❌ No URL scheme available for host: \(hostId)")
             // No URL scheme found - start recording and show keyboard return prompt
             // so user can switch back manually and find recording already in progress
-            Task {
-                if let vm = appState.recordViewModel,
-                   vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
-                    logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
-                    vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
-                }
-                appState.showKeyboardReturnPrompt = true
-            }
+            startRecordingAndShowReturnPrompt()
 
             trackUnrecognizedHostIfNeeded(hostId)
+        }
+    }
+
+    /// The manual-return path: start recording, then ask the user to switch
+    /// back themselves, so they arrive to find recording already in progress.
+    private func startRecordingAndShowReturnPrompt() {
+        Task {
+            if let vm = appState.recordViewModel,
+               vm.transcriptionManager.getCurrentTranscriptionModel() != nil {
+                logger.logInfo("🎙️ Starting recording before showing manual switch sheet")
+                vm.startCaptureAudio(sourceTag: SourceTag.keyboard)
+            }
+            appState.showKeyboardReturnPrompt = true
         }
     }
     
@@ -638,6 +661,58 @@ struct VivaDictaApp: App {
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension"
     ]
+
+    /// Host apps whose return URL scheme relaunches them onto a *new* surface
+    /// instead of resuming the one the user came from.
+    ///
+    /// Opening a scheme is a launch, not a resume, so for these apps the
+    /// teleport drops the user in a fresh tab, chat or message and the text
+    /// they were in the middle of is somewhere they now have to go find.
+    /// Swiping back by hand is strictly better here - iOS resumes the app
+    /// exactly where it was. Settings -> Advanced -> Return to App decides
+    /// whether the list is honored.
+    ///
+    /// Only apps whose scheme is known to be an *action* (compose, search, new
+    /// chat) belong here. A wrong entry costs a user a working teleport, so
+    /// anything unproven stays out.
+    enum StateLosingHostApps {
+        struct Entry {
+            let bundleId: String
+            /// Shown in the Advanced setting so the skipped apps are not a
+            /// mystery to the user.
+            let displayName: String
+        }
+
+        static let entries: [Entry] = [
+            // `x-web-search://` is Safari's *search* action: it opens a new tab
+            // focused on the search field. The tab the user was reading is
+            // still there, but they are no longer on it.
+            Entry(bundleId: "com.apple.mobilesafari", displayName: "Safari"),
+
+            // `sms://` with no recipient is the *compose* action - a new blank
+            // message, not the conversation that was being typed in. The most
+            // reported case of this: "I'm back in Messages but not in the chat
+            // I was typing in."
+            Entry(bundleId: "com.apple.MobileSMS", displayName: "Messages"),
+
+            // `claude://` lands on a new chat rather than the conversation the
+            // keyboard was typing into.
+            Entry(bundleId: "com.anthropic.claude", displayName: "Claude")
+        ]
+
+        static let bundleIds: Set<String> = Set(entries.map(\.bundleId))
+
+        static let displayNames: [String] = entries.map(\.displayName)
+
+        /// Whether the URL-scheme teleport back to `hostId` should be declined
+        /// in favor of the manual return prompt.
+        ///
+        /// These hosts are recognized - we hold a working scheme for every one
+        /// of them - so declining is a deliberate choice, not a miss.
+        static func shouldDeclineReturnURL(hostId: String, isSkipEnabled: Bool) -> Bool {
+            isSkipEnabled && bundleIds.contains(hostId)
+        }
+    }
 
     /// Reports a host app we could not return to, so its URL scheme can be
     /// looked up and added to `returnURL(forHostId:)` later.

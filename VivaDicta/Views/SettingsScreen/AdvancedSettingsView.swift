@@ -44,6 +44,9 @@ struct AdvancedSettingsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isFillerRemovalEnabled)
     private var isFillerRemovalEnabled: Bool = true
 
+    @AppStorage(UserDefaultsStorage.Keys.isSkipStateLosingHostReturnEnabled)
+    private var isSkipStateLosingHostReturnEnabled: Bool = true
+
     @AppStorage(UserDefaultsStorage.Keys.defaultAIModeId)
     private var defaultAIModeId: String = ""
 
@@ -211,6 +214,28 @@ struct AdvancedSettingsView: View {
                 }
             } header: {
                 Text("Text Processing")
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: 4) {
+                    Toggle("Skip Apps That Lose Your Place", isOn: $isSkipStateLosingHostReturnEnabled)
+                        .onChange(of: isSkipStateLosingHostReturnEnabled) { _, _ in
+                            HapticManager.selectionChanged()
+                        }
+                    Text("Safari, Messages and a few other apps open a new tab, chat or message when VivaDicta sends you back. With this on, VivaDicta asks you to swipe back instead, so you return exactly where you were.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Apps You Swipe Back To")
+                        .font(.body)
+                    Text(VivaDictaApp.StateLosingHostApps.displayNames.formatted(.list(type: .and)))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Return to App")
             }
         }
         .navigationTitle("Advanced")

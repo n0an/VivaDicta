@@ -102,6 +102,11 @@ public enum UserDefaultsStorage {
         public static let isStripTrailingPeriodEnabled = "isStripTrailingPeriodEnabled"
         public static let isFillerRemovalEnabled = "isFillerRemovalEnabled"
 
+        /// Whether the keyboard handoff declines the URL-scheme return for host
+        /// apps that relaunch onto a new tab/chat/message, and asks the user to
+        /// swipe back instead. Defaults to on; only the main app reads it.
+        public static let isSkipStateLosingHostReturnEnabled = "isSkipStateLosingHostReturnEnabled"
+
         /// Raw value of `PreferredMicrophone`. Decides whether recording asks
         /// iOS for the built-in mic or takes whatever input is connected.
         public static let preferredMicrophone = "preferredMicrophone"
