@@ -27,7 +27,7 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 /// The best models for cleaning up dictation, measured rather than guessed.
 ///
 /// Only the top 10 ship in the app; the full table of
-/// 48 models is on the website, which is also where the
+/// 59 models is on the website, which is also where the
 /// method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
@@ -35,87 +35,87 @@ public enum AIModelBenchmarkCatalog {
 
     /// ISO date the measurements were taken. Shown so a stale table is visibly
     /// stale rather than quietly wrong.
-    public static let measuredAt = "2026-09-08"
+    public static let measuredAt = "2026-09-12"
 
     public static let top: [AIModelBenchmark] = [
         AIModelBenchmark(
             rank: 1,
-            provider: "OpenAI",
-            model: "gpt-5.5",
-            quality: 9.8,
-            seconds: 1.0,
+            provider: "Gemini",
+            model: "gemini-3.8-flash",
+            quality: 9.7,
+            seconds: 0.87,
             freeTier: false
         ),
         AIModelBenchmark(
             rank: 2,
             provider: "OpenAI",
-            model: "gpt-5.4-nano",
+            model: "gpt-5.4-mini",
             quality: 9.7,
-            seconds: 0.7,
+            seconds: 0.89,
             freeTier: false
         ),
         AIModelBenchmark(
             rank: 3,
-            provider: "Grok (xAI)",
-            model: "grok-4.20-non-reasoning",
-            quality: 9.7,
-            seconds: 0.7,
+            provider: "OpenAI",
+            model: "gpt-4.1-mini",
+            quality: 9.6,
+            seconds: 0.74,
             freeTier: false
         ),
         AIModelBenchmark(
             rank: 4,
-            provider: "OpenAI",
-            model: "gpt-5.4-mini",
-            quality: 9.6,
-            seconds: 0.8,
+            provider: "Anthropic",
+            model: "claude-haiku-4-5",
+            quality: 9.5,
+            seconds: 0.74,
             freeTier: false
         ),
         AIModelBenchmark(
             rank: 5,
+            provider: "Vercel AI Gateway",
+            model: "anthropic/claude-haiku-4.5",
+            quality: 9.6,
+            seconds: 0.78,
+            freeTier: false
+        ),
+        AIModelBenchmark(
+            rank: 6,
+            provider: "Grok (xAI)",
+            model: "grok-4.20-non-reasoning",
+            quality: 9.6,
+            seconds: 0.79,
+            freeTier: false
+        ),
+        AIModelBenchmark(
+            rank: 7,
             provider: "OpenAI",
-            model: "gpt-5.6-luna",
+            model: "gpt-5.4",
+            quality: 9.5,
+            seconds: 0.84,
+            freeTier: false
+        ),
+        AIModelBenchmark(
+            rank: 8,
+            provider: "Gemini",
+            model: "gemini-3.7-flash",
             quality: 9.5,
             seconds: 0.9,
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 6,
-            provider: "Anthropic",
-            model: "claude-haiku-4-5",
-            quality: 9.6,
-            seconds: 0.9,
-            freeTier: false
-        ),
-        AIModelBenchmark(
-            rank: 7,
-            provider: "Mistral",
-            model: "mistral-medium-latest",
-            quality: 9.4,
-            seconds: 0.4,
-            freeTier: true
-        ),
-        AIModelBenchmark(
-            rank: 8,
-            provider: "Ollama Cloud",
-            model: "gemma4:31b",
-            quality: 9.4,
-            seconds: 0.6,
-            freeTier: true
-        ),
-        AIModelBenchmark(
             rank: 9,
             provider: "Gemini",
-            model: "gemini-3.1-flash-lite",
-            quality: 9.4,
-            seconds: 0.7,
+            model: "gemini-3.5-flash",
+            quality: 9.6,
+            seconds: 0.93,
             freeTier: false
         ),
         AIModelBenchmark(
             rank: 10,
-            provider: "Gemini",
-            model: "gemini-3.5-flash-lite",
-            quality: 9.4,
-            seconds: 0.8,
+            provider: "OpenRouter",
+            model: "anthropic/claude-haiku-4.5",
+            quality: 9.6,
+            seconds: 1.02,
             freeTier: false
         )
     ]
