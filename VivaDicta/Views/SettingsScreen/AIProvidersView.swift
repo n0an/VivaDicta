@@ -365,7 +365,7 @@ struct AIProviders: View {
         } footer: {
             if isTopModelsExpanded {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Scored on how well each model cleans up dictation, and how long it takes. Measured \(AIModelBenchmarkCatalog.measuredAt); scores within 0.3 are ties.")
+                    Text("Scored on how well each model cleans up dictation, and how long it takes. Measured \(AIModelBenchmarkCatalog.measuredAt); scores within 0.3 are ties. One row per provider - each provider's other models are in its own picker.")
                     Text("Free tier marks models you can run without paying, though the terms differ - some are free forever with rate limits, others give a monthly allowance or a starting credit.")
                     Link("See all measured models", destination: AIModelBenchmarkCatalog.fullTableURL)
                 }

@@ -26,9 +26,10 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 
 /// The best models for cleaning up dictation, measured rather than guessed.
 ///
-/// Only the top 10 ship in the app; the full table of
-/// 59 models is on the website, which is also where the
-/// method is written up.
+/// One row per provider, best model first, so the list answers "which provider
+/// should I set up" rather than repeating a provider already on it. The full
+/// table of 59 models is on the website, which is also where
+/// the method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
     public static let fullTableURL = URL(string: "https://vivadicta.com/docs/ai-model-rankings")!
@@ -56,14 +57,6 @@ public enum AIModelBenchmarkCatalog {
         ),
         AIModelBenchmark(
             rank: 3,
-            provider: "OpenAI",
-            model: "gpt-4.1-mini",
-            quality: 9.6,
-            seconds: 0.74,
-            freeTier: false
-        ),
-        AIModelBenchmark(
-            rank: 4,
             provider: "Anthropic",
             model: "claude-haiku-4-5",
             quality: 9.5,
@@ -71,15 +64,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 5,
-            provider: "Vercel AI Gateway",
-            model: "anthropic/claude-haiku-4.5",
-            quality: 9.6,
-            seconds: 0.78,
-            freeTier: false
-        ),
-        AIModelBenchmark(
-            rank: 6,
+            rank: 4,
             provider: "Grok (xAI)",
             model: "grok-4.20-non-reasoning",
             quality: 9.6,
@@ -87,35 +72,43 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
+            rank: 5,
+            provider: "Ollama Cloud",
+            model: "gemma4:31b",
+            quality: 9.4,
+            seconds: 0.63,
+            freeTier: true
+        ),
+        AIModelBenchmark(
+            rank: 6,
+            provider: "Cerebras",
+            model: "qwen-3.8-27b",
+            quality: 9.2,
+            seconds: 0.3,
+            freeTier: true
+        ),
+        AIModelBenchmark(
             rank: 7,
-            provider: "OpenAI",
-            model: "gpt-5.4",
-            quality: 9.5,
-            seconds: 0.84,
-            freeTier: false
+            provider: "Groq",
+            model: "qwen/qwen3.8-27b",
+            quality: 9.1,
+            seconds: 0.35,
+            freeTier: true
         ),
         AIModelBenchmark(
             rank: 8,
-            provider: "Gemini",
-            model: "gemini-3.7-flash",
-            quality: 9.5,
-            seconds: 0.9,
-            freeTier: false
+            provider: "HuggingFace",
+            model: "openai/gpt-oss-120b",
+            quality: 9.1,
+            seconds: 0.51,
+            freeTier: true
         ),
         AIModelBenchmark(
             rank: 9,
-            provider: "Gemini",
-            model: "gemini-3.5-flash",
-            quality: 9.6,
-            seconds: 0.93,
-            freeTier: false
-        ),
-        AIModelBenchmark(
-            rank: 10,
-            provider: "OpenRouter",
-            model: "anthropic/claude-haiku-4.5",
-            quality: 9.6,
-            seconds: 1.02,
+            provider: "OpenCode Go",
+            model: "glm-5.3-flash",
+            quality: 9.5,
+            seconds: 1.31,
             freeTier: false
         )
     ]
