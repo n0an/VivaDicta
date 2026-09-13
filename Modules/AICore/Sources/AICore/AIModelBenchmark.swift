@@ -28,7 +28,7 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 ///
 /// One row per provider, best model first, so the list answers "which provider
 /// should I set up" rather than repeating a provider already on it. The full
-/// table of 54 models is on the website, which is also where
+/// table of 55 models is on the website, which is also where
 /// the method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
@@ -73,6 +73,14 @@ public enum AIModelBenchmarkCatalog {
         ),
         AIModelBenchmark(
             rank: 5,
+            provider: "Mistral",
+            model: "mistral-medium-latest",
+            quality: 9.4,
+            seconds: 0.4,
+            freeTier: true
+        ),
+        AIModelBenchmark(
+            rank: 6,
             provider: "Ollama Cloud",
             model: "gemma4:31b",
             quality: 9.4,
@@ -80,7 +88,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 6,
+            rank: 7,
             provider: "Cerebras",
             model: "qwen-3.8-27b",
             quality: 9.2,
@@ -88,7 +96,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 7,
+            rank: 8,
             provider: "Groq",
             model: "qwen/qwen3.8-27b",
             quality: 9.1,
@@ -96,7 +104,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 8,
+            rank: 9,
             provider: "HuggingFace",
             model: "openai/gpt-oss-120b",
             quality: 9.1,
@@ -104,7 +112,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 9,
+            rank: 10,
             provider: "OpenCode Go",
             model: "glm-5.3-flash",
             quality: 9.5,
