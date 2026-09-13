@@ -28,7 +28,7 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 ///
 /// One row per provider, best model first, so the list answers "which provider
 /// should I set up" rather than repeating a provider already on it. The full
-/// table of 59 models is on the website, which is also where
+/// table of 54 models is on the website, which is also where
 /// the method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
