@@ -11,7 +11,7 @@ import KeyboardKit
 
 struct KeyboardCustomView: View {
 
-    @Environment(KeyboardDictationState.self) var dictationState
+    @Environment(KeyboardDictationState.self) private var dictationState
     @Environment(\.openURL) private var openURL
     @ObservedObject private var keyboardContext: KeyboardContext
     @State private var processingStage: ProcessingStage = .waitingToStart

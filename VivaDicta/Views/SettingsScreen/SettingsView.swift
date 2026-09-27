@@ -15,12 +15,12 @@ import AICore
 import CloudTranscription
 
 struct SettingsView: View {
-    @Environment(AppState.self) var appState
+    @Environment(AppState.self) private var appState
 
-    @State var promptsManager = PromptsManager()
+    @State private var promptsManager = PromptsManager()
 
     @Environment(\.dismiss) private var dismiss
-    @State var navigationPath = NavigationPath()
+    @State private var navigationPath = NavigationPath()
     @AppStorage(AppGroupCoordinator.kIsVADEnabled, store: UserDefaultsStorage.shared)
     private var isVADEnabled = true
     @AppStorage(UserDefaultsStorage.Keys.isAutoCopyAfterRecordingEnabled)
@@ -66,7 +66,7 @@ struct SettingsView: View {
     @State private var showAddMode = false
     @State private var showMailCompose = false
 
-    let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
+    private let selectTranscriptionModelTipSettingsView = SelectTranscriptionModelTipSettingsView()
     
     var body: some View {
         NavigationStack(path: $navigationPath) {

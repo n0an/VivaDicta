@@ -15,7 +15,7 @@ struct TranscriptionRowView: View {
     let allTags: [TranscriptionTag]
     let semanticScore: Float?
 
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showGradient = false
     @State private var showCopied = false
 
