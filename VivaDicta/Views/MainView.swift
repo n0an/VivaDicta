@@ -16,8 +16,8 @@ import os
 import CoreTransferable
 
 struct MainView: View {
-    @Environment(AppState.self) var appState
-    @Environment(Router.self) var router
+    @Environment(AppState.self) private var appState
+    @Environment(Router.self) private var router
     @Query private var transcriptions: [Transcription]
     @Query(sort: \TranscriptionTag.sortOrder) private var transcriptionTags: [TranscriptionTag]
 
@@ -41,8 +41,8 @@ struct MainView: View {
     @State private var showMultiNoteChats = false
     @State private var selectionChatViewModel: MultiNoteChatViewModel?
 
-    @State var rippleEffectTimer: Timer?
-    @State var rippleEffectTrigger = false
+    @State private var rippleEffectTimer: Timer?
+    @State private var rippleEffectTrigger = false
     @State private var showWhatsNew = false
     @State private var showNoModelAlert = false
     @State private var showFileErrorAlert = false
@@ -64,7 +64,7 @@ struct MainView: View {
 
     @Environment(\.modelContext) private var modelContext
     
-    var selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
+    private let selectTranscriptionModelTipMainView = SelectTranscriptionModelTipMainView()
         
     var body: some View {
         configuredNavigationView
@@ -103,6 +103,12 @@ struct MainView: View {
             }
             .task {
                 await performMaintenanceTasks()
+            }
+            .task {
+                await requestReviewAfterLaunchDelay()
+            }
+            .task {
+                await showWhatsNewIfNeeded()
             }
     }
 
@@ -462,33 +468,36 @@ struct MainView: View {
         SelectTranscriptionModelTipMainView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         SelectTranscriptionModelTipSettingsView.isTranscriptionReady = appState.transcriptionManager.hasAvailableTranscriptionModels
         sanitizeSavedNotesFilter()
-
-        // Request app rating on app start (with delay to not be jarring)
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            let count = transcriptions.count
-            RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: count)
-
-            // Deferred rating request after first successful keyboard use
-            if AppGroupCoordinator.shared.consumeKeyboardSuccessFlag() {
-                RateAppManager.requestReviewIfAppropriate()
-            }
-        }
-
-        checkAndShowWhatsNew()
     }
 
-    private func checkAndShowWhatsNew() {
+    /// Requests an app rating on app start, with a delay so it isn't jarring.
+    private func requestReviewAfterLaunchDelay() async {
+        do {
+            try await Task.sleep(for: .seconds(2))
+        } catch {
+            return
+        }
+        RateAppManager.requestReviewOnAppStartIfAppropriate(transcriptionCount: transcriptions.count)
+
+        // Deferred rating request after first successful keyboard use
+        if AppGroupCoordinator.shared.consumeKeyboardSuccessFlag() {
+            RateAppManager.requestReviewIfAppropriate()
+        }
+    }
+
+    private func showWhatsNewIfNeeded() async {
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         let lastSeen = UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
 
         guard let release = WhatsNewCatalog.release(for: currentVersion),
               lastSeen != release.id else { return }
 
-        Task {
-            try? await Task.sleep(for: .milliseconds(800))
-            showWhatsNew = true
+        do {
+            try await Task.sleep(for: .milliseconds(800))
+        } catch {
+            return
         }
+        showWhatsNew = true
     }
 
     // MARK: - Toolbar Content

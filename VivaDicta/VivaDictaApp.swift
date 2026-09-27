@@ -657,9 +657,36 @@ struct VivaDictaApp: App {
         "org.denshe.telegramdev",       // Telegram dev build, not on the App Store
         "com.olcorporation.olai",       // iMe: Telegram AI Messenger
 
+        // Checked 2026-09-27: no custom scheme, and no universal link that
+        // opens the app at its root.
+        "com.anuvadini.keyboard",       // Desi AI GenZ Keyboard container app - no AASA, no scheme
+        "com.booking.pulse",            // Pulse for Booking.com Partners - booking.com AASA lists the consumer app only
+        "com.doordash.dasher",          // DoorDash Dasher - doordash.com AASA lists Consumer/Merchant/Caviar only
+        "com.larksuite.feishu.ka.fssw", // Feishu KA custom build - not in applink.feishu.cn AASA; lark:// belongs to other bundles
+        "com.microsoft.to-do",          // Microsoft To Do - AASA lists Outlook only; ms-to-do:// has no primary source
+        "com.supersethealth.superset",  // Bevel (ex Superset) - bevel.health serves no AASA
+        "ru.yandex.uber",               // Fasten Russia taxi (ex Uber Russia bundle) - no AASA anywhere
+        "ai.qwenlm.chat.ios",           // Qwen Studio - qwen.com AASA lists only com.tongyi.intl
+        "com.scaleforce.mobile.myexcitel", // my Excitel - no AASA
+        "co.anysphere.sand",            // Grok Bot (X Corp) - x.ai AASA matches only concrete share ids, no catch-all
+        "com.apple.Preferences",        // Settings - only App-prefs://, a private scheme Apple rejects in review
+        "com.apple.WritingToolsUIService", // Writing Tools view service
+        "com.apple.GenerativePlaygroundApp", // Image Playground - no known scheme
+        "com.apple.mobilephone",        // Phone - tel: needs a number, nothing opens the app bare
+        "com.x.xchat",                  // X Chat - x.com AASA lists it under webcredentials only
+        "com.gingerlabs.Notability",    // Notability - AASA covers deep note paths only, no scheme found
+        "agata.Snippets",               // QuickPaste - no AASA, no scheme
+        "ru.bankffin.ffbank",           // Freedom Finance Bank - off the App Store, no AASA
+        "ru.wildberries.wbworkspace",   // WB Chat - AASA covers /join/* invites only
+        "kras-abs.ru.MC-VK-Komfort",    // Dom KOMFORT management-company app - no AASA
+        "cz.chmu.pocasi",               // CHMI weather - no AASA
+        "online.anero.app",             // Anero - no AASA
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
-        "net.whatsapp.WhatsApp.ShareExtension"
+        "net.whatsapp.WhatsApp.ShareExtension",
+        "ph.telegra.Telegraph.Share",   // Telegram share extension
+        "io.raindrop.ios.share"         // Raindrop.io share extension
     ]
 
     /// Host apps whose return URL scheme relaunches them onto a *new* surface
@@ -863,7 +890,59 @@ struct VivaDictaApp: App {
             "com.360buy.jdmobile": "https://m.jd.com/",
             "com.waze.iphone": "https://www.waze.com/ul",
             "ru.avito.app": "https://www.avito.ru/",
-            "vn.com.vng.zingalo": "https://zalo.me/"
+            "vn.com.vng.zingalo": "https://zalo.me/",
+
+            // 2026-09-27. Schemes read from the app's own source.
+            "sh.paseo": "paseo://",                          // packages/app/app.config.js in getpaseo/paseo
+            "com.silentcircle.SilentPhone": "silentphone://", // spi3/Info.plist; sip: is shared, not used
+            "com.apple.mobilecal": "calshow://",             // read from MobileCal.app
+            "ai.pocketpal": "pocketpal://",                  // ios/PocketPal/Info.plist
+            "app.cogwheel.conduit": "conduit://",            // Release config in Runner.xcodeproj
+            "com.brave.ios.browser": "brave://",             // NOT http/https, which it also claims
+            "org.mozilla.ios.Firefox": "firefox://",         // NOT http/https, which it also claims
+            "com.mattermost.rn": "mattermost://",            // ios/Mattermost/Info.plist
+            "io.raindrop.ios": "raindrop://",                // App/App.plist
+            "com.ntoporcov.openclient": "openclient://",     // OpenCodeIOSClient/Generated-Info.plist
+            "app.nicegram": "nicegram://",                   // Telegram/BUILD; NOT tg://, shared with Telegram
+
+            // 2026-09-27. No custom scheme; universal link confirmed in the
+            // app's AASA file, matching the bundle ID at the root or a
+            // catch-all path.
+            "com.vk.vkclient": "https://vk.com/feed",        // NOT vk:// - several VK apps on one team
+            "com.dazz.hoop": "https://hoop.photo/",
+            "com.airbnb.app": "https://www.airbnb.com/",
+            "com.kk2.rootshell": "https://rootshell.com/",
+            "com.moonshot.kimichat": "https://kimi.com/app/",
+            "co.hinge.mobile.ios": "https://hinge.co/app/",
+            "com.raycast.ios.release": "https://raycast.com/ios-app-link/", // raycast:// is the macOS scheme
+            "com.duolingo.DuolingoMobile": "https://duolingo.com/home",     // bare host: www. serves no AASA
+            "com.facebook.stellaapp": "https://www.meta.ai/",                // Meta AI
+            "com.yandex.alice-app": "https://alice.yandex.ru/",
+            "com.google.Dynamite": "https://chat.google.com/",               // Google Chat
+            "com.google.producer": "https://www.flowmusic.app/",             // Google Flow Music; bare host 308s to www.
+            "com.beeasy.shopee.my": "https://shopee.com.my/",
+            "com.abbyhealth.app": "https://app.abbyhealth.app/",             // AASA served at the root, not /.well-known
+            "cz.juicymo.contracts.ios.Alza-01": "https://www.alza.cz/",      // Alza
+
+            // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
+            // specific page, or the scheme comes from vendor docs or community
+            // lists rather than the plist. A miss costs nothing beyond the
+            // usual prompt.
+            "com.quizlet.quizlet": "https://quizlet.com/latest/",
+            "com.tongyi.intl": "https://qwen.com/app/",       // Qwen intl; their AASA JSON has a trailing comma
+            "com.audible.iphone": "https://www.audible.com/iosinstall/",
+            "com.jiangjia.gif": "https://m.ssl.kuaishou.com/app/", // Kuaishou, legacy GIF Kuaishou bundle
+            "com.overdesigned.Cheatsheet": "cheatsheet://",   // documented as cheatsheet://add?text=
+            "net.ichi2.anki": "anki://",                      // AnkiMobile manual, url-schemes page
+            "net.shinyfrog.bear-iOS": "bear://",              // Bear x-callback-url docs
+            "app.getmoshi.ios": "moshi://",                   // docs show only moshi://tmux?... forms
+            "com.bloomberg.Bloomberg": "https://www.bloomberg.com/latest", // AASA has no root path
+            "ru.unlimitedtech.express": "https://xlnk.ms/open/", // eXpress messenger; AASA lists /open/*
+            "com.google.Keep": "comgooglekeep://",            // community lists; keep.google.com serves no AASA
+            "com.tencent.ww": "wxwork://",                    // WeCom; community lists
+            "com.dianping.dpscope": "dianping://",            // community lists; AASA covers /hobbit/ only
+            "ru.yandex.mobile.search": "yandexbrowser-open-url://", // Yandex Browser (NOT the Yandex app); an open-URL scheme
+            "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
         return knownURLs[bundleId].flatMap(URL.init(string:))

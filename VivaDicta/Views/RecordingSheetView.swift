@@ -11,8 +11,8 @@ import SwiftData
 
 struct RecordingSheetView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) var modelContext
-    @Environment(AppState.self) var appState
+    @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
 
     @AppStorage(UserDefaultsStorage.Keys.recordingOrbStyle)
     private var orbStyle: RecordingOrbStyle = .particles
