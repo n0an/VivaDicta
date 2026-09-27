@@ -295,6 +295,22 @@ struct ModeEditView: View {
                             }
                         }
                         .foregroundStyle(.primary)
+                    } else if viewModel.transcriptionProvider.acceptsGrokSubscription {
+                        // xAI STT takes the Grok subscription too, so offer sign-in, not just a key.
+                        // The model picker's onAppear selects a model once this is configured.
+                        NavigationLink {
+                            GrokConfigurationView(aiService: viewModel.aiService)
+                        } label: {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Configure Grok")
+                                Spacer()
+                                Text("Required")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     } else {
                         if let mappedProvider = viewModel.transcriptionProvider.mappedAIProvider {
                             NavigationLink {
@@ -560,6 +576,22 @@ struct ModeEditView: View {
                                             Image(systemName: "exclamationmark.triangle.fill")
                                                 .foregroundStyle(.orange)
                                             Text("Configure Gemini")
+                                            Spacer()
+                                            Text("Required")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+                                } else if provider == .grok {
+                                    // Grok has dedicated config (subscription sign-in + API key)
+                                    NavigationLink {
+                                        GrokConfigurationView(aiService: viewModel.aiService)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundStyle(.orange)
+                                            Text("Configure Grok")
                                             Spacer()
                                             Text("Required")
                                                 .font(.caption)
