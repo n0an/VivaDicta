@@ -352,7 +352,16 @@ archive_local_build → export_local_build → upload_build → wait_for_build_p
 
 #### 3. Run it for real
 
-Drop `--dry-run`. **Run it in the background** - a full Release archive of the app plus 7 embedded targets, the upload, and ASC processing take a long time. Poll the output file rather than blocking.
+Drop `--dry-run`. **Run it in the background** - a full Release archive of the app plus 7 embedded targets, the upload, and ASC processing take a long time. Poll the output file rather than blocking. Wrap it in `caffeinate -dims` so the Mac does not sleep mid-run: the 3.11.1 export died with `exportArchive The network connection was lost` when the Mac went offline.
+
+If the archive succeeded but a later step failed, do not re-archive. Export from the existing archive, then upload the IPA:
+
+```bash
+caffeinate -dims xcodebuild -exportArchive -archivePath "$SCRATCH/VivaDicta.xcarchive" \
+  -exportOptionsPlist ./ExportOptions.plist -exportPath "$SCRATCH/export" -allowProvisioningUpdates
+asc publish appstore --app 6758147238 --ipa "$SCRATCH/export/VivaDicta.ipa" \
+  --version X.Y.Z --build-number NNNN --metadata-dir ./metadata --wait --timeout 45m --dry-run --output table
+```
 
 ```bash
 # same command, minus --dry-run, with --output json --pretty
@@ -383,8 +392,8 @@ asc review details-for-version --version-id VERSION_ID     # or details-get --id
 #### 5. Submit
 
 ```bash
-asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --dry-run
-asc review submit --app 6758147238 --version-id VERSION_ID --build BUILD_ID --confirm
+asc review submit --app 6758147238 --version-id VERSION_ID --build-id BUILD_ID --dry-run
+asc review submit --app 6758147238 --version-id VERSION_ID --build-id BUILD_ID --confirm
 ```
 
 Or click **Add for Review** in App Store Connect.
@@ -400,7 +409,7 @@ If headless signing fails and is not worth debugging mid-release, fall back to P
 ```bash
 asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata --dry-run
 asc metadata apply --app 6758147238 --version X.Y.Z --platform IOS --dir ./metadata
-asc versions attach-build --version-id VERSION_ID --build BUILD_ID
+asc versions attach-build --version-id VERSION_ID --build-id BUILD_ID
 ```
 
 To upload an already-exported IPA without local-build mode: `asc publish appstore --ipa path/to.ipa` - no `ExportOptions.plist` required.
