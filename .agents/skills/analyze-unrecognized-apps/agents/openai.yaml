@@ -1,6 +1,6 @@
 interface:
   display_name: "Analyze Unrecognized Apps"
-  short_description: "Analyze unrecognized host app bundle IDs from Firebase/Google Analytics and add URL scheme mappings"
+  short_description: "Pull unrecognized host app bundle IDs from Google Analytics via gog and add URL scheme mappings"
   brand_color: "#7C3AED"
   default_prompt: "Use $analyze-unrecognized-apps on this project."
 

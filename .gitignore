@@ -134,3 +134,4 @@ skills-lock.json
 
 .trees/
 .understand-anything/
+__pycache__/
