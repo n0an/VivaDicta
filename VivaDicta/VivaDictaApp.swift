@@ -657,6 +657,11 @@ struct VivaDictaApp: App {
         "org.denshe.telegramdev",       // Telegram dev build, not on the App Store
         "com.olcorporation.olai",       // iMe: Telegram AI Messenger
 
+        // Checked 2026-09-28: a personal fork of Happy (slopus/happy). Its
+        // app.config.js registers the same happy:// scheme as com.ex3ndr.happy,
+        // so mapping it would hand the user to whichever claimant iOS picks.
+        "com.omachala.happy",           // Happy fork - shares happy:// with com.ex3ndr.happy
+
         // Checked 2026-09-27: no custom scheme, and no universal link that
         // opens the app at its root.
         "com.anuvadini.keyboard",       // Desi AI GenZ Keyboard container app - no AASA, no scheme
