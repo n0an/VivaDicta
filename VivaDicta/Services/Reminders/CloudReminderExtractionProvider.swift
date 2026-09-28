@@ -612,7 +612,7 @@ final class CloudReminderExtractionProvider {
             ]
         ]
 
-        if model.lowercased().hasPrefix("gpt-5") == false {
+        if ReasoningConfig.sendsTemperature(for: model) {
             requestBody["temperature"] = 0.2
         }
 

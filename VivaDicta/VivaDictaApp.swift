@@ -613,7 +613,6 @@ struct VivaDictaApp: App {
         "com.ios.aquaMagic062516.cn",   // Unknown app
         "com.lixkit.diary",             // Diary app - no known URL scheme
         "com.weichart.Zettel",          // Zettel Notes - no known URL scheme
-        "h3p.Neon-Vision-Editor",       // Neon Vision Editor - no known URL scheme
         "mystxtalk",                    // Unknown messaging app
         "ru.ozon.sellerApp",            // Ozon Seller - no known URL scheme
         "kz.origon.empapp",             // KZ telemedicine app - no known URL scheme
@@ -632,14 +631,11 @@ struct VivaDictaApp: App {
         // the app at its root.
         "com.deepseek.chat",            // DeepSeek - AASA lists the bundle with an empty paths array
         "com.hevyapp.hevy",             // Hevy - AASA has no root path, only per-object routes
-        "com.stably.orca.mobile",       // Orca IDE - no AASA, no known scheme
         "org.edupage",                  // EduPage - no AASA, no known scheme
         "com.rivetrune.cognilog",       // CogniLog - no AASA, no known scheme
-        "com.t3tools.t3code",           // T3 Code - t3.codes serves no AASA
         "com.davetech.todo",            // MinimaList to-do - no AASA, no known scheme
         "cc.calacatta.happiest",        // Not on any App Store storefront; calacatta.cc does not resolve
         "tech.baye.OpenCat",            // OpenCat - no AASA, no documented scheme
-        "xyz.block.buzz.mobile",        // Buzz - no AASA on block.xyz or cash.app
         "Mailroom.Canary-iOS",          // Canary Mail - canarymail.io serves no AASA
         "4GU63N96WE.com.p5sys.jumpdesktop", // Jump Desktop - no AASA, no known scheme
         "org.kodiakgaming.Whisper-Secrets", // Whisper Secrets - no AASA
@@ -656,6 +652,11 @@ struct VivaDictaApp: App {
         // it would let iOS hand the user to whichever claimant it picks.
         "org.denshe.telegramdev",       // Telegram dev build, not on the App Store
         "com.olcorporation.olai",       // iMe: Telegram AI Messenger
+
+        // Checked 2026-09-28: a personal fork of Happy (slopus/happy). Its
+        // app.config.js registers the same happy:// scheme as com.ex3ndr.happy,
+        // so mapping it would hand the user to whichever claimant iOS picks.
+        "com.omachala.happy",           // Happy fork - shares happy:// with com.ex3ndr.happy
 
         // Checked 2026-09-27: no custom scheme, and no universal link that
         // opens the app at its root.
@@ -905,6 +906,12 @@ struct VivaDictaApp: App {
             "com.ntoporcov.openclient": "openclient://",     // OpenCodeIOSClient/Generated-Info.plist
             "app.nicegram": "nicegram://",                   // Telegram/BUILD; NOT tg://, shared with Telegram
 
+            // 2026-09-28. Schemes read from the app's own source.
+            "com.stably.orca.mobile": "orca://",             // Orca; mobile/app.json in stablyai/orca
+            "com.t3tools.t3code": "t3code://",               // T3 Code; apps/mobile/app.config.ts in pingdotgg/t3code
+            "h3p.Neon-Vision-Editor": "neonvisioneditor://", // Project/Configuration/Info-iOS.plist in h3pdesign/Neon-Vision-Editor
+            "xyz.block.buzz.mobile": "buzz://",              // Buzz (Block); mobile/ios/Runner/Info.plist + Flutter/Release.xcconfig in block/buzz
+
             // 2026-09-27. No custom scheme; universal link confirmed in the
             // app's AASA file, matching the bundle ID at the root or a
             // catch-all path.
@@ -923,6 +930,7 @@ struct VivaDictaApp: App {
             "com.beeasy.shopee.my": "https://shopee.com.my/",
             "com.abbyhealth.app": "https://app.abbyhealth.app/",             // AASA served at the root, not /.well-known
             "cz.juicymo.contracts.ios.Alza-01": "https://www.alza.cz/",      // Alza
+            "com.google.Drive": "https://drive.google.com/drive/my-drive",   // 2026-09-28; AASA path */drive/*my-drive
 
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community

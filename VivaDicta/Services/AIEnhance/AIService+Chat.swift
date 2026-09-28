@@ -524,12 +524,13 @@ extension AIService {
             "stream": stream
         ]
 
+        // OpenAI's reasoning family (gpt-5, gpt-6) and the fixed-temperature
+        // models reject a temperature they did not pick.
         let modelLower = model.lowercased()
-        let isReasoningModel = modelLower.hasPrefix("gpt-5")
-            || modelLower.hasPrefix("o1")
+        let isLegacyReasoningModel = modelLower.hasPrefix("o1")
             || modelLower.hasPrefix("o3")
             || modelLower.hasPrefix("o4")
-        if !isReasoningModel {
+        if ReasoningConfig.sendsTemperature(for: model) && !isLegacyReasoningModel {
             body["temperature"] = 0.7
         }
 
