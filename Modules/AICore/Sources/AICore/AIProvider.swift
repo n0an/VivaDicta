@@ -591,6 +591,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             return [
                 "claude-fable-5-1",
                 "claude-fable-5",
+                "claude-opus-5-5",
                 "claude-opus-5",
                 "claude-opus-4-8",
                 "claude-opus-4-7",
@@ -605,6 +606,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
                 "gpt-6-astra",
+                "gpt-6-sol",
+                "gpt-6-luna",
                 "gpt-5.6-sol",
                 "gpt-5.6-terra",
                 "gpt-5.6-luna",
@@ -629,6 +632,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // allowed on chat completions`, so it can never serve enhancement.
             return [
                 "grok-4.20-non-reasoning",
+                "grok-4.7",
                 "grok-4.6",
                 "grok-4.5",
                 "grok-4.3",
