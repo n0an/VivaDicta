@@ -24,7 +24,9 @@ public enum OpenAIOAuthClient {
     public static let defaultModel = "gpt-5.6-luna"
 
     /// Models the Codex endpoint actually serves, verified against it on
-    /// 2026-08-27.
+    /// 2026-08-27; the GPT-6 generation verified on 2026-09-28 (an id it does
+    /// not serve comes back as HTTP 400 "not supported when using Codex with a
+    /// ChatGPT account").
     ///
     /// This is deliberately *not* derived from `AIProvider.openAI.availableModels`.
     /// Codex serves the 5.4 generation upward and nothing else: gpt-5.4-nano,
@@ -37,6 +39,9 @@ public enum OpenAIOAuthClient {
     /// resolves elsewhere - which is exactly what happened while this list
     /// mirrored the catalog.
     public static let supportedModels: [String] = [
+        "gpt-6-astra",
+        "gpt-6-sol",
+        "gpt-6-luna",
         "gpt-5.6-sol",
         "gpt-5.6-terra",
         "gpt-5.6-luna",
