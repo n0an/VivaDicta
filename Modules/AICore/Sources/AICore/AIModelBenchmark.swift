@@ -34,8 +34,7 @@ public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
     public static let fullTableURL = URL(string: "https://vivadicta.com/docs/ai-model-rankings")!
 
-    /// ISO date the measurements were taken. Shown so a stale table is visibly
-    /// stale rather than quietly wrong.
+    /// ISO date the latest measurement batch was added. Older rows may predate it.
     public static let measuredAt = "2026-09-28"
 
     public static let top: [AIModelBenchmark] = [
