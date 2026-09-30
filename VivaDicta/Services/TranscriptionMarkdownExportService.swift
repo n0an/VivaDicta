@@ -11,10 +11,12 @@ import Presets
 
 enum TranscriptionMarkdownExportService {
     struct Snapshot: Sendable {
+        let id: UUID
         let timestamp: Date
         let text: String
         let transcriptionModelName: String?
         let powerModeDisplay: String
+        let powerModeName: String
         let durationText: String?
         let sourceTag: String?
         let variations: [VariationSnapshot]
@@ -58,10 +60,12 @@ enum TranscriptionMarkdownExportService {
 
     @MainActor private static func snapshot(for transcription: Transcription) -> Snapshot {
         Snapshot(
+            id: transcription.id,
             timestamp: transcription.timestamp,
             text: transcription.text,
             transcriptionModelName: transcription.transcriptionModelName,
             powerModeDisplay: powerModeDisplay(name: transcription.powerModeName, emoji: transcription.powerModeEmoji),
+            powerModeName: transcription.powerModeName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
             durationText: transcription.audioDuration > 0 ? transcription.getDurationFormatted(transcription.audioDuration) : nil,
             sourceTag: transcription.sourceTag,
             variations: (transcription.variations ?? []).map {
@@ -86,7 +90,22 @@ enum TranscriptionMarkdownExportService {
         )
     }
 
-    nonisolated private static func generateMarkdown(for snapshot: Snapshot) -> String {
+    /// Template values for a note: `{text}` is the latest variation (what the
+    /// user last saw AI produce), falling back to the original transcription.
+    nonisolated static func templateValues(for snapshot: Snapshot) -> NoteTemplate.Values {
+        let latest = sortedVariations(for: snapshot).last
+        return NoteTemplate.Values(
+            date: snapshot.timestamp,
+            text: (latest?.text ?? snapshot.text).trimmingCharacters(in: .whitespacesAndNewlines),
+            original: snapshot.text.trimmingCharacters(in: .whitespacesAndNewlines),
+            mode: snapshot.powerModeName,
+            preset: latest?.title ?? "",
+            id: snapshot.id.uuidString,
+            markdown: generateMarkdown(for: snapshot)
+        )
+    }
+
+    nonisolated static func generateMarkdown(for snapshot: Snapshot) -> String {
         var lines: [String] = [
             "# Transcription - \(snapshot.timestamp.formatted(exportTimestampFormat))",
             ""

@@ -17,7 +17,7 @@ import os
 /// Mirrors the existing Obsidian integration: gated by a global toggle plus a
 /// per-mode toggle, and triggered at the same points in `RecordViewModel`.
 enum FolderExportService {
-    private static let logger = Logger(category: .folderExportService)
+    nonisolated private static let logger = Logger(category: .folderExportService)
 
     // MARK: - Bookmark management
 
@@ -49,6 +49,20 @@ enum FolderExportService {
 
     // MARK: - Saving
 
+    /// Everything the background writer needs, resolved from Settings on the
+    /// main actor before hopping off it.
+    nonisolated struct WriteRequest: Sendable {
+        /// Subfolders followed by the file name, relative to the picked folder.
+        let pathComponents: [String]
+        let mode: FolderExportWriteMode
+        /// Full markdown document for `.replace`, the entry body otherwise.
+        let content: String
+        /// Transcription UUID used for the block markers.
+        let blockID: String
+
+        var relativePath: String { pathComponents.joined(separator: "/") }
+    }
+
     /// Writes the transcription as a markdown file in the picked folder if the
     /// global toggle is on, the mode opts in, and a bookmark exists.
     /// Safe to call from any source. Errors are logged, never thrown to caller.
@@ -61,19 +75,16 @@ enum FolderExportService {
             return
         }
 
-        let snapshots = TranscriptionMarkdownExportService.snapshots(for: [transcription])
-        guard let snapshot = snapshots.first else { return }
-        let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
-        guard let item = items.first else { return }
+        guard let request = makeRequest(for: transcription) else { return }
 
         Task(priority: .utility) { @concurrent in
-            await write(item: item, snapshot: snapshot, bookmark: bookmark)
+            await write(request: request, bookmark: bookmark)
         }
     }
 
     /// Outcome of a manual export attempt. Distinguishes failures so the UI
     /// can show specific guidance instead of a generic "something went wrong".
-    enum ManualSaveResult: Equatable {
+    nonisolated enum ManualSaveResult: Equatable, Sendable {
         case success(filename: String)
         case noFolderPicked
         case bookmarkUnusable
@@ -94,32 +105,59 @@ enum FolderExportService {
             return .noFolderPicked
         }
 
-        let snapshots = TranscriptionMarkdownExportService.snapshots(for: [transcription])
-        guard let snapshot = snapshots.first else { return .writeFailed("No transcription snapshot") }
-        let items = TranscriptionMarkdownExportService.items(forSnapshots: snapshots)
-        guard let item = items.first else { return .writeFailed("No exportable item") }
+        guard let request = makeRequest(for: transcription) else {
+            return .writeFailed("The file name template does not produce a usable file name")
+        }
 
         return await Task(priority: .userInitiated) { @concurrent in
-            await writeWithResult(item: item, snapshot: snapshot, bookmark: bookmark)
+            await writeWithResult(request: request, bookmark: bookmark)
         }.value
     }
 
-    private static func write(
-        item: MarkdownExportItem,
-        snapshot: TranscriptionMarkdownExportService.Snapshot,
-        bookmark: Data
-    ) async {
-        _ = await writeWithResult(item: item, snapshot: snapshot, bookmark: bookmark)
+    /// Resolves the file-name template, write mode and entry template from
+    /// Settings for one transcription.
+    @MainActor
+    private static func makeRequest(for transcription: Transcription) -> WriteRequest? {
+        guard let snapshot = TranscriptionMarkdownExportService.snapshots(for: [transcription]).first else { return nil }
+        let defaults = UserDefaultsStorage.appPrivate
+
+        let filenameTemplate = nonEmpty(defaults.string(forKey: UserDefaultsStorage.Keys.folderExportFilenameTemplate))
+            ?? UserDefaultsStorage.defaultFolderExportFilenameTemplate
+        let mode = defaults.string(forKey: UserDefaultsStorage.Keys.folderExportWriteMode)
+            .flatMap(FolderExportWriteMode.init(rawValue:)) ?? .default
+        let values = TranscriptionMarkdownExportService.templateValues(for: snapshot)
+
+        guard let pathComponents = FolderExportComposer.relativePath(template: filenameTemplate, values: values) else {
+            logger.logError("📁 Folder export: template '\(filenameTemplate)' produced no usable file name")
+            return nil
+        }
+
+        let content: String
+        switch mode {
+        case .replace:
+            content = values.markdown
+        case .append, .prepend:
+            let entryTemplate = nonEmpty(defaults.string(forKey: UserDefaultsStorage.Keys.folderExportEntryTemplate))
+                ?? UserDefaultsStorage.defaultFolderExportEntryTemplate
+            content = NoteTemplate.expand(entryTemplate, values: values)
+        }
+
+        return WriteRequest(pathComponents: pathComponents, mode: mode, content: content, blockID: values.id)
+    }
+
+    private static func nonEmpty(_ value: String?) -> String? {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        return value
+    }
+
+    @concurrent private static func write(request: WriteRequest, bookmark: Data) async {
+        _ = await writeWithResult(request: request, bookmark: bookmark)
     }
 
     /// Same as `write`, but returns a typed outcome so manual callers can
     /// surface accurate UI feedback (e.g. distinguish "bookmark stale" from
     /// "write failed").
-    private static func writeWithResult(
-        item: MarkdownExportItem,
-        snapshot: TranscriptionMarkdownExportService.Snapshot,
-        bookmark: Data
-    ) async -> ManualSaveResult {
+    @concurrent private static func writeWithResult(request: WriteRequest, bookmark: Data) async -> ManualSaveResult {
         var isStale = false
         let folderURL: URL
         do {
@@ -147,16 +185,59 @@ enum FolderExportService {
         }
         defer { folderURL.stopAccessingSecurityScopedResource() }
 
-        // The filename is deterministic per note (derived from its timestamp),
-        // so re-exporting the same note overwrites its previous file rather than
-        // piling up `-2`, `-3` copies. Atomic write replaces any existing file.
-        let destination = folderURL.appending(path: item.filename, directoryHint: .notDirectory)
+        var destination = folderURL
+        for component in request.pathComponents.dropLast() {
+            destination = destination.appending(path: component, directoryHint: .isDirectory)
+        }
+        destination = destination.appending(path: request.pathComponents.last ?? "", directoryHint: .notDirectory)
+
+        // Coordinated read-modify-write: the folder is usually an Obsidian
+        // vault in iCloud Drive, and Obsidian or iCloud may touch the same
+        // daily file at the same time.
+        var outcome: ManualSaveResult = .writeFailed("File coordination did not run")
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: destination, options: .forMerging, error: &coordinationError) { url in
+            outcome = writeCoordinated(request: request, to: url)
+        }
+        if let coordinationError {
+            logger.logError("📁 Folder export: coordination failed for \(request.relativePath) - \(coordinationError.localizedDescription)")
+            return .writeFailed(coordinationError.localizedDescription)
+        }
+        return outcome
+    }
+
+    nonisolated private static func writeCoordinated(request: WriteRequest, to url: URL) -> ManualSaveResult {
+        let fileManager = FileManager.default
         do {
-            try Data(item.text.utf8).write(to: destination, options: .atomic)
-            logger.logInfo("📁 Folder export: wrote \(destination.lastPathComponent)")
-            return .success(filename: destination.lastPathComponent)
+            try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+            let text: String
+            switch request.mode {
+            case .replace:
+                // The file name is deterministic per note by default (derived
+                // from its timestamp), so re-exporting the same note overwrites
+                // its previous file rather than piling up `-2`, `-3` copies.
+                text = request.content
+            case .append, .prepend:
+                var existing: String?
+                if fileManager.fileExists(atPath: url.path(percentEncoded: false)) {
+                    // Never fall back to an empty string here: a file we cannot
+                    // decode would be overwritten and the user's note lost.
+                    existing = try String(contentsOf: url, encoding: .utf8)
+                }
+                text = FolderExportComposer.merge(
+                    existing: existing,
+                    entry: request.content,
+                    id: request.blockID,
+                    mode: request.mode
+                )
+            }
+
+            try Data(text.utf8).write(to: url, options: .atomic)
+            logger.logInfo("📁 Folder export: wrote \(request.relativePath) (\(request.mode.rawValue))")
+            return .success(filename: request.relativePath)
         } catch {
-            logger.logError("📁 Folder export: write failed for \(destination.lastPathComponent) - \(error.localizedDescription)")
+            logger.logError("📁 Folder export: write failed for \(request.relativePath) - \(error.localizedDescription)")
             return .writeFailed(error.localizedDescription)
         }
     }

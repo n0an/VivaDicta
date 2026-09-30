@@ -871,7 +871,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 // publish to the App Group, and the keyboard extension consumes
                 // that payload inside handleTranscription (which fires from the
                 // Darwin notification shareTranscribedText posts).
-                self.openObsidianIfEnabled(text: textToShare, presetName: promptName, sourceTag: resolvedSourceTag)
+                self.openObsidianIfEnabled(
+                    text: textToShare,
+                    originalText: transcribedText,
+                    presetName: promptName,
+                    transcriptionID: savedTranscription.id,
+                    sourceTag: resolvedSourceTag
+                )
 
                 FolderExportService.saveIfEnabled(
                     transcription: savedTranscription,
@@ -1178,7 +1184,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     // the enhanced-text path above.
                     self.openObsidianIfEnabled(
                         text: pending.text,
+                        originalText: pending.text,
                         presetName: nil,
+                        transcriptionID: transcription.id,
                         sourceTag: pending.sourceTag ?? SourceTag.app
                     )
 
@@ -1230,9 +1238,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    /// If the active mode has Obsidian save enabled, arrange for
-    /// `obsidian://new?...&clipboard&append=true` to open with the correct
-    /// clipboard payload.
+    /// If the active mode has Obsidian save enabled, arrange for the Obsidian
+    /// URL (standard `obsidian://new?...&clipboard&append=true` or the user's
+    /// custom URL template) to open with the correct clipboard payload.
     ///
     /// Branches on the source tag rather than `UIApplication.applicationState`:
     /// - `.app` (main-app recording): main app is foregrounded, so it writes
@@ -1249,16 +1257,21 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     /// Callers must invoke this BEFORE `shareTranscribedText`, because the
     /// latter posts a Darwin notification that wakes the keyboard's
     /// `handleTranscription` - which needs the App Group payload in place.
-    private func openObsidianIfEnabled(text: String, presetName: String?, sourceTag: String) {
+    private func openObsidianIfEnabled(text: String,
+                                       originalText: String,
+                                       presetName: String?,
+                                       transcriptionID: UUID,
+                                       sourceTag: String) {
         guard UserDefaultsStorage.appPrivate.bool(forKey: UserDefaultsStorage.Keys.isObsidianGloballyEnabled) else { return }
         let mode = aiService.selectedMode
         guard mode.obsidianEnabled else { return }
-        // Trim and fall back to the default if the user cleared the field -
-        // an empty note name would silently fail to build a URL.
-        let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
-        guard let output = ObsidianURLBuilder.build(text: text, template: template, modeName: mode.name, presetName: presetName) else {
+        guard let output = ObsidianURLBuilder.buildFromSettings(
+            text: text,
+            originalText: originalText,
+            modeName: mode.name,
+            presetName: presetName,
+            transcriptionID: transcriptionID
+        ) else {
             logger.logError("📱 Obsidian: failed to build URL for mode '\(mode.name)'")
             return
         }

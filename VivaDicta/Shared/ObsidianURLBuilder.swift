@@ -6,10 +6,18 @@
 //
 
 import Foundation
+import AppGroup
 
-/// Builds the clipboard payload and `obsidian://new` URL used to append a
-/// transcription to an Obsidian note. Shared between the main app and the
-/// keyboard extension so both hand-off paths produce identical behaviour.
+/// Builds the clipboard payload and URL used to hand a transcription to
+/// Obsidian. The main app either opens the URL itself or publishes it to the
+/// App Group for the keyboard extension, so both paths get the same URL.
+///
+/// Two styles:
+/// - Standard: `obsidian://new?file=<note name>&clipboard&append=true`, with
+///   the note name expanded from the user's template.
+/// - Custom URL: the user writes the whole URL (any scheme, e.g. Advanced URI
+///   or `obsidian://open?...&prepend={text}`), and every placeholder value is
+///   percent-encoded into it.
 enum ObsidianURLBuilder {
 
     struct Output {
@@ -18,7 +26,7 @@ enum ObsidianURLBuilder {
         /// (e.g. `{date}`), repeated appends stack as separate lines.
         let clipboardText: String
 
-        /// The fully-formed `obsidian://new?...` URL.
+        /// The fully-formed URL to open.
         let url: URL
     }
 
@@ -26,25 +34,47 @@ enum ObsidianURLBuilder {
     ///
     /// - Parameters:
     ///   - text: The final transcription text (enhanced if AI ran, else raw).
+    ///   - originalText: Raw transcription for the `{original}` placeholder.
+    ///     Defaults to `text` when the caller has no separate raw text.
     ///   - template: Note-name template carrying placeholders like `{date}`.
     ///     Stored globally in Settings → Integrations.
+    ///   - customURLTemplate: Full URL template. When non-empty it replaces the
+    ///     standard `obsidian://new` URL entirely.
     ///   - modeName: Human-readable mode name for the `{mode}` placeholder.
     ///   - presetName: Human-readable preset name for the `{preset}` placeholder.
+    ///   - transcriptionID: UUID for the `{id}` placeholder.
     ///   - date: The moment the transcription completed. Parameterised for testability.
     /// - Returns: `nil` if the resulting note name is empty or the URL cannot
     ///   be constructed. Callers should treat `nil` as a no-op.
     static func build(text: String,
+                      originalText: String? = nil,
                       template: String,
+                      customURLTemplate: String? = nil,
                       modeName: String,
                       presetName: String?,
+                      transcriptionID: UUID? = nil,
                       date: Date = Date()) -> Output? {
-        let noteName = expand(template: template,
-                              date: date,
-                              presetName: presetName,
-                              modeName: modeName)
-        guard !noteName.isEmpty else { return nil }
-
+        let values = NoteTemplate.Values(
+            date: date,
+            text: text,
+            original: originalText ?? text,
+            mode: modeName,
+            preset: presetName ?? "",
+            id: transcriptionID?.uuidString ?? ""
+        )
         let clipboardText = text + "\n"
+
+        let trimmedCustom = customURLTemplate?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmedCustom.isEmpty {
+            let expanded = NoteTemplate.expand(trimmedCustom, values: values, escaping: .url)
+            // `URL(string:)` percent-encodes invalid characters the user typed
+            // in the literal part (spaces, Cyrillic) on iOS 17+.
+            guard let url = URL(string: expanded), url.scheme != nil else { return nil }
+            return Output(clipboardText: clipboardText, url: url)
+        }
+
+        let noteName = NoteTemplate.expand(template, values: values)
+        guard !noteName.isEmpty else { return nil }
 
         var components = URLComponents()
         components.scheme = "obsidian"
@@ -59,33 +89,31 @@ enum ObsidianURLBuilder {
         return Output(clipboardText: clipboardText, url: url)
     }
 
-    private static func expand(template: String,
-                               date: Date,
-                               presetName: String?,
-                               modeName: String) -> String {
-        // Force Gregorian so `{date}` is always YYYY-MM-DD regardless of the
-        // user's iOS calendar setting (Buddhist, Hebrew, etc. would otherwise
-        // shift the year value).
-        let gregorian = Calendar(identifier: .gregorian)
-        let components = gregorian.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
-        let year = (components.year ?? 0).formatted(.number.grouping(.never).precision(.integerLength(4...)))
-        let twoDigits = IntegerFormatStyle<Int>.number.grouping(.never).precision(.integerLength(2...))
-        let month = (components.month ?? 0).formatted(twoDigits)
-        let day = (components.day ?? 0).formatted(twoDigits)
-        let hour = (components.hour ?? 0).formatted(twoDigits)
-        let minute = (components.minute ?? 0).formatted(twoDigits)
-        let second = (components.second ?? 0).formatted(twoDigits)
+    /// Same as `build`, reading the note-name template and custom URL from
+    /// Settings → Integrations.
+    static func buildFromSettings(text: String,
+                                  originalText: String?,
+                                  modeName: String,
+                                  presetName: String?,
+                                  transcriptionID: UUID?,
+                                  date: Date = Date()) -> Output? {
+        let defaults = UserDefaultsStorage.appPrivate
+        // Trim and fall back to the default if the user cleared the field -
+        // an empty note name would silently fail to build a URL.
+        let trimmedTemplate = (defaults.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
+        let customURLTemplate = defaults.bool(forKey: UserDefaultsStorage.Keys.isObsidianCustomURLEnabled)
+            ? defaults.string(forKey: UserDefaultsStorage.Keys.obsidianCustomURLTemplate)
+            : nil
 
-        var result = template
-        result = result.replacing("{date}", with: "\(year)-\(month)-\(day)")
-        result = result.replacing("{yyyy}", with: year)
-        result = result.replacing("{MM}", with: month)
-        result = result.replacing("{dd}", with: day)
-        result = result.replacing("{HH}", with: hour)
-        result = result.replacing("{mm}", with: minute)
-        result = result.replacing("{ss}", with: second)
-        result = result.replacing("{preset}", with: presetName ?? "")
-        result = result.replacing("{mode}", with: modeName)
-        return result
+        return build(text: text,
+                     originalText: originalText,
+                     template: template,
+                     customURLTemplate: customURLTemplate,
+                     modeName: modeName,
+                     presetName: presetName,
+                     transcriptionID: transcriptionID,
+                     date: date)
     }
 }

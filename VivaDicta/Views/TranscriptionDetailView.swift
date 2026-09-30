@@ -847,10 +847,6 @@ struct TranscriptionDetailView: View {
     private func sendToObsidian() {
         HapticManager.lightImpact()
 
-        let trimmedTemplate = (UserDefaultsStorage.appPrivate.string(forKey: UserDefaultsStorage.Keys.obsidianNoteTemplate) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let template = trimmedTemplate.isEmpty ? UserDefaultsStorage.defaultObsidianNoteTemplate : trimmedTemplate
-
         let modeName: String = {
             if let powerModeIdStr = transcription.powerModeId,
                let powerModeId = UUID(uuidString: powerModeIdStr),
@@ -868,14 +864,15 @@ struct TranscriptionDetailView: View {
             return PresetCatalog.displayName(for: variation.presetId, fallback: variation.presetDisplayName, userDefaults: UserDefaultsStorage.shared)
         }()
 
-        guard let output = ObsidianURLBuilder.build(
+        guard let output = ObsidianURLBuilder.buildFromSettings(
             text: displayedText,
-            template: template,
+            originalText: transcription.text,
             modeName: modeName,
             presetName: presetName,
+            transcriptionID: transcription.id,
             date: transcription.timestamp
         ) else {
-            logger.logError("📱 Obsidian: failed to build URL for manual send (template '\(template)', mode '\(modeName)')")
+            logger.logError("📱 Obsidian: failed to build URL for manual send (mode '\(modeName)')")
             return
         }
 
