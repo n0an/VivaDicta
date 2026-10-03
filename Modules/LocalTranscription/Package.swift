@@ -15,16 +15,16 @@ let package = Package(
     dependencies: [
         .package(path: "../TranscriptionCore"),
         .package(path: "../TestUtilities"),
-        .package(url: "https://github.com/argmaxinc/WhisperKit.git", branch: "main"),
-        .package(url: "https://github.com/FluidInference/FluidAudio", exact: "0.13.6"),
+        .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", branch: "main"),
+        .package(url: "https://github.com/FluidInference/FluidAudio", exact: "0.17.5"),
     ],
     targets: [
         .target(
             name: "LocalTranscription",
             dependencies: [
                 .product(name: "TranscriptionCore", package: "TranscriptionCore"),
-                .product(name: "WhisperKit", package: "WhisperKit"),
-                .product(name: "SpeakerKit", package: "WhisperKit"),
+                .product(name: "WhisperKit", package: "argmax-oss-swift"),
+                .product(name: "SpeakerKit", package: "argmax-oss-swift"),
                 .product(name: "FluidAudio", package: "FluidAudio"),
             ]
         ),
