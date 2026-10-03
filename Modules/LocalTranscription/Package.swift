@@ -16,7 +16,8 @@ let package = Package(
         .package(path: "../TranscriptionCore"),
         .package(path: "../TestUtilities"),
         .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", branch: "main"),
-        .package(url: "https://github.com/FluidInference/FluidAudio", exact: "0.17.5"),
+        // traits: [] opts out of the NeMo text-normalization binary (~8 MB per slice, TTS/ITN only).
+        .package(url: "https://github.com/FluidInference/FluidAudio", exact: "0.17.5", traits: []),
     ],
     targets: [
         .target(
