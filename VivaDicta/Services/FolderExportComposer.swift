@@ -33,9 +33,14 @@ nonisolated enum FolderExportWriteMode: String, CaseIterable, Identifiable, Send
 /// can be unit tested.
 nonisolated enum FolderExportComposer {
 
-    /// Longest allowed path component before the extension. Keeps `{text}` in
-    /// a file name from hitting the 255-byte filesystem limit.
+    /// Longest allowed path component before the extension, in characters.
     nonisolated static let maxComponentLength = 120
+
+    /// Longest allowed path component before the extension, in UTF-8 bytes.
+    /// Keeps `{text}` in a file name from hitting the 255-byte filesystem
+    /// limit: CJK and emoji take 3-4 bytes per character, so the character
+    /// limit alone is not enough.
+    nonisolated static let maxComponentBytes = 240
 
     private nonisolated static let markdownExtensions = [".md", ".markdown", ".txt"]
 
@@ -58,7 +63,7 @@ nonisolated enum FolderExportComposer {
         let lowercased = last.lowercased()
         let fileExtension = markdownExtensions.first { lowercased.hasSuffix($0) && lowercased.count > $0.count }
         let base = fileExtension.map { String(last.dropLast($0.count)) } ?? last
-        let fileName = String(base.prefix(maxComponentLength)) + (fileExtension.map { String(last.suffix($0.count)) } ?? ".md")
+        let fileName = truncated(base) + (fileExtension.map { String(last.suffix($0.count)) } ?? ".md")
         return components + [fileName]
     }
 
@@ -71,7 +76,18 @@ nonisolated enum FolderExportComposer {
         while result.hasPrefix(".") {
             result.removeFirst()
         }
-        return String(result.prefix(maxComponentLength)).trimmingCharacters(in: .whitespaces)
+        return truncated(result).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Cuts a component to `maxComponentLength` characters and
+    /// `maxComponentBytes` UTF-8 bytes, never splitting a character.
+    private nonisolated static func truncated(_ component: String) -> String {
+        var result = Substring(component.prefix(maxComponentLength))
+        var bytes = result.utf8.count
+        while bytes > maxComponentBytes, let last = result.popLast() {
+            bytes -= String(last).utf8.count
+        }
+        return String(result)
     }
 
     // MARK: - Blocks

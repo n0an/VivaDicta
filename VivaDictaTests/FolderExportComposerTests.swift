@@ -53,6 +53,18 @@ struct FolderExportComposerTests {
         #expect(name == String(repeating: "a", count: FolderExportComposer.maxComponentLength) + ".md")
     }
 
+    @Test func relativePath_wideCharactersStayUnderByteLimit() throws {
+        for character in ["字", "👍", "я"] {
+            let long = String(repeating: character, count: 500)
+            let path = try #require(FolderExportComposer.relativePath(template: "{text}",
+                                                                      values: NoteTemplateTests.values(text: long)))
+            let name = try #require(path.last)
+            #expect(name.utf8.count <= 255)
+            #expect(name.hasSuffix(".md"))
+            #expect(name.dropLast(3).allSatisfy { String($0) == character })
+        }
+    }
+
     @Test func relativePath_emptyResultReturnsNil() {
         #expect(FolderExportComposer.relativePath(template: "///", values: values) == nil)
         #expect(FolderExportComposer.relativePath(template: "{text}",
