@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct StrokeAnimatableShape<S: Shape>: Shape {
+nonisolated struct StrokeAnimatableShape<S: Shape>: Shape {
     var animationProgress: CGFloat = 0
     let shape: S
 

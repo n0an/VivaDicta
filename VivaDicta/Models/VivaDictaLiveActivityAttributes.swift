@@ -9,7 +9,7 @@ import Foundation
 import ActivityKit
 
 // Processing state for Live Activity
-public enum LiveActivityState: String, Codable, Hashable {
+nonisolated public enum LiveActivityState: String, Codable, Hashable {
     case idle
     case recording
     case transcribing
@@ -51,8 +51,8 @@ public enum LiveActivityState: String, Codable, Hashable {
     }
 }
 
-struct VivaDictaLiveActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
+nonisolated struct VivaDictaLiveActivityAttributes: ActivityAttributes {
+    nonisolated public struct ContentState: Codable, Hashable {
         var state: LiveActivityState
     }
     
