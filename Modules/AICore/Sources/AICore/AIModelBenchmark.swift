@@ -28,14 +28,14 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 ///
 /// One row per provider, best model first, so the list answers "which provider
 /// should I set up" rather than repeating a provider already on it. The full
-/// table of 59 models is on the website, which is also where
+/// table of 60 models is on the website, which is also where
 /// the method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
     public static let fullTableURL = URL(string: "https://vivadicta.com/docs/ai-model-rankings")!
 
     /// ISO date the latest measurement batch was added. Older rows may predate it.
-    public static let measuredAt = "2026-09-28"
+    public static let measuredAt = "2026-10-03"
 
     public static let top: [AIModelBenchmark] = [
         AIModelBenchmark(

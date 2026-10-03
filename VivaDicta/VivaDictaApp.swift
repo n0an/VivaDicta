@@ -683,6 +683,17 @@ struct VivaDictaApp: App {
         "cz.chmu.pocasi",               // CHMI weather - no AASA
         "online.anero.app",             // Anero - no AASA
 
+        // Checked 2026-10-03: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "com.satisfyer.connect",        // Satisfyer Connect - satisfyer.com serves no AASA
+        "ru.yandex.telemost",           // Yandex Telemost - AASA covers /j/* and /join/* meeting links only
+        "com.bitrixsoft.cpmobile",      // Bitrix24 - AASA covers per-portal deep paths only
+        "com.grindrguy.grindrx",        // Grindr - AASA covers /blog and /content-hub only
+        "com.guion.flicknote",          // FlickNote - flicknote.app serves no AASA
+        "com.museai.asst.mobile",       // not on the App Store, nothing to verify
+        "life.dailypresence.presence",  // Presence - no seller site, no AASA
+        "com.taskrabbit.site",          // Taskrabbit - AASA has no root path; /dashboard would pull the user out of the chat or form they were typing in
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -932,6 +943,14 @@ struct VivaDictaApp: App {
             "cz.juicymo.contracts.ios.Alza-01": "https://www.alza.cz/",      // Alza
             "com.google.Drive": "https://drive.google.com/drive/my-drive",   // 2026-09-28; AASA path */drive/*my-drive
 
+            // 2026-10-03. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.standardnotes.standardnotes": "com.standardnotes.standardnotes://", // packages/mobile/ios/StandardNotes/Info.plist: the scheme is $(PRODUCT_BUNDLE_IDENTIFIER)
+            "com.microsoft.officemobile": "https://m365.cloud.microsoft/",   // Microsoft 365 Copilot; AASA paths / and /*
+            "com.skout.SKOUT": "https://www.skout.com/",
+            "com.thecarousell.Carousell": "https://www.carousell.sg/",       // carousell.com sits behind a Cloudflare challenge
+            "com.apple.supportapp": "https://getsupport.apple.com/",         // Apple Support; AASA catch-all /*
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -950,6 +969,8 @@ struct VivaDictaApp: App {
             "com.tencent.ww": "wxwork://",                    // WeCom; community lists
             "com.dianping.dpscope": "dianping://",            // community lists; AASA covers /hobbit/ only
             "ru.yandex.mobile.search": "yandexbrowser-open-url://", // Yandex Browser (NOT the Yandex app); an open-URL scheme
+            "com.facebook.hatch": "https://muse.ai/open_hatch", // Muse from Meta; 2026-10-03, AASA lists /open_hatch, no root path
+            "com.apple.mobileslideshow": "photos-redirect://", // Photos; 2026-10-03, community lists, not read from the binary
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
