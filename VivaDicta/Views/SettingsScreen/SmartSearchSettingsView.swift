@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import os
 
 /// Settings screen for RAG Smart Search configuration.
