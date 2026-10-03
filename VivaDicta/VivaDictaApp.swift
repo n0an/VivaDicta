@@ -692,6 +692,7 @@ struct VivaDictaApp: App {
         "com.guion.flicknote",          // FlickNote - flicknote.app serves no AASA
         "com.museai.asst.mobile",       // not on the App Store, nothing to verify
         "life.dailypresence.presence",  // Presence - no seller site, no AASA
+        "com.taskrabbit.site",          // Taskrabbit - AASA has no root path; /dashboard would pull the user out of the chat or form they were typing in
 
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
@@ -969,7 +970,6 @@ struct VivaDictaApp: App {
             "com.dianping.dpscope": "dianping://",            // community lists; AASA covers /hobbit/ only
             "ru.yandex.mobile.search": "yandexbrowser-open-url://", // Yandex Browser (NOT the Yandex app); an open-URL scheme
             "com.facebook.hatch": "https://muse.ai/open_hatch", // Muse from Meta; 2026-10-03, AASA lists /open_hatch, no root path
-            "com.taskrabbit.site": "https://www.taskrabbit.com/dashboard", // 2026-10-03; AASA has no root path
             "com.apple.mobileslideshow": "photos-redirect://", // Photos; 2026-10-03, community lists, not read from the binary
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
