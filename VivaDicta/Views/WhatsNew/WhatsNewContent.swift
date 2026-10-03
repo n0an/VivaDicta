@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.12": release_3_12,
         "3.11": release_3_11,
         "3.10": release_3_10,
         "3.9": release_3_9,
@@ -48,6 +49,50 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
+    // 2026-10-03
+    private static let release_3_12 = WhatsNewRelease(
+        id: "3.12",
+        headline: "What's New in VivaDicta 3.12.0",
+        features: [
+            WhatsNewFeature(
+                icon: "calendar.badge.plus",
+                iconColors: [.purple, .indigo],
+                title: "One Daily Note",
+                description: "Folder export can add each transcription to an existing file, on top or at the end. Name the file Daily/{date} and a whole day collects in one note."
+            ),
+            WhatsNewFeature(
+                icon: "curlybraces",
+                iconColors: [.indigo, .blue],
+                title: "Templates for Export",
+                description: "File names and entries take placeholders like {date}, {time}, {text} and {mode}. Exporting the same note again updates its entry instead of adding a copy."
+            ),
+            WhatsNewFeature(
+                icon: "link",
+                iconColors: [.teal, .mint],
+                title: "Custom Obsidian URL",
+                description: "Write the whole Obsidian URL yourself, for example to prepend to a daily note or to use the Advanced URI plugin. Leave it empty to keep the standard note."
+            ),
+            WhatsNewFeature(
+                icon: "sparkles",
+                iconColors: [.orange, .pink],
+                title: "Five New AI Models",
+                description: "GPT-6.1 Sol, GPT-6 Sol, GPT-6 Luna, Claude Opus 5.5 and Grok 4.7 join the pickers. The GPT-6 family also works with ChatGPT sign-in, no API key needed."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.blue, .cyan],
+                title: "Back to 12 More Apps",
+                description: "The keyboard finds its way back to twelve more apps, including Microsoft 365 Copilot, Google Drive and Standard Notes. Messages now resumes the conversation you were in."
+            ),
+            WhatsNewFeature(
+                icon: "keyboard",
+                iconColors: [.green, .teal],
+                title: "Czech Keyboard Fix",
+                description: "Tapping the gap next to the Y key on the Czech layout no longer types z."
+            ),
+        ]
+    )
+
     // 2026-09-12
     private static let release_3_11 = WhatsNewRelease(
         id: "3.11",
