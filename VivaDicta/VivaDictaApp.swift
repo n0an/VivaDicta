@@ -728,12 +728,6 @@ struct VivaDictaApp: App {
             // still there, but they are no longer on it.
             Entry(bundleId: "com.apple.mobilesafari", displayName: "Safari"),
 
-            // `sms://` with no recipient is the *compose* action - a new blank
-            // message, not the conversation that was being typed in. The most
-            // reported case of this: "I'm back in Messages but not in the chat
-            // I was typing in."
-            Entry(bundleId: "com.apple.MobileSMS", displayName: "Messages"),
-
             // `claude://` lands on a new chat rather than the conversation the
             // keyboard was typing into.
             Entry(bundleId: "com.anthropic.claude", displayName: "Claude")
@@ -781,7 +775,12 @@ struct VivaDictaApp: App {
     private func returnURL(forHostId bundleId: String) -> URL? {
         let knownURLs: [String: String] = [
             "com.apple.mobilenotes": "mobilenotes://",
-            "com.apple.MobileSMS": "sms://",
+            // NOT `sms://`, `messages://`, `imessage://` or `im://`: with no
+            // recipient each of them is the *compose* action and lands on a new
+            // blank message. `ichat://` is the one Messages scheme that brings
+            // the app back to the conversation the user was typing in, draft
+            // intact. Measured on device on iOS 26.5 and iOS 27.0.1.
+            "com.apple.MobileSMS": "ichat://",
             "com.apple.mobilemail": "message://",
             "com.apple.mobilesafari": "x-web-search://",
             "com.microsoft.Office.Word": "ms-word://",

@@ -222,7 +222,7 @@ struct AdvancedSettingsView: View {
                         .onChange(of: isSkipStateLosingHostReturnEnabled) { _, _ in
                             HapticManager.selectionChanged()
                         }
-                    Text("Safari, Messages and Claude open a new tab, chat or message when VivaDicta sends you back. Turn this on and VivaDicta asks you to swipe back instead, so you return exactly where you were.")
+                    Text("Safari and Claude open a new tab or chat when VivaDicta sends you back. Turn this on and VivaDicta asks you to swipe back instead, so you return exactly where you were.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
