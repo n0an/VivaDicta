@@ -16,7 +16,8 @@ import UniformTypeIdentifiers
 ///   and gates the per-mode opt-out in `ModeEditView`.
 /// - "Show Export to Folder button" (`isFolderExportButtonEnabled`) reveals a
 ///   manual export FAB on the transcription detail screen.
-/// The folder picker and Markdown Export variation picker are shared.
+/// The folder picker, Markdown Export variation picker and the file section
+/// (name template, write mode, entry template) are shared.
 struct ExportSettingsView: View {
     @AppStorage(MarkdownExportContent.userDefaultsKey)
     private var markdownExportContent: MarkdownExportContent = .default
@@ -29,6 +30,15 @@ struct ExportSettingsView: View {
 
     @AppStorage(UserDefaultsStorage.SharedKeys.folderExportDisplayName, store: UserDefaultsStorage.shared)
     private var folderExportDisplayName: String = ""
+
+    @AppStorage(UserDefaultsStorage.Keys.folderExportFilenameTemplate)
+    private var filenameTemplate = UserDefaultsStorage.defaultFolderExportFilenameTemplate
+
+    @AppStorage(UserDefaultsStorage.Keys.folderExportWriteMode)
+    private var writeMode: FolderExportWriteMode = .default
+
+    @AppStorage(UserDefaultsStorage.Keys.folderExportEntryTemplate)
+    private var entryTemplate = UserDefaultsStorage.defaultFolderExportEntryTemplate
 
     @State private var isFolderPickerPresented = false
     @State private var folderPickerError: String?
@@ -106,6 +116,39 @@ struct ExportSettingsView: View {
                     }
                 }
             }
+
+            if isAnyExportEnabled {
+                Section(header: Text("File"), footer: fileFooter) {
+                    HStack {
+                        Text("File name")
+                        Spacer()
+                        TextField(UserDefaultsStorage.defaultFolderExportFilenameTemplate, text: $filenameTemplate)
+                            .multilineTextAlignment(.trailing)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
+
+                    Picker("If the file exists", selection: $writeMode) {
+                        ForEach(FolderExportWriteMode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .onChange(of: writeMode) { _, _ in
+                        HapticManager.selectionChanged()
+                    }
+
+                    if writeMode != .replace {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Entry")
+                            TextField(UserDefaultsStorage.defaultFolderExportEntryTemplate, text: $entryTemplate, axis: .vertical)
+                                .lineLimit(2...8)
+                                .font(.callout.monospaced())
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        }
+                    }
+                }
+            }
         }
         .navigationTitle("Export Notes")
         .navigationBarTitleDisplayMode(.inline)
@@ -146,7 +189,17 @@ struct ExportSettingsView: View {
     @ViewBuilder
     private var exportFooter: some View {
         if isAnyExportEnabled {
-            Text("One markdown file per transcription, named VivaDicta-YYYY-MM-DD_HHmmss.md. Pick any folder, including an Obsidian vault. Per-mode opt-out for auto-export is available in each mode's settings.")
+            Text("Pick any folder, including an Obsidian vault. Per-mode opt-out for auto-export is available in each mode's settings.")
+        }
+    }
+
+    @ViewBuilder
+    private var fileFooter: some View {
+        switch writeMode {
+        case .replace:
+            Text("One markdown file per name. Placeholders: \(NoteTemplate.placeholderList). A / creates subfolders, e.g. Daily/{date}. .md is added if missing. With a name unique per note (the default includes seconds) every transcription gets its own file; exporting the same note again overwrites it.")
+        case .append, .prepend:
+            Text("Each transcription is added as an entry to the file, e.g. File name Daily/{date} collects a whole day in one note. \(writeMode == .prepend ? "New entries go on top, below any YAML frontmatter." : "New entries go at the end.") Entry placeholders: \(NoteTemplate.placeholderList), plus {markdown} for the full export with variations. {text} is the final text, {original} the raw transcription. Entries carry hidden markers, so exporting the same note again updates its entry instead of adding a copy.")
         }
     }
 }

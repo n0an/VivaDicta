@@ -123,10 +123,20 @@ public enum UserDefaultsStorage {
         public static let isObsidianGloballyEnabled = "isObsidianGloballyEnabled"
         public static let obsidianNoteTemplate = "obsidianNoteTemplate"
         public static let isObsidianSendButtonEnabled = "isObsidianSendButtonEnabled"
+        /// When on, `obsidianCustomURLTemplate` replaces the standard
+        /// `obsidian://new` URL (placeholders are percent-encoded into it).
+        public static let isObsidianCustomURLEnabled = "isObsidianCustomURLEnabled"
+        public static let obsidianCustomURLTemplate = "obsidianCustomURLTemplate"
 
         // Integrations - Folder export (silent markdown save to user-picked folder)
         public static let isFolderExportGloballyEnabled = "isFolderExportGloballyEnabled"
         public static let isFolderExportButtonEnabled = "isFolderExportButtonEnabled"
+        /// File name template, `/` creates subfolders. Empty = default.
+        public static let folderExportFilenameTemplate = "folderExportFilenameTemplate"
+        /// Raw value of `FolderExportWriteMode`: replace / append / prepend.
+        public static let folderExportWriteMode = "folderExportWriteMode"
+        /// Entry template used by the append / prepend write modes.
+        public static let folderExportEntryTemplate = "folderExportEntryTemplate"
 
         // Live Translation
         public static let liveTranslationSourceLanguage = "liveTranslation.sourceLanguage"
@@ -139,4 +149,7 @@ public enum UserDefaultsStorage {
     // MARK: - Integrations defaults
 
     public static let defaultObsidianNoteTemplate = "VD {date} {HH}-{mm}-{ss}"
+    /// Matches the historical hardcoded `VivaDicta-YYYY-MM-DD_HHmmss.md` name.
+    public static let defaultFolderExportFilenameTemplate = "VivaDicta-{date}_{HH}{mm}{ss}"
+    public static let defaultFolderExportEntryTemplate = "## {time}\n\n{text}"
 }
