@@ -20,6 +20,12 @@ import KeyboardKit
 ///   Row 1: a s d f g h j k l    (9)
 ///   Row 2: y x c v b n m        (7)
 ///
+/// The swap covers KeyboardKit's `.characterMargin` items too. These are the
+/// invisible keys that pad the ends of an iPhone letter row and type the
+/// letter they sit next to, so a tap just past the edge key still hits it.
+/// Row 2 starts with `.characterMargin("z")` between shift and the first
+/// letter; left alone, a tap in that gap types `z` right beside the `y` key.
+///
 /// All Czech diacritics (á č ď é ě í ň ó ř š ť ú ů ý ž) are reached via
 /// long-press — see `CzechCallouts`. No German umlauts appear on the keys.
 enum CzechLayout {
@@ -29,9 +35,16 @@ enum CzechLayout {
 
         for rowIndex in result.itemRows.indices {
             for itemIndex in result.itemRows[rowIndex].indices {
-                guard case .character(let char) = result.itemRows[rowIndex][itemIndex].action,
-                      let swapped = swapped(char) else { continue }
-                result.itemRows[rowIndex][itemIndex].action = .character(swapped)
+                switch result.itemRows[rowIndex][itemIndex].action {
+                case .character(let char):
+                    guard let swapped = swapped(char) else { continue }
+                    result.itemRows[rowIndex][itemIndex].action = .character(swapped)
+                case .characterMargin(let char):
+                    guard let swapped = swapped(char) else { continue }
+                    result.itemRows[rowIndex][itemIndex].action = .characterMargin(swapped)
+                default:
+                    continue
+                }
             }
         }
 
