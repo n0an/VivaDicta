@@ -30,7 +30,7 @@ actor SonioxRealtimeSTTClient {
     }
 
     private let logger = Logger(category: .liveTranslationSTT)
-    private let endpoint = URL(string: "wss://stt-rt.soniox.com/transcribe-websocket")!
+    static let endpoint = URL(string: "wss://stt-rt.soniox.com/transcribe-websocket")!
 
     /// Defined on the model catalog because that file is shared with the app
     /// extensions; see `TranscriptionModelProvider.sonioxRealtimeModel`.
@@ -51,7 +51,7 @@ actor SonioxRealtimeSTTClient {
         disconnect()
 
         let session = URLSession(configuration: .default)
-        let task = session.webSocketTask(with: endpoint)
+        let task = session.webSocketTask(with: Self.makeUpgradeRequest(apiKey: apiKey))
         self.task = task
 
         let stream = AsyncStream<Event> { continuation in
@@ -64,8 +64,7 @@ actor SonioxRealtimeSTTClient {
         task.resume()
 
         do {
-            let config = makeConfigPayload(
-                apiKey: apiKey,
+            let config = Self.makeConfigPayload(
                 languageHints: languageHints,
                 mode: mode,
                 vocabularyTerms: vocabularyTerms
@@ -113,14 +112,19 @@ actor SonioxRealtimeSTTClient {
 
     // MARK: - Private
 
-    private func makeConfigPayload(
-        apiKey: String,
+    /// Key travels in the handshake header; see `SonioxWebSocketRequest`.
+    static func makeUpgradeRequest(apiKey: String) -> URLRequest {
+        SonioxWebSocketRequest.make(endpoint: endpoint, apiKey: apiKey)
+    }
+
+    /// Start message. No `api_key` here; see `SonioxWebSocketRequest`.
+    /// Static (not actor-isolated) so tests can pin the shape without a socket.
+    static func makeConfigPayload(
         languageHints: [String],
         mode: Mode,
         vocabularyTerms: [String]
     ) -> [String: Any] {
         var payload: [String: Any] = [
-            "api_key": apiKey,
             "model": Self.model,
             "audio_format": "pcm_s16le",
             "sample_rate": 16000,
