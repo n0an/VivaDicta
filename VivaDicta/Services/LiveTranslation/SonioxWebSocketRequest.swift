@@ -17,7 +17,10 @@ import Foundation
 /// still does not fail the handshake: Soniox opens the socket and sends an
 /// `error_message` frame, which the clients already surface as `.failed`.
 /// https://soniox.com/docs/guides/websocket-authentication
-enum SonioxWebSocketRequest {
+///
+/// `nonisolated` because the target defaults to MainActor isolation and both
+/// callers are plain actors that build the request synchronously.
+nonisolated enum SonioxWebSocketRequest {
     static func make(endpoint: URL, apiKey: String) -> URLRequest {
         var request = URLRequest(url: endpoint)
         // Settings only checked that the trimmed key is non-empty; a pasted
