@@ -50,8 +50,9 @@ actor SonioxRealtimeSTTClient {
     ) -> AsyncStream<Event> {
         disconnect()
 
+        // Key travels in the handshake header; see SonioxWebSocketRequest.
         let session = URLSession(configuration: .default)
-        let task = session.webSocketTask(with: endpoint)
+        let task = session.webSocketTask(with: SonioxWebSocketRequest.make(endpoint: endpoint, apiKey: apiKey))
         self.task = task
 
         let stream = AsyncStream<Event> { continuation in
@@ -64,8 +65,7 @@ actor SonioxRealtimeSTTClient {
         task.resume()
 
         do {
-            let config = makeConfigPayload(
-                apiKey: apiKey,
+            let config = Self.makeConfigPayload(
                 languageHints: languageHints,
                 mode: mode,
                 vocabularyTerms: vocabularyTerms
@@ -113,14 +113,15 @@ actor SonioxRealtimeSTTClient {
 
     // MARK: - Private
 
-    private func makeConfigPayload(
-        apiKey: String,
+    /// Start message. Deliberately carries no `api_key`: the key is sent on
+    /// the connection, and sending it here as well is rejected by Soniox.
+    /// Static (not actor-isolated) so tests can pin that without a socket.
+    static func makeConfigPayload(
         languageHints: [String],
         mode: Mode,
         vocabularyTerms: [String]
     ) -> [String: Any] {
         var payload: [String: Any] = [
-            "api_key": apiKey,
             "model": Self.model,
             "audio_format": "pcm_s16le",
             "sample_rate": 16000,

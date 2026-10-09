@@ -32,8 +32,9 @@ actor SonioxRealtimeTTSClient {
     ) -> AsyncStream<Event> {
         disconnect()
 
+        // Key travels in the handshake header; see SonioxWebSocketRequest.
         let session = URLSession(configuration: .default)
-        let task = session.webSocketTask(with: endpoint)
+        let task = session.webSocketTask(with: SonioxWebSocketRequest.make(endpoint: endpoint, apiKey: apiKey))
         self.task = task
 
         let stream = AsyncStream<Event> { continuation in
@@ -45,15 +46,11 @@ actor SonioxRealtimeTTSClient {
 
         task.resume()
 
-        let payload: [String: Any] = [
-            "api_key": apiKey,
-            "model": "tts-rt-v1-preview",
-            "language": language.rawValue,
-            "voice": voice,
-            "audio_format": "pcm_s16le",
-            "sample_rate": Int(Self.outputSampleRate),
-            "stream_id": streamID
-        ]
+        let payload = Self.makeConfigPayload(
+            language: language,
+            voice: voice,
+            streamID: streamID
+        )
 
         if let data = try? JSONSerialization.data(withJSONObject: payload),
            let configString = String(data: data, encoding: .utf8) {
@@ -111,6 +108,24 @@ actor SonioxRealtimeTTSClient {
     }
 
     // MARK: - Private
+
+    /// Config message. Deliberately carries no `api_key`: the key is sent on
+    /// the connection, and sending it here as well is rejected by Soniox.
+    /// Static (not actor-isolated) so tests can pin that without a socket.
+    static func makeConfigPayload(
+        language: LiveTranslationLanguage,
+        voice: String,
+        streamID: String
+    ) -> [String: Any] {
+        [
+            "model": "tts-rt-v1-preview",
+            "language": language.rawValue,
+            "voice": voice,
+            "audio_format": "pcm_s16le",
+            "sample_rate": Int(Self.outputSampleRate),
+            "stream_id": streamID
+        ]
+    }
 
     private func receiveLoop() async {
         guard let task else { return }
