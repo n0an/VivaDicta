@@ -30,7 +30,7 @@ actor SonioxRealtimeSTTClient {
     }
 
     private let logger = Logger(category: .liveTranslationSTT)
-    private let endpoint = URL(string: "wss://stt-rt.soniox.com/transcribe-websocket")!
+    static let endpoint = URL(string: "wss://stt-rt.soniox.com/transcribe-websocket")!
 
     /// Defined on the model catalog because that file is shared with the app
     /// extensions; see `TranscriptionModelProvider.sonioxRealtimeModel`.
@@ -50,9 +50,8 @@ actor SonioxRealtimeSTTClient {
     ) -> AsyncStream<Event> {
         disconnect()
 
-        // Key travels in the handshake header; see SonioxWebSocketRequest.
         let session = URLSession(configuration: .default)
-        let task = session.webSocketTask(with: SonioxWebSocketRequest.make(endpoint: endpoint, apiKey: apiKey))
+        let task = session.webSocketTask(with: Self.makeUpgradeRequest(apiKey: apiKey))
         self.task = task
 
         let stream = AsyncStream<Event> { continuation in
@@ -113,9 +112,13 @@ actor SonioxRealtimeSTTClient {
 
     // MARK: - Private
 
-    /// Start message. Deliberately carries no `api_key`: the key is sent on
-    /// the connection, and sending it here as well is rejected by Soniox.
-    /// Static (not actor-isolated) so tests can pin that without a socket.
+    /// Key travels in the handshake header; see `SonioxWebSocketRequest`.
+    static func makeUpgradeRequest(apiKey: String) -> URLRequest {
+        SonioxWebSocketRequest.make(endpoint: endpoint, apiKey: apiKey)
+    }
+
+    /// Start message. No `api_key` here; see `SonioxWebSocketRequest`.
+    /// Static (not actor-isolated) so tests can pin the shape without a socket.
     static func makeConfigPayload(
         languageHints: [String],
         mode: Mode,
