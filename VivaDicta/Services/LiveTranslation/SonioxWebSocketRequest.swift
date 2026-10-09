@@ -12,8 +12,8 @@ import Foundation
 /// Soniox authenticates the *connection*, not the first message: the key goes
 /// in the `Authorization` header of the WebSocket handshake. Putting `api_key`
 /// in the start/config payload is the legacy scheme and stops working on
-/// 2027-01-15 (401 after that). Both schemes at once get a 400 error frame, so
-/// the clients must leave `api_key` out of their payloads entirely. A bad key
+/// 2027-01-15 (401 after that). The start/config message should omit `api_key`;
+/// a different key there is rejected with a 400 error frame. A bad key
 /// still does not fail the handshake: Soniox opens the socket and sends an
 /// `error_message` frame, which the clients already surface as `.failed`.
 /// https://soniox.com/docs/guides/websocket-authentication

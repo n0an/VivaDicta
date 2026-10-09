@@ -7,8 +7,8 @@ import Testing
 /// Pins the Soniox realtime auth scheme.
 ///
 /// Soniox retires `api_key` in the first WebSocket message on 2027-01-15; from
-/// then on only the `Authorization: Bearer` header on the handshake works, and
-/// sending both at once is rejected with a 400 error frame. These tests fail
+/// then on the key must be sent with the connection. The start/config message
+/// should omit it (a different key there is rejected). These tests fail
 /// if either client drifts back to the legacy payload field, or if the header
 /// goes missing from the upgrade request.
 /// https://soniox.com/docs/guides/websocket-authentication
