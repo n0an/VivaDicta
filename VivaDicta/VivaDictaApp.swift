@@ -694,10 +694,26 @@ struct VivaDictaApp: App {
         "life.dailypresence.presence",  // Presence - no seller site, no AASA
         "com.taskrabbit.site",          // Taskrabbit - AASA has no root path; /dashboard would pull the user out of the chat or form they were typing in
 
+        // Checked 2026-10-10: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "app.ish.iSH",                  // iSH Shell - app/Info.plist in ish-app/ish registers no URL types; no AASA
+        "ai.perplexity.comet.ios",      // Comet browser - perplexity.ai AASA lists the id under webcredentials only
+        "com.tinginteractive.usms",     // TextNow - textnow.com AASA has webcredentials only, no applinks
+        "a4a.radarlive",                // Adam4Adam - no AASA on any seller domain
+        "com.consim.bharatMatrimony",   // Bharat Matrimony - AASA covers /bm.php* and /c/e.php* only
+        "com.kunchenguid.sshhip",       // SSHHIP - sshhip.com serves no AASA
+        "com.security.BatteryCam",      // Anker eufy - no AASA on eufy.com / eufylife.com
+        "com.amazon.echo",              // Amazon Alexa - AASA has no root path; /spa/* is the web-app shell and would navigate away
+        "com.zoho.zmail",               // Zoho Mail - AASA matches /zm/* with a #mail* fragment only; an inbox link would pull the user out of the draft
+        "com.apple.MailCompositionService", // Mail compose sheet hosted in another app
+        "com.apple.DocumentManagerUICore.SaveToFiles", // "Save to Files" sheet
+        "com.t3tools.t3code.swiftui.dev.AUW3D5DD4J", // third-party dev build of the T3 Code fork; no verifiable mapping
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
         "ph.telegra.Telegraph.Share",   // Telegram share extension
+        "org.whispersystems.signal.shareextension", // Signal share extension
         "io.raindrop.ios.share"         // Raindrop.io share extension
     ]
 
@@ -950,6 +966,11 @@ struct VivaDictaApp: App {
             "com.thecarousell.Carousell": "https://www.carousell.sg/",       // carousell.com sits behind a Cloudflare challenge
             "com.apple.supportapp": "https://getsupport.apple.com/",         // Apple Support; AASA catch-all /*
 
+            // 2026-10-10. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.superhuman.Superhuman": "https://mail.superhuman.com/",    // Superhuman Mail; AASA catch-all "*"
+            "app.getbb.mobile": "bb://",                                     // bb; apps/mobile/app.json in get-bb/bb (Expo "scheme"); not on the App Store, TestFlight build
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -970,6 +991,15 @@ struct VivaDictaApp: App {
             "ru.yandex.mobile.search": "yandexbrowser-open-url://", // Yandex Browser (NOT the Yandex app); an open-URL scheme
             "com.facebook.hatch": "https://muse.ai/open_hatch", // Muse from Meta; 2026-10-03, AASA lists /open_hatch, no root path
             "com.apple.mobileslideshow": "photos-redirect://", // Photos; 2026-10-03, community lists, not read from the binary
+            "com.taimi.ios": "https://taimi.com/applink",     // Taimi; 2026-10-10, AASA lists /applink only, no root path
+            "com.toggl.daneel": "https://track.toggl.com/timer/", // Toggl Track; 2026-10-10, AASA path /timer/* (the Track web home); toggl.com has no AASA
+            "co.switch.Switch": "https://dialpad.com/app/",   // Dialpad (ex-Switch); 2026-10-10, AASA path /app/*
+            "com.harklabs.hark": "https://hark.com/chat",     // Hark Pro; 2026-10-10, AASA path /chat; harklabs.com serves no AASA
+            "com.picsart.studio": "https://picsart.com/open", // Picsart; 2026-10-10, AASA path /open (exact, no trailing slash)
+            "com.teslamotors.TeslaApp": "https://www.tesla.com/1/app/home", // Tesla; 2026-10-10, AASA path /1/app/home ("Open Tesla App"), read via Apple's CDN mirror
+            "de.barmergek.serviceapp": "https://link-registry.bconnect.barmer.de/barmer/foreground", // Meine BARMER; 2026-10-10, AASA path /barmer/foreground
+            "com.microsoft.onenote": "onenote://",            // OneNote; 2026-10-10, vendor docs (Graph "open OneNote client") show only onenote:https://<page> forms
+            "com.tapbots.Ivory": "ivory://",                  // Ivory; 2026-10-10, tapbots.com support docs show only ivory://acct/... forms
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
