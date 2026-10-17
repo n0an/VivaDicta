@@ -572,6 +572,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .gemini:
             return [
+                "gemini-4-argon",
                 "gemini-3.8-flash",
                 "gemini-3.7-flash",
                 "gemini-3.6-flash",
@@ -909,6 +910,7 @@ public extension AIProvider {
         "gemini-3.1-pro",
         "gemini-3.5-flash",
         "gemini-3-flash",
+        "deepseek-v4.1-flash",
         "deepseek-v4-pro",
         "deepseek-v4-flash",
         "glm-5.2",
@@ -918,6 +920,7 @@ public extension AIProvider {
         "kimi-k2.5",
         "minimax-m2.7",
         "minimax-m2.5",
+        "qwen3.8-flash",
         "qwen3.6-plus",
         "qwen3.5-plus",
         "grok-build-0.1"
@@ -948,9 +951,9 @@ public extension AIProvider {
     static let opencodeGoModels: [String] = [
         "glm-5.3", "glm-5.2", "glm-5.1",
         "kimi-k3", "kimi-k2.7-code", "kimi-k2.6",
-        "mimo-v2.5", "mimo-v2.5-pro",
+        "mimo-v2.6-flash", "mimo-v2.5", "mimo-v2.5-pro",
         "minimax-m3", "minimax-m2.7",
-        "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
+        "qwen3.8-flash", "qwen3.8-max", "qwen3.7-max", "qwen3.7-plus", "qwen3.6-plus",
         "deepseek-v4-pro", "deepseek-v4-flash",
         "longcat-2.0", "hy3"
     ]

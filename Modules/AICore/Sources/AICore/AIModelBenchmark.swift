@@ -28,18 +28,26 @@ public struct AIModelBenchmark: Identifiable, Hashable, Sendable {
 ///
 /// One row per provider, best model first, so the list answers "which provider
 /// should I set up" rather than repeating a provider already on it. The full
-/// table of 60 models is on the website, which is also where
+/// table of 64 models is on the website, which is also where
 /// the method is written up.
 public enum AIModelBenchmarkCatalog {
     /// URL of the full ranking.
     public static let fullTableURL = URL(string: "https://vivadicta.com/docs/ai-model-rankings")!
 
     /// ISO date the latest measurement batch was added. Older rows may predate it.
-    public static let measuredAt = "2026-10-03"
+    public static let measuredAt = "2026-10-17"
 
     public static let top: [AIModelBenchmark] = [
         AIModelBenchmark(
             rank: 1,
+            provider: "OpenCode Zen",
+            model: "deepseek-v4.1-flash",
+            quality: 9.8,
+            seconds: 0.95,
+            freeTier: false
+        ),
+        AIModelBenchmark(
+            rank: 2,
             provider: "Gemini",
             model: "gemini-3.8-flash",
             quality: 9.7,
@@ -47,7 +55,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 2,
+            rank: 3,
             provider: "OpenAI",
             model: "gpt-5.4-mini",
             quality: 9.7,
@@ -55,7 +63,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 3,
+            rank: 4,
             provider: "Anthropic",
             model: "claude-haiku-4-5",
             quality: 9.5,
@@ -63,7 +71,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 4,
+            rank: 5,
             provider: "Grok (xAI)",
             model: "grok-4.20-non-reasoning",
             quality: 9.6,
@@ -71,7 +79,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: false
         ),
         AIModelBenchmark(
-            rank: 5,
+            rank: 6,
             provider: "Mistral",
             model: "mistral-medium-latest",
             quality: 9.4,
@@ -79,7 +87,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 6,
+            rank: 7,
             provider: "Ollama Cloud",
             model: "gemma4:31b",
             quality: 9.4,
@@ -87,7 +95,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 7,
+            rank: 8,
             provider: "Cerebras",
             model: "qwen-3.8-27b",
             quality: 9.2,
@@ -95,7 +103,7 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 8,
+            rank: 9,
             provider: "Groq",
             model: "qwen/qwen3.8-27b",
             quality: 9.1,
@@ -103,20 +111,12 @@ public enum AIModelBenchmarkCatalog {
             freeTier: true
         ),
         AIModelBenchmark(
-            rank: 9,
+            rank: 10,
             provider: "HuggingFace",
             model: "openai/gpt-oss-120b",
             quality: 9.1,
             seconds: 0.51,
             freeTier: true
-        ),
-        AIModelBenchmark(
-            rank: 10,
-            provider: "OpenCode Go",
-            model: "glm-5.3-flash",
-            quality: 9.5,
-            seconds: 1.31,
-            freeTier: false
         )
     ]
 }

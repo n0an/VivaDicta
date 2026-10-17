@@ -14,6 +14,7 @@ struct ReasoningConfigTests {
         // 3.7 and 3.8 Flash reject "minimal" with a validation error - "low" is their floor.
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.7-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.8-flash") == "low")
+        #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-argon") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.5-flash-lite") == "minimal")
         // OpenAI GPT-5 series
         #expect(ReasoningConfig.getReasoningParameter(for: "gpt-5.5") == "none")
