@@ -86,7 +86,8 @@ public final class ParakeetTranscriptionService: @unchecked Sendable {
                 shouldObserveProgress: shouldObserveProgress,
                 progressHandler: progressHandler
             ) {
-                try await asrManager.transcribe(audioURL, source: .system)
+                var decoderState = TdtDecoderState.make(decoderLayers: await asrManager.decoderLayerCount)
+                return try await asrManager.transcribe(audioURL, decoderState: &decoderState)
             }
 
             await cleanupAfterTranscription(using: asrManager)
@@ -107,7 +108,8 @@ public final class ParakeetTranscriptionService: @unchecked Sendable {
             shouldObserveProgress: shouldObserveProgress,
             progressHandler: progressHandler
         ) {
-            try await asrManager.transcribe(speechAudio, source: .system)
+            var decoderState = TdtDecoderState.make(decoderLayers: await asrManager.decoderLayerCount)
+            return try await asrManager.transcribe(speechAudio, decoderState: &decoderState)
         }
 
         await cleanupAfterTranscription(using: asrManager)
@@ -321,7 +323,8 @@ public final class ParakeetTranscriptionService: @unchecked Sendable {
                 vocabulary: vocabulary,
                 ctcModels: ctcModels
             )
-            try await slidingManager.start(models: models, source: .system)
+            try await slidingManager.loadModels(models)
+            try await slidingManager.startStreaming(source: .system)
 
             if durationSeconds < 20.0 || !isVADEnabled {
                 logger.logNotice("🎙️ Using vocabulary-boosted file transcription for Parakeet")
