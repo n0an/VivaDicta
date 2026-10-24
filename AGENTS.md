@@ -18,6 +18,7 @@ Canonical custom skills live in `.agents/skills/` as directories containing `SKI
 - **App ID**: `6758147238`
 - **App Name**: VivaDicta - Speech to Text
 - **Bundle ID**: `com.antonnovoselov.VivaDicta`
+- **asc profile**: run every `asc` command with `ASC_PROFILE=VivaDicta` - the Mac also holds other companies' keys, and the default profile is not guaranteed to be this one. The generic `asc-*` skills are the vendor pack from `asc install-skills` (user level).
 - **Submission quirk**: `asc review submissions-create` creates an empty draft — it does NOT add the version item. Either use `asc submit create` for simple submissions, or follow `submissions-create` with `items-add` + `submissions-submit`. When in doubt, tell the user to submit via the "Add for Review" button in App Store Connect.
 
 ## Build Commands

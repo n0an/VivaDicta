@@ -22,8 +22,10 @@ The **only** place short `X.Y` form survives is the internal `WhatsNewCatalog.re
 
 ## Related Skills
 
+The `asc-*` skills below are the vendor skill pack, installed once per machine with `asc install-skills` (user level, not in this repo). Their generic advice is overridden by the VivaDicta rules here.
+
 - `asc-release-flow` — drive the App Store Connect submission flow (Step 11 covers the normal archive-upload-and-submit path; reach for this skill when a submission needs unpicking)
-- `asc-whats-new-writer` — generate App Store release notes
+- `asc-whats-new-writer` — generate App Store release notes. **Override its "Localize" phase: never translate.** Copy the approved en-US What's New text to every locale unchanged - the extra localizations exist for ASO keyword fields, not translation. China mainland is not in App Availability, so it needs no special handling.
 - `asc-metadata-sync` — sync and validate App Store metadata
 - `asc-localize-metadata` — sync metadata across localizations (used for ASO, not actual translation)
 - `asc-aso-audit` — run ASO audit on App Store metadata and surface keyword gaps
