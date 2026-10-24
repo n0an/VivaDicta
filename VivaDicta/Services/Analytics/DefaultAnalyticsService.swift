@@ -25,11 +25,11 @@ struct DefaultAnalyticsService: AnalyticsService {
     nonisolated static let live = DefaultAnalyticsService()
 
     /// Receives unrecognized keyboard host bundle IDs.
-    nonisolated static let endpoint = URL(string: "https://vivadicta.com/api/unrecognized-host")!
+    nonisolated private static let endpoint = URL(string: "https://vivadicta.com/api/unrecognized-host")!
 
     /// `UserDefaults.standard` key holding the bundle IDs already delivered
     /// from this install.
-    nonisolated static let reportedIdsKey = "reportedUnrecognizedHostIds"
+    nonisolated private static let reportedIdsKey = "reportedUnrecognizedHostIds"
 
     nonisolated private static let logger = Logger(category: .analytics)
 
@@ -59,10 +59,11 @@ struct DefaultAnalyticsService: AnalyticsService {
     // MARK: - Unrecognized host
 
     nonisolated private static func reportUnrecognizedHost(_ bundleId: String) {
-        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
-        let payload = ["bundleId": bundleId, "appVersion": appVersion]
-        guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
-            Self.logger.logError("📊 Could not encode unrecognized host report for \(bundleId)")
+        // `hostId` arrives in a URL query, so anything could open the app with
+        // an arbitrary string. Only send what looks like a bundle ID; the
+        // server applies the same rule.
+        guard isPlausibleBundleId(bundleId) else {
+            Self.logger.logWarning("📊 Ignoring malformed host bundle ID")
             return
         }
 
@@ -72,6 +73,14 @@ struct DefaultAnalyticsService: AnalyticsService {
             return true
         }
         guard shouldSend else { return }
+
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        let payload = ["bundleId": bundleId, "appVersion": appVersion]
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else {
+            Self.logger.logError("📊 Could not encode unrecognized host report for \(bundleId)")
+            Self.inFlight.withLock { _ = $0.remove(bundleId) }
+            return
+        }
 
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
@@ -98,6 +107,17 @@ struct DefaultAnalyticsService: AnalyticsService {
                 Self.logger.logError("📊 Unrecognized host report failed for \(bundleId): \(statusCode.map { "HTTP \($0)" } ?? "no response")")
             }
         }.resume()
+    }
+
+    /// Reverse-DNS shape (`com.example.notes`), at most 155 characters -
+    /// matches the server-side check.
+    nonisolated private static func isPlausibleBundleId(_ value: String) -> Bool {
+        guard value.count <= 155 else { return false }
+        let labels = value.split(separator: ".", omittingEmptySubsequences: false)
+        guard labels.count >= 2 else { return false }
+        return labels.allSatisfy { label in
+            !label.isEmpty && label.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }
+        }
     }
 
     /// Bundle IDs already delivered from this install.
