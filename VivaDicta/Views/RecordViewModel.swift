@@ -704,7 +704,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     // Realtime already produced the text while recording; run it
                     // through the same filters/formatting the upload path uses.
                     realtimeTranscript = nil
-                    transcribedText = transcriptionManager.postProcessStreamedText(streamed, startTime: transcriptionStart)
+                    transcribedText = transcriptionManager.postProcessStreamedText(streamed)
                 } else {
                     transcribedText = try await transcriptionManager.transcribe(
                         audioURL: audioURLToTranscribe,

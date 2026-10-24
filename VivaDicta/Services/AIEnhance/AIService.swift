@@ -7,7 +7,6 @@
 
 import Keychain
 import TextProcessing
-import Analytics
 import Networking
 import Presets
 import SwiftUI
@@ -988,15 +987,6 @@ class AIService {
         }
         let duration = Date().timeIntervalSince(startTime)
         Task { await AIVariationsDiscoveryTip.variationGeneratedEvent.donate() }
-
-        DefaultAnalyticsService.live.track(.variationGenerated(
-            presetId: preset.isBuiltIn ? preset.id : "custom",
-            isBuiltInPreset: preset.isBuiltIn,
-            provider: mode.aiProvider?.rawValue ?? "unknown",
-            model: mode.aiModel,
-            durationSeconds: duration,
-            outputLength: result.count
-        ))
 
         return (result, duration)
     }

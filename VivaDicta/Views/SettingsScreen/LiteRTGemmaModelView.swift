@@ -11,7 +11,6 @@
 //
 
 import SwiftUI
-import Analytics
 import DesignSystem
 import LocalLLM
 import AICore
@@ -77,7 +76,6 @@ final class LiteRTGemmaModelViewModel {
         tasks[variant]?.cancel()
         status[variant] = .downloading(0)
         let task = Task { @MainActor in
-            let wasDownloaded = await engine.isDownloaded(variant)
             do {
                 // A Settings download loads into RAM, so keep memory single-resident.
                 await OnDeviceModelMemory.shared.ensureOnlyResident(.liteRT)
@@ -94,11 +92,6 @@ final class LiteRTGemmaModelViewModel {
                 }
                 self.status[variant] = .ready
                 self.sizeBytes[variant] = await engine.downloadedBytes(variant)
-                // Track only a genuine new download, not a reload of an
-                // already-downloaded variant.
-                if !wasDownloaded {
-                    DefaultAnalyticsService.live.track(.modelDownloaded(name: variant.rawValue, type: "litert"))
-                }
             } catch is CancellationError {
                 self.status[variant] = .notDownloaded
             } catch {

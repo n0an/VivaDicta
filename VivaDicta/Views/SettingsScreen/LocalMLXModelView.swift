@@ -10,7 +10,6 @@
 //
 
 import SwiftUI
-import Analytics
 import DesignSystem
 import AICore
 
@@ -68,7 +67,6 @@ final class LocalMLXModelViewModel {
         tasks[model]?.cancel()
         status[model] = .downloading(0)
         let task = Task { @MainActor in
-            let wasDownloaded = await engine.isDownloaded(model)
             do {
                 // A Settings download loads into RAM, so keep memory single-resident.
                 await OnDeviceModelMemory.shared.ensureOnlyResident(.mlx)
@@ -84,11 +82,6 @@ final class LocalMLXModelViewModel {
                 }
                 self.status[model] = .ready
                 self.sizeBytes[model] = await engine.downloadedBytes(model)
-                // Track only a genuine new download, not a reload of an
-                // already-downloaded model.
-                if !wasDownloaded {
-                    DefaultAnalyticsService.live.track(.modelDownloaded(name: model.rawValue, type: "mlx"))
-                }
             } catch is CancellationError {
                 // Discard the partial download so it can't later read as Ready.
                 try? await engine.deleteModel(model)

@@ -6,7 +6,6 @@
 //
 
 import AVFoundation
-import Analytics
 import SwiftData
 import SwiftUI
 
@@ -61,7 +60,6 @@ private struct LiveTranslationSessionView: View {
             }
             .onAppear {
                 hasSonioxKey = checkSonioxKey()
-                DefaultAnalyticsService.live.track(.liveTranslationOpened)
             }
             .onReceive(NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)) { _ in
                 headphonesConnected = LiveTranslationAudio.isHeadphonesRouteActive
@@ -452,7 +450,6 @@ private struct LiveTranslationSessionView: View {
         do {
             try modelContext.save()
             savedSnapshot = SavedSnapshot()
-            DefaultAnalyticsService.live.track(.liveTranslationSavedAsNote)
         } catch {
             // Roll the insert out of the context so the same Transcription
             // instance isn't dangling in memory and won't auto-save next

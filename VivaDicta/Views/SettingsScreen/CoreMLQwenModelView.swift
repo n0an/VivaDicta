@@ -12,7 +12,6 @@
 //
 
 import SwiftUI
-import Analytics
 import DesignSystem
 import LocalLLM
 import AICore
@@ -71,7 +70,6 @@ final class CoreMLQwenModelViewModel {
         tasks[variant]?.cancel()
         status[variant] = .downloading(0)
         let task = Task { @MainActor in
-            let wasDownloaded = await engine.isDownloaded(variant)
             do {
                 // A Settings download loads into RAM, so keep memory single-resident.
                 await OnDeviceModelMemory.shared.ensureOnlyResident(.coreML)
@@ -87,11 +85,6 @@ final class CoreMLQwenModelViewModel {
                 }
                 self.status[variant] = .ready
                 self.sizeBytes[variant] = await engine.downloadedBytes(variant)
-                // Track only a genuine new download, not a reload of an
-                // already-downloaded model.
-                if !wasDownloaded {
-                    DefaultAnalyticsService.live.track(.modelDownloaded(name: variant.rawValue, type: "coreml"))
-                }
             } catch is CancellationError {
                 try? await engine.deleteModel(variant)
                 self.status[variant] = .notDownloaded

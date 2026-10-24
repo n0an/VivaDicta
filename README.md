@@ -333,7 +333,7 @@ VivaDicta/
 │   ├── Models/             # SwiftData models (Transcription, Preset, etc.)
 │   ├── Services/           # Core services
 │   │   ├── AIEnhance/      # AIService, prompts, VivAgents CLI bridge
-│   │   ├── Analytics/      # AnalyticsService, MetricKit performance monitoring
+│   │   ├── Analytics/      # DefaultAnalyticsService (unrecognized keyboard host reporter)
 │   │   ├── LiveTranslation/# Live translation
 │   │   ├── OAuth/          # OAuth sign-in flows
 │   │   ├── RAG/            # RAGIndexingService, vector search, chunking

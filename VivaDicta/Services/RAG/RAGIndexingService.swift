@@ -6,7 +6,6 @@
 //
 
 import CryptoKit
-import Analytics
 import Foundation
 import Observation
 import SwiftData
@@ -388,12 +387,6 @@ final class RAGIndexingService: NoteSearchService {
             let totalChunks = try await _documentCount()
             logger.logInfo("Indexing complete: \(indexed) indexed, \(skipped) skipped, \(orphanedIds.count) orphans removed, \(totalChunks) total chunks")
             await logIndexSnapshot(reason: "bulk-index-complete", using: logger)
-            DefaultAnalyticsService.live.track(.ragIndexingCompleted(
-                indexedCount: indexed,
-                skippedCount: skipped,
-                totalChunks: totalChunks,
-                isFirstRun: isFirstRun
-            ))
         } catch {
             logger.logError("Bulk indexing failed: \(error.localizedDescription)")
         }
@@ -588,11 +581,6 @@ final class RAGIndexingService: NoteSearchService {
                 baseThreshold: threshold,
                 mapping: mapping
             )
-            DefaultAnalyticsService.live.track(.smartSearchQueryExecuted(
-                queryLength: query.count,
-                topK: topK,
-                resultCount: 0
-            ))
             return []
         }
 
@@ -643,11 +631,6 @@ final class RAGIndexingService: NoteSearchService {
             await logIndexSnapshot(reason: "search-unmapped-raw-hits", using: searchLogger)
         }
         searchLogger.logInfo("Search '\(query.prefix(50))': \(finalResults.count) transcriptions matched")
-        DefaultAnalyticsService.live.track(.smartSearchQueryExecuted(
-            queryLength: query.count,
-            topK: topK,
-            resultCount: finalResults.count
-        ))
         return finalResults
     }
 

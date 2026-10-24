@@ -47,7 +47,7 @@ final class MockTranscriber: Transcriber {
     /// One entry per override-aware call, `nil` when no override was passed.
     private(set) var languageOverrides: [String?] = []
 
-    func postProcessStreamedText(_ text: String, startTime: Date) -> String {
+    func postProcessStreamedText(_ text: String) -> String {
         postProcessStreamedCallCount += 1
         return text
     }

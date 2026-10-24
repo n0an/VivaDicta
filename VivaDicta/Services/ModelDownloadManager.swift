@@ -6,7 +6,6 @@
 //
 
 import LocalTranscription
-import Analytics
 import SwiftUI
 import TranscriptionCore
 import os
@@ -234,8 +233,6 @@ class ModelDownloadManager {
             downloadStatuses[model.name] = .downloaded
             logger.logNotice("✅ Successfully downloaded \(model.displayName)")
 
-            DefaultAnalyticsService.live.track(.modelDownloaded(name: model.displayName, type: "parakeet"))
-
             try? await Task.sleep(for: .seconds(0.5))
 
             downloadProgress.removeValue(forKey: model.name)
@@ -330,8 +327,6 @@ class ModelDownloadManager {
             downloadStatuses[model.name] = .downloaded
             logger.logNotice("✅ Successfully downloaded and prepared \(displayName)")
             logger.logNotice("⏱️ Preparation time: prewarm: \(phaseState.prewarmDuration.formatted(.number.precision(.fractionLength(2))))s, load: \(phaseState.loadDuration.formatted(.number.precision(.fractionLength(2))))s")
-
-            DefaultAnalyticsService.live.track(.modelDownloaded(name: displayName, type: "whisperkit"))
 
             try? await Task.sleep(for: .seconds(0.5))
 

@@ -7,7 +7,6 @@
 
 import Foundation
 import TextProcessing
-import Analytics
 import AppGroup
 import CloudTranscription
 import LocalTranscription
@@ -171,7 +170,6 @@ class TranscriptionManager: Transcriber {
             throw TranscriptionError.transcriptionFailed
         }
 
-        let startTime = Date()
         // Before building the request: a vendor's size cap otherwise surfaces as
         // a raw HTTP 400 that names neither the cause nor a way forward.
         try CloudTranscriptionLimits.check(
@@ -188,30 +186,24 @@ class TranscriptionManager: Transcriber {
 
         return postProcess(
             transcriptionResult,
-            model: model,
-            startTime: startTime,
             transcriptionLanguage: languageOverride ?? currentMode.transcriptionLanguage
         )
     }
 
     /// Runs the same post-processing the file-based path applies, for text that
     /// arrived over the realtime WebSocket instead of an upload. Keeping this
-    /// one implementation is the point - filters, formatting, replacements, and
-    /// the completion analytics must not diverge between the two paths.
-    public func postProcessStreamedText(_ text: String, startTime: Date) -> String {
-        guard let model = getCurrentTranscriptionModel() else { return text }
+    /// one implementation is the point - filters, formatting, and replacements
+    /// must not diverge between the two paths.
+    public func postProcessStreamedText(_ text: String) -> String {
+        guard getCurrentTranscriptionModel() != nil else { return text }
         return postProcess(
             .plain(text),
-            model: model,
-            startTime: startTime,
             transcriptionLanguage: currentMode.transcriptionLanguage
         )
     }
 
     private func postProcess(
         _ transcriptionResult: TranscriptionServiceResult,
-        model: any TranscriptionModel,
-        startTime: Date,
         transcriptionLanguage: String?
     ) -> String {
         // When inline translation is active (e.g. Soniox Spanish → Russian) the
@@ -238,13 +230,6 @@ class TranscriptionManager: Transcriber {
         if UserDefaults.standard.object(forKey: UserDefaultsStorage.Keys.isStripTrailingPeriodEnabled) as? Bool ?? false {
             result = TranscriptionOutputFilter.stripTrailingPeriods(result)
         }
-
-        DefaultAnalyticsService.live.track(.transcriptionCompleted(
-            engine: model.provider.rawValue,
-            isOnDevice: TranscriptionModelProvider.localProviders.contains(model.provider),
-            durationSeconds: Date().timeIntervalSince(startTime),
-            outputLength: result.count
-        ))
 
         return result
     }

@@ -206,7 +206,7 @@ The last two are not arbitrary: the socket is opened in transcription-only mode,
 
 ### Post-processing
 
-Streamed text runs through `TranscriptionManager.postProcessStreamedText(_:startTime:)`, sharing one implementation with the upload path so filters, formatting, word replacements, and completion analytics cannot diverge between the two.
+Streamed text runs through `TranscriptionManager.postProcessStreamedText(_:)`, sharing one implementation with the upload path so filters, formatting, and word replacements cannot diverge between the two.
 
 ## Key Features
 

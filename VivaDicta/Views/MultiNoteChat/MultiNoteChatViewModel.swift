@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Analytics
 import FoundationModels
 import SwiftData
 import os
@@ -145,7 +144,6 @@ final class MultiNoteChatViewModel {
     private var pendingUserMessage: ChatMessage?
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
-    private var hasLoggedConversationStart = false
 
     var assembledNoteText: String {
         conversation.noteContext
@@ -159,7 +157,6 @@ final class MultiNoteChatViewModel {
         self.modelContext = modelContext
 
         loadMessages()
-        hasLoggedConversationStart = messages.contains { $0.role == "user" }
         noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
             noteText: assembledNoteText,
             systemPrompt: MultiNoteContextManager.systemPrompt
@@ -226,24 +223,6 @@ final class MultiNoteChatViewModel {
         )
         pendingUserMessage = userMessage
         messages.append(userMessage)
-
-        let chatType: AnalyticsEvent.ChatType = conversation.isAllNotes ? .allNotes : .multiNote
-        let turnCount = messages.filter { $0.role == "user" }.count
-        if !hasLoggedConversationStart {
-            DefaultAnalyticsService.live.track(.chatConversationStarted(
-                chatType: chatType,
-                provider: provider.rawValue,
-                model: model,
-                noteCount: conversation.sourceNoteCount
-            ))
-            hasLoggedConversationStart = true
-        }
-        DefaultAnalyticsService.live.track(.chatMessageSent(
-            chatType: chatType,
-            provider: provider.rawValue,
-            model: model,
-            turnCount: turnCount
-        ))
 
         isStreaming = true
         streamingText = ""

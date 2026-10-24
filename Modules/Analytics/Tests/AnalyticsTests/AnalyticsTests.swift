@@ -4,42 +4,14 @@ import Testing
 import Analytics
 import AnalyticsMocks
 
-/// Pins the `AnalyticsEvent` -> Firebase name/parameter mapping. These names are
-/// a stable contract (changing one breaks historical reporting), so the module
-/// owns the tests that guard them.
+/// Pins the `AnalyticsEvent` name, so the identifier used in logs and test
+/// assertions stays stable.
 struct AnalyticsEventTests {
 
-    @Test func transcriptionCompleted_mapsNameParametersAndAttachesDeviceConditions() {
-        let sut: AnalyticsEvent = .transcriptionCompleted(
-            engine: "whisperKit", isOnDevice: true, durationSeconds: 1.5, outputLength: 42
-        )
+    @Test func unrecognizedHostApp_mapsName() {
+        let sut: AnalyticsEvent = .unrecognizedHostApp(bundleId: "com.example.host")
 
-        #expect(sut.name == "transcription_completed")
-        #expect(sut.parameters?["engine"] as? String == "whisperKit")
-        #expect(sut.parameters?["is_on_device"] as? Bool == true)
-        #expect(sut.parameters?["output_length"] as? Int == 42)
-        #expect(sut.attachesDeviceConditions == true)   // interactive event
-    }
-
-    @Test func chatConversationStarted_omitsNoteCountWhenNil() {
-        let withCount: AnalyticsEvent = .chatConversationStarted(chatType: .multiNote, provider: "openai", model: "gpt", noteCount: 3)
-        let withoutCount: AnalyticsEvent = .chatConversationStarted(chatType: .singleNote, provider: "openai", model: "gpt", noteCount: nil)
-
-        #expect(withCount.parameters?["chat_type"] as? String == "multi_note")
-        #expect(withCount.parameters?["note_count"] as? Int == 3)
-        #expect(withoutCount.parameters?["note_count"] == nil)
-    }
-
-    @Test func metricKitEvents_doNotAttachDeviceConditions() {
-        // MetricKit payloads are aggregated over the past day, so live device
-        // state at delivery time is unrelated.
-        #expect(AnalyticsEvent.appLaunchMetric(averageMs: 100, sampleCount: 3).attachesDeviceConditions == false)
-        #expect(AnalyticsEvent.appLaunchMetric(averageMs: 100, sampleCount: 3).name == "app_launch_metric")
-    }
-
-    @Test func eventWithoutParameters_returnsNil() {
-        #expect(AnalyticsEvent.onboardingCompleted.parameters == nil)
-        #expect(AnalyticsEvent.onboardingCompleted.name == "onboarding_completed")
+        #expect(sut.name == "unrecognized_host_app")
     }
 }
 
@@ -50,10 +22,13 @@ struct MockAnalyticsServiceTests {
     @Test func track_recordsEventsInOrder() {
         let sut = MockAnalyticsService()
 
-        sut.track(.onboardingCompleted)
-        sut.track(.liveTranslationOpened)
+        sut.track(.unrecognizedHostApp(bundleId: "com.example.first"))
+        sut.track(.unrecognizedHostApp(bundleId: "com.example.second"))
 
-        #expect(sut.trackedEvents.count == 2)
-        #expect(sut.trackedEventNames == ["onboarding_completed", "live_translation_opened"])
+        #expect(sut.trackedEvents == [
+            .unrecognizedHostApp(bundleId: "com.example.first"),
+            .unrecognizedHostApp(bundleId: "com.example.second"),
+        ])
+        #expect(sut.trackedEventNames == ["unrecognized_host_app", "unrecognized_host_app"])
     }
 }

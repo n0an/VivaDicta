@@ -39,7 +39,7 @@ protocol Transcriber {
     /// Apply the same post-processing pipeline to text that arrived over the
     /// realtime WebSocket rather than from an upload, so both paths produce
     /// identically filtered and formatted output.
-    func postProcessStreamedText(_ text: String, startTime: Date) -> String
+    func postProcessStreamedText(_ text: String) -> String
 }
 
 extension Transcriber {

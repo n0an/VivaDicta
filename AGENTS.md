@@ -60,7 +60,7 @@ Under the hood `app`/`full` run `xcodebuild test -enableCodeCoverage YES -result
 
 ### The test plan gathers ALL targets - filter to first-party when reading
 
-`VivaDicta/VivaDictaTestPlan.xctestplan` has **no `defaultOptions.codeCoverage` pin**, so Xcode gathers coverage for **every** target - Firebase / Google / GUL\* / KeyboardKit / LumoKit / Transformers included (FirebaseCrashlytics alone is ~10k lines). The **raw bundle % is therefore meaningless** (~25%). `coverage.sh` filters to first-party at report time (`first_party_overall`: the 16 production modules + `VivaDicta` app + the 4 extensions; `TestUtilities` / `*Mocks` / `*Tests` excluded), so the headline stays real (~14%). **If you call `xccov` by hand, filter yourself** or you'll read the polluted number.
+`VivaDicta/VivaDictaTestPlan.xctestplan` has **no `defaultOptions.codeCoverage` pin**, so Xcode gathers coverage for **every** target - third-party SPM packages such as KeyboardKit / LumoKit / Transformers included. The **raw bundle % is therefore meaningless**. `coverage.sh` filters to first-party at report time (`first_party_overall`: the 16 production modules + `VivaDicta` app + the 4 extensions; `TestUtilities` / `*Mocks` / `*Tests` excluded), so the headline stays real (~14%). **If you call `xccov` by hand, filter yourself** or you'll read the polluted number.
 
 > History: the test plan used to pin `codeCoverage` to a first-party `targets` list; that pin was removed 2026-06-20 - filtering moved into the script, so adding/removing a module no longer means editing the test plan. (`.xctestplan` is JSON; validate edits with `python3 -c "import json; json.load(open('VivaDicta/VivaDictaTestPlan.xctestplan'))"` - `plutil -lint` rejects the extension.)
 

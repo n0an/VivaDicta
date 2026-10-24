@@ -9,15 +9,12 @@
 import UIKit
 import ActivityKit
 import os
-import FirebaseCore
 
 final class AppDelegate: UIResponder, UIApplicationDelegate {
     private let logger = Logger(category: .appDelegate)
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         logger.logInfo("🚀 didFinishLaunchingWithOptions - state: \(application.applicationState.debugDescription)")
-        FirebaseApp.configure()
-        PerformanceMonitoringService.shared.start()
         BackgroundTaskManager.registerBGTaskHandler()
         // Arm the on-device LLM memory monitor (frees the model under pressure so
         // we don't get jetsammed while holding a ~1-2 GB model).
