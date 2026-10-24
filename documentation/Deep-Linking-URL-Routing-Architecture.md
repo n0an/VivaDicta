@@ -102,9 +102,9 @@ Resolving at the tap rather than reusing an earlier answer is deliberate. Keyboa
 
 ### Host App URL Scheme Mapping
 
-`getURLSchemeForBundleId(_:)` contains a static dictionary mapping bundle identifiers to URL schemes for ~40 commonly used apps. When a host app is not in the dictionary, the function returns `nil` and the keyboard flow toast is shown as a fallback. Unknown hosts are logged to Firebase Analytics under the `unrecognized_host_app` event so new entries can be added over time.
+`getURLSchemeForBundleId(_:)` contains a static dictionary mapping bundle identifiers to URL schemes for ~40 commonly used apps. When a host app is not in the dictionary, the function returns `nil` and the keyboard flow toast is shown as a fallback. Unknown hosts are reported by `DefaultAnalyticsService` (bundle ID + app version only, once per install) to `https://vivadicta.com/api/unrecognized-host` so new entries can be added over time. This is the only data the app sends.
 
-Known apps with no public URL scheme (and therefore excluded from analytics) are listed in `knownNoSchemeHosts`:
+Known apps with no public URL scheme (and therefore never reported) are listed in `knownNoSchemeHosts`:
 - `com.apple.SafariViewService` — SFSafariViewController in-app browser
 - `com.apple.springboard` — iOS home screen
 - Several AI apps without public schemes (Grok, GPChat, Saner AI, Venice AI, Snappy Notes)
@@ -286,7 +286,7 @@ Spotlight results, when tapped, resume via the `NSUserActivity` continuation pat
 | File | Role |
 |---|---|
 | `VivaDicta/VivaDictaApp.swift` | `onOpenURL` handler, `handleDeepLink()`, `getURLSchemeForBundleId()`, `handleTranscriptionActivity()`, `updateShortcutItems()` |
-| `VivaDicta/AppDelegate.swift` | `AppDelegate` (Firebase init, scene config), `SceneDelegate` (quick action delivery, deferred action handling) |
+| `VivaDicta/AppDelegate.swift` | `AppDelegate` (launch setup, scene config), `SceneDelegate` (quick action delivery, deferred action handling) |
 | `VivaDicta/AppState.swift` | Navigation flags, `userActivity(for:)`, Spotlight indexing methods |
 | `VivaDicta/Router.swift` | `NavigationStack` path wrapper (`@Observable`, `@MainActor`) |
 | `VivaDicta/Shared/AppGroupCoordinator.swift` | App Group UserDefaults + Darwin notification bus; keyboard session lifecycle; Share Extension audio handoff |

@@ -308,7 +308,6 @@ struct VivaDictaApp: App {
                     if let release = WhatsNewCatalog.release(for: currentVersion) {
                         UserDefaultsStorage.appPrivate.set(release.id, forKey: UserDefaultsStorage.Keys.lastSeenWhatsNewVersion)
                     }
-                    DefaultAnalyticsService.live.track(.onboardingCompleted)
                 }
             }
         }
@@ -433,9 +432,6 @@ struct VivaDictaApp: App {
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
 
-                    // Log keyboard session start to Firebase Analytics
-                    DefaultAnalyticsService.live.track(.keyboardSessionStarted(hostBundleId: hostId))
-
                     // Activate keyboard session to notify keyboard that hot mic is ready
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
                     AppGroupCoordinator.shared.activateKeyboardSession(
@@ -494,12 +490,6 @@ struct VivaDictaApp: App {
 
                     let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
                     let hostId = components?.queryItems?.first(where: { $0.name == "hostId" })?.value
-
-                    // Same event as the dictation handoff: a keyboard session is
-                    // a keyboard session whichever button opened it, and this is
-                    // where the unresolved-host rate for text actions shows up
-                    // (`host_bundle_id` is "unknown" when the resolver timed out).
-                    DefaultAnalyticsService.live.track(.keyboardSessionStarted(hostBundleId: hostId))
 
                     let timeoutSeconds = AudioPrewarmManager.shared.audioSessionTimeout
                     AppGroupCoordinator.shared.activateKeyboardSession(
@@ -807,7 +797,7 @@ struct VivaDictaApp: App {
     /// Called from both keyboard handoffs - dictation and text processing.
     /// Apps used only for text actions would otherwise never be reported, and
     /// their users would keep losing the teleport back with nothing to show for
-    /// it in the analytics.
+    /// it. This is the only thing the app reports - see `DefaultAnalyticsService`.
     private func trackUnrecognizedHostIfNeeded(_ hostId: String) {
         guard !Self.knownNoSchemeHosts.contains(hostId) else { return }
         DefaultAnalyticsService.live.track(.unrecognizedHostApp(bundleId: hostId))

@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import Analytics
 import WatchConnectivity
 import os
 
@@ -159,7 +158,6 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
         let recordingTimestamp = Date(timeIntervalSince1970: timestamp)
         let modeId = rawMetadata["modeId"] as? String
-        let duration = rawMetadata["duration"] as? Double
 
         let audioDir = URL.documentsDirectory.appending(path: "Audio")
 
@@ -169,11 +167,6 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             let destURL = audioDir.appending(path: "watch-\(UUID().uuidString).\(ext)")
             try FileManager.default.moveItem(at: sourceURL, to: destURL)
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
-
-            DefaultAnalyticsService.live.track(.watchRecordingReceived(
-                durationSeconds: duration,
-                hasModeId: modeId != nil
-            ))
 
             Task { @MainActor in
                 self.processInBackground(audioURL: destURL, sourceTag: sourceTag, recordingTimestamp: recordingTimestamp, modeId: modeId)

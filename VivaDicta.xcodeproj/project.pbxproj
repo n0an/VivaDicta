@@ -28,8 +28,6 @@
 		18AABBCC0011223344556604 /* NetworkingMocks in Frameworks */ = {isa = PBXBuildFile; productRef = 18AABBCC0011223344556603 /* NetworkingMocks */; };
 		18B497E52F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
 		18B497E62F26822400538830 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 18B497E42F26822400538830 /* Settings.bundle */; };
-		18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497EF2F268B2700538830 /* FirebaseAnalytics */; };
-		18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 18B497F12F268B2700538830 /* FirebaseCrashlytics */; };
 		18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = 18B89BC22FB875530007FA96 /* TranscriptionKit */; };
 		18B8BEB12FB8BD7D0007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8BEB02FB8BD7D0007FA96 /* DesignSystem */; };
 		18B8CF2C2FB8C4690007FA96 /* DesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = 18B8CF2B2FB8C4690007FA96 /* DesignSystem */; };
@@ -264,7 +262,6 @@
 		186E24542EA199EF00B19EDF /* Exceptions for "VivaDicta" folder in "VivaDictaTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"GoogleService-Info.plist",
 				Utilities/LoggerExtension.swift,
 			);
 			target = 18351E562E634FF000944940 /* VivaDictaTests */;
@@ -280,7 +277,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/FileManager+Directories.swift",
-				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
@@ -305,7 +301,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"Extensions/FileManager+Directories.swift",
-				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
@@ -373,7 +368,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppIntents/ToggleRecordIntent.swift,
-				"GoogleService-Info.plist",
 				Models/VivaDictaLiveActivityAttributes.swift,
 				PrivacyInfo.xcprivacy,
 				Utilities/LoggerExtension.swift,
@@ -385,7 +379,6 @@
 			membershipExceptions = (
 				Assets.xcassets,
 				"Extensions/FileManager+Directories.swift",
-				"GoogleService-Info.plist",
 				Models/CloudModel.swift,
 				Models/ParakeetModel.swift,
 				Models/TranscriptionModel.swift,
@@ -515,8 +508,6 @@
 				18AABBCC0011223344556602 /* Networking in Frameworks */,
 				18E1B4AD2E8C875000BE8A11 /* KeyboardKit in Frameworks */,
 				18F75FBE2FB79A2B00280269 /* TranscriptionCore in Frameworks */,
-				18B497F22F268B2700538830 /* FirebaseCrashlytics in Frameworks */,
-				18B497F02F268B2700538830 /* FirebaseAnalytics in Frameworks */,
 				188E02572FC3BCB4007B8BC1 /* AudioRecording in Frameworks */,
 				18C7D0AC2FEBD86F0041C086 /* MLXLLM in Frameworks */,
 				18B89BC32FB875530007FA96 /* TranscriptionKit in Frameworks */,
@@ -711,7 +702,6 @@
 				180E1D6C2E4A994800AE33B1 /* Embed Frameworks */,
 				18E1B4AA2E8C6FF400BE8A11 /* Embed Foundation Extensions */,
 				18BA24142F7ED0D700C4F68B /* Embed Watch Content */,
-				18B497F32F268D9600538830 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -729,8 +719,6 @@
 			name = VivaDicta;
 			packageProductDependencies = (
 				18E1B4AC2E8C875000BE8A11 /* KeyboardKit */,
-				18B497EF2F268B2700538830 /* FirebaseAnalytics */,
-				18B497F12F268B2700538830 /* FirebaseCrashlytics */,
 				1879FD9F2F8C088E00952CF9 /* LumoKit */,
 				186C057E2FB779AA00102432 /* Keychain */,
 				8412CA347E0626D9F232A9F9 /* TextProcessing */,
@@ -1021,7 +1009,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				18E1B4AB2E8C875000BE8A11 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
-				18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				1879FD9E2F8C088E00952CF9 /* XCRemoteSwiftPackageReference "LumoKit" */,
 				18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
@@ -1128,31 +1115,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		18B497F32F268D9600538830 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
-				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
-				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Skip Crashlytics dSYM upload for Debug builds\nif [ \"$CONFIGURATION\" == \"Debug\" ]; then\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		181D04D32E3E55E400D357A6 /* Sources */ = {
@@ -2444,14 +2406,6 @@
 				version = 3.3.0;
 			};
 		};
-		18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.8.0;
-			};
-		};
 		18C7D0A82FEBD86F0041C086 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
@@ -2543,16 +2497,6 @@
 		18AABBCC0011223344556603 /* NetworkingMocks */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkingMocks;
-		};
-		18B497EF2F268B2700538830 /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
-		};
-		18B497F12F268B2700538830 /* FirebaseCrashlytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 18B497EE2F268B2700538830 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
 		};
 		18B89BC22FB875530007FA96 /* TranscriptionKit */ = {
 			isa = XCSwiftPackageProductDependency;

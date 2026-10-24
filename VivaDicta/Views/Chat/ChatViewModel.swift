@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Analytics
 import FoundationModels
 import SwiftData
 import os
@@ -147,14 +146,12 @@ final class ChatViewModel {
     let transcription: Transcription
     private let aiService: any AIChatService
     private let modelContext: ModelContext
-    private let analytics: any AnalyticsService
     private var streamingTask: Task<Void, Never>?
     private var pendingUserMessage: ChatMessage?
     private let notesSearchToolCaptureID = UUID()
     private let webSearchToolCaptureID = UUID()
     private var successfulReplyCount = 0
     private var hasRequestedReviewForSession = false
-    private var hasLoggedConversationStart = false
 
     /// The note text for this conversation.
     var assembledNoteText: String {
@@ -163,15 +160,13 @@ final class ChatViewModel {
 
     // MARK: - Init
 
-    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext, analytics: any AnalyticsService = DefaultAnalyticsService.live) {
+    init(conversation: ChatConversation, transcription: Transcription, aiService: any AIChatService, modelContext: ModelContext) {
         self.conversation = conversation
         self.transcription = transcription
         self.aiService = aiService
         self.modelContext = modelContext
-        self.analytics = analytics
 
         loadMessages()
-        hasLoggedConversationStart = messages.contains { $0.role == "user" }
         noteExceedsAppleFMContext = Self.estimateNoteExceedsAppleFM(
             noteText: assembledNoteText,
             systemPrompt: ChatContextManager.chatSystemPrompt
@@ -240,23 +235,6 @@ final class ChatViewModel {
         )
         pendingUserMessage = userMessage
         messages.append(userMessage)
-
-        let turnCount = messages.filter { $0.role == "user" }.count
-        if !hasLoggedConversationStart {
-            analytics.track(.chatConversationStarted(
-                chatType: .singleNote,
-                provider: provider.rawValue,
-                model: model,
-                noteCount: nil
-            ))
-            hasLoggedConversationStart = true
-        }
-        analytics.track(.chatMessageSent(
-            chatType: .singleNote,
-            provider: provider.rawValue,
-            model: model,
-            turnCount: turnCount
-        ))
 
         isStreaming = true
         streamingText = ""

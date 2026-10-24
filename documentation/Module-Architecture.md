@@ -151,7 +151,7 @@ graph BT
 | `Presets` | core | Preset domain types + management (Regular, Summary, ...). | `PresetsMocks` |
 | `TranscriptionCore` | core | Pure protocol + value types: `TranscriptionService`, `TranscriptionServiceResult`. | n/a |
 | `AICore` | core | AI-stack API + kernel (Foundation only): `AITextProvider` protocol, `AIProvider` id enum, `EnhancementError`, `AIEnhancementOutputFilter`, `ReasoningConfig`, Apple FM sampling types. | n/a |
-| `Analytics` | core | `AnalyticsService` protocol + `AnalyticsEvent` catalogue (stable Firebase event names/params). Pure Foundation, no deps. `DefaultAnalyticsService` (Firebase) stays app-side. | `AnalyticsMocks` |
+| `Analytics` | core | `AnalyticsService` protocol + `AnalyticsEvent` (single case, `unrecognizedHostApp`). Pure Foundation, no deps. `DefaultAnalyticsService` (POSTs unrecognized keyboard host bundle IDs to vivadicta.com) stays app-side. | `AnalyticsMocks` |
 | `TextProcessing` | core | Pure text transforms: `TextFormatter` (paragraph chunking), `TranscriptionOutputFilter` (filler/hallucination strip, `hasMeaningfulContent`, trailing-period strip), `LanguageDetector`. Foundation + NaturalLanguage, no deps. | n/a |
 | `AppGroup` | core | App-Group coordination keys shared between the app and extensions. | n/a |
 | `DesignSystem` | core | SwiftUI design tokens, colors, typography, shared components. | n/a |

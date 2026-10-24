@@ -6,7 +6,6 @@
 //
 
 import AVFoundation
-import Analytics
 import Foundation
 import Keychain
 import os
@@ -59,7 +58,6 @@ final class LiveTranslationService {
     /// uses these so save-as-note labels never reflect a picker change made
     /// after Stop and before tapping Save.
     private(set) var sessionSourceLanguage: LiveTranslationLanguage = .english
-    private var sessionStartedAt: Date?
     private(set) var sessionTargetLanguage: LiveTranslationLanguage = .english
 
     init(keychain: any KeychainService = DefaultKeychainService()) {
@@ -147,13 +145,6 @@ final class LiveTranslationService {
         // we'd revive a session that's already been torn down by stop()/fail().
         if status == .starting {
             status = .running
-            sessionStartedAt = Date()
-            DefaultAnalyticsService.live.track(.liveTranslationStarted(
-                sourceLanguage: config.sourceLanguage.rawValue,
-                targetLanguage: config.targetLanguage.rawValue,
-                ttsEnabled: config.ttsEnabled,
-                voice: config.ttsVoice
-            ))
         }
     }
 
@@ -180,20 +171,9 @@ final class LiveTranslationService {
 
     func stop() async {
         guard status == .running || status == .starting else { return }
-        let wasRunning = status == .running
         status = .stopping
         await teardown()
         status = .idle
-
-        if wasRunning, let startedAt = sessionStartedAt {
-            DefaultAnalyticsService.live.track(.liveTranslationStopped(
-                durationSeconds: Date().timeIntervalSince(startedAt),
-                originalTokenCount: originalTokens.count,
-                translatedTokenCount: translatedTokens.count,
-                ttsEnabled: config.ttsEnabled
-            ))
-        }
-        sessionStartedAt = nil
     }
 
     func transcriptSnapshot() -> (
@@ -458,19 +438,14 @@ final class LiveTranslationService {
 
     private func fail(_ error: Error) async {
         let message: String
-        let category: String
         if let translationError = error as? LiveTranslationError {
             message = translationError.errorDescription ?? "Unknown error"
-            category = translationError.analyticsCategory
         } else {
             message = error.localizedDescription
-            category = "unknown"
         }
         logger.logError("Live translation failed: \(message)")
         await teardown()
         status = .failed(message)
-        sessionStartedAt = nil
-        DefaultAnalyticsService.live.track(.liveTranslationFailed(reason: category))
     }
 
     private func isFailed(_ status: LiveTranslationStatus) -> Bool {

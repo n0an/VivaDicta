@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import Analytics
-import AnalyticsMocks
 import SwiftData
 import Testing
 @testable import VivaDicta
@@ -42,11 +40,10 @@ struct ChatViewModelTests {
         let sut: ChatViewModel
         let mockAIService: MockAIChatService
         let container: ModelContainer
-        let analytics: MockAnalyticsService
         let conversation: ChatConversation
     }
 
-    private func makeFixture(stubMode: VivaMode = .defaultMode, analytics: MockAnalyticsService = MockAnalyticsService()) throws -> Fixture {
+    private func makeFixture(stubMode: VivaMode = .defaultMode) throws -> Fixture {
         let container = try makeContainer()
         let conversation = ChatConversation()
         let transcription = Transcription(text: "Test note", audioDuration: 5)
@@ -60,10 +57,9 @@ struct ChatViewModelTests {
             conversation: conversation,
             transcription: transcription,
             aiService: mockAIService,
-            modelContext: container.mainContext,
-            analytics: analytics
+            modelContext: container.mainContext
         )
-        return Fixture(sut: sut, mockAIService: mockAIService, container: container, analytics: analytics, conversation: conversation)
+        return Fixture(sut: sut, mockAIService: mockAIService, container: container, conversation: conversation)
     }
 
     /// A mode wired to a configured cloud provider, so `sendMessage` clears its
@@ -93,11 +89,9 @@ struct ChatViewModelTests {
         #expect(fixture.sut.selectedModel == nil)
     }
 
-    /// The capability the Analytics seam unlocks: assert which events fired by
-    /// injecting a recording `MockAnalyticsService` (impossible with the old
-    /// static facade). `sendMessage` logs conversation-started + message-sent
+    /// `sendMessage` appends the user message and flips `isStreaming`
     /// synchronously, before the streaming task runs.
-    @Test func sendMessage_tracksConversationStartedAndMessageSent() async throws {
+    @Test func sendMessage_appendsUserMessageAndStartsStreaming() async throws {
         let fixture = try makeFixture(
             stubMode: makeMode(provider: .openAI, model: "gpt-4")
         )
@@ -105,9 +99,9 @@ struct ChatViewModelTests {
 
         fixture.sut.sendMessage()
 
-        // Events fire synchronously, before the streaming task starts.
-        #expect(fixture.analytics.trackedEventNames.contains("chat_conversation_started"))
-        #expect(fixture.analytics.trackedEventNames.contains("chat_message_sent"))
+        #expect(fixture.sut.messages.last?.role == "user")
+        #expect(fixture.sut.messages.last?.content == "hello there")
+        #expect(fixture.sut.isStreaming)
 
         // Drain the background streaming task so it finishes while the in-memory
         // container is still alive (otherwise it touches a reset ModelContext).
@@ -148,7 +142,6 @@ struct ChatViewModelTests {
         #expect(fixture.sut.messages.isEmpty)
         #expect(fixture.sut.errorMessage == nil)
         #expect(fixture.sut.isStreaming == false)
-        #expect(fixture.analytics.trackedEventNames.contains("chat_message_sent") == false)
     }
 
     @Test func sendMessage_whitespaceOnlyInput_isNoOp() throws {

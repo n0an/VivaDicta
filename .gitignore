@@ -70,8 +70,7 @@ fastlane/.env
 appcenter-pre-build.sh
 appcenter-post-build.sh
 
-# Firebase
-GoogleService-Info.plist
+# Crash logs
 *.crash
 
 # SPM build artifacts

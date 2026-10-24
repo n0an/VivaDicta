@@ -188,7 +188,7 @@ class AudioPlayerManager: NSObject, AVAudioPlayerDelegate {
     // callbacks on the run loop of the thread that started playback - main here,
     // since playback always starts on the main actor - so the `@objc` thunk's
     // main-actor precondition passes. If playback is ever started off the main
-    // actor, this would hit the same trap as the MetricKit subscriber and must
+    // actor, that precondition traps, and this must
     // become `nonisolated` with a `Task { @MainActor in ... }` hop (see
     // RecordViewModel.audioPlayerDidFinishPlaying).
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {

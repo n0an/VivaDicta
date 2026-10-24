@@ -53,7 +53,7 @@ run_test_plan() {
 
 # Print the first-party overall % from the result bundle. Sums ONLY the 16
 # modules + app + 4 extensions, so it stays meaningful even when the test plan
-# gathers coverage for ALL targets (Firebase/Google/KeyboardKit/etc., which
+# gathers coverage for ALL targets (KeyboardKit/LumoKit/Transformers/etc., which
 # would otherwise inflate the raw bundle total).
 first_party_overall() {
   xcrun xccov view --report --json "$RESULT" | python3 -c '
