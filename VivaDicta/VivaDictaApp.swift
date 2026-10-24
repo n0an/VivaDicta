@@ -724,6 +724,21 @@ struct VivaDictaApp: App {
         "com.tencent.mqq",              // QQ - qm.qq.com catch-all is also claimed by TIM, so iOS picks between them
         "do.fizzy.app.ios",             // Fizzy - AASA catch-all, but the root is the board and would pull the user out of the card
 
+        // Checked 2026-10-24: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "app.spine.Spine",              // Spine audiobook player - spine.merifiles.com serves no AASA
+        "com.5n6.LiberaGPT",            // LiberaGPT - liberagpt.com serves no AASA
+        "com.alipay.iphoneclient",      // Alipay - render.alipay.com AASA covers redirector paths only (p/s/i/, p/s/ulink/)
+        "com.antonnovoselov.VivaDicta.XTMY7H3WVC", // Own app, team-ID-suffixed build
+        "com.apple.VoiceMemos",         // Voice Memos - no documented scheme
+        "com.byoklab.gitdo",            // not on the App Store, nothing to verify
+        "com.duckduckgo.mobile.ios",    // DuckDuckGo - every own scheme is an action (ddgNewSearch, ddgFireButton...), http/https are shared, and the AASA catch-all root is a new search
+        "com.google.AIEdgeGallery",     // Google AI Edge Gallery - no known scheme; google-ai-edge/gallery carries no iOS source with this id
+        "com.noteful-technologies.noteful", // Noteful - no seller site, no AASA, no known scheme
+        "com.slack.slackmdm",           // Slack for EMM - slack.com /app/open is also claimed by the main Slack app, so iOS picks between them
+        "com.teacapps.QRbot",           // QRbot - qrbot.net AASA covers the x-callback-url scan/create actions only
+        "com.whoop.iphone",             // WHOOP - AASA has no root path; /home would pull the user out of the coach chat or journal
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -1004,6 +1019,13 @@ struct VivaDictaApp: App {
             "RU.WILDBERRIES.MOBILEAPP": "https://www.wildberries.ru/",       // Wildberries; AASA lists / for the bundle
             "xyz.nextalone.nagram": "nagram://",                             // Nagram; Telegram/Telegram-iOS/Info.plist in NextAlone/Nagram-iOS; NOT tg://, shared with Telegram
 
+            // 2026-10-24. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.comuto.comuto": "https://www.blablacar.fr/",                // BlaBlaCar; AASA lists / for the bundle (www.blablacar.com serves none)
+            "com.walmart.electronics": "https://www.walmart.com/",           // Walmart; AASA component /
+            "fr.leboncoin.Leboncoin": "https://www.leboncoin.fr/",           // leboncoin; AASA path /
+            "im.vector.app": "element://",                                   // Element Classic; Config/AppIdentifiers.xcconfig APPLICATION_SCHEME in element-hq/element-ios; NOT matrix://, shared with other Matrix clients
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -1036,6 +1058,10 @@ struct VivaDictaApp: App {
             "com.kindroid.app": "https://kindroid-ai.firebaseapp.com/", // Kindroid; 2026-10-17, AASA /* on the Firebase auth domain; kindroid.ai serves no AASA
             "com.linguee.DeepLMobileTranslator": "https://www.deepl.com/ul/", // DeepL; 2026-10-17, AASA path /ul/* only, no root path
             "io.elevenlabs.readerapp": "https://elevenlabs.io/readerapp", // ElevenReader; 2026-10-17, AASA lists the exact path /readerapp
+            "com.lukilabs.lukiapp": "craftdocs://",           // Craft; 2026-10-24, vendor docs (support.craft.do "Using URL Scheme") show only craftdocs://<action> forms
+            "com.fogcreek.trello": "trello://",               // Trello; 2026-10-24, Atlassian support "Automate with URL Scheme" shows only trello://x-callback-url/... forms; AASA has no root path
+            "com.kagi.kagiiOS": "orion://",                   // Orion Browser; 2026-10-24, help.kagi.com technical docs show only orion://open-url and orion://search forms
+            "org.zulip.Zulip": "zulip://",                    // Zulip; 2026-10-24, ios/Runner/Info.plist in zulip/zulip-flutter, but the app handles only zulip://login, so a bare open just foregrounds it
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
