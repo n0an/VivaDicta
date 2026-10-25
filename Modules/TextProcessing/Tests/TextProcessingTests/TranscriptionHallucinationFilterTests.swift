@@ -137,6 +137,63 @@ struct TranscriptionHallucinationFilterTests {
         #expect(sut == input)
     }
 
+    // MARK: Tail hallucinations (whole transcript or final sentence)
+
+    @Test(arguments: [
+        "Привет, как дела? Спасибо за просмотр!",
+        "Привет, как дела? Спасибо за субтитры!",
+        "Привет, как дела? ПОДПИШИСЬ НА КАНАЛ!",
+        "Привет, как дела?\nВЕСЕЛАЯ МУЗЫКА"
+    ])
+    func filter_tailPhraseAfterRealSpeech_keepsSpeech(_ input: String) {
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == "Привет, как дела?", "expected the tail of \(input) to be stripped, got \(sut)")
+    }
+
+    /// Each pass exposes the next fabricated sentence, so stacked tails go too.
+    @Test func filter_stackedTailPhrases_allStripped() {
+        let sut = TranscriptionOutputFilter.filter(
+            "Привет, как дела? Спасибо за субтитры! Спасибо за просмотр!",
+            language: "ru"
+        )
+
+        #expect(sut == "Привет, как дела?")
+    }
+
+    /// The phrase has to start its own sentence; inside one it is real speech.
+    @Test func filter_tailPhraseInsideFinalSentence_isKept() {
+        let input = "Я хотел сказать спасибо за просмотр!"
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == input)
+    }
+
+    /// Regression: an open-ended suffix let the trailing sweep run past the
+    /// hallucinated sentence and delete the real one after it.
+    @Test func filter_tailPhraseFollowedByRealSentence_isKept() {
+        let input = "Привет. Смотрите продолжение. Встреча завтра в десять."
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == input)
+    }
+
+    @Test func filter_smotriteProdolzhenieTail_stripped() {
+        let sut = TranscriptionOutputFilter.filter(
+            "Привет, как дела? Смотрите продолжение на нашем канале!",
+            language: "ru"
+        )
+
+        #expect(sut == "Привет, как дела?")
+    }
+
+    @Test func filter_soundLabelWordInsideRealSpeech_isKept() {
+        let input = "У меня третий день сильный кашель."
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == input)
+    }
+
     @Test func filter_soundLabelAlone_returnsEmpty() {
         #expect(TranscriptionOutputFilter.filter("ВЕСЕЛАЯ МУЗЫКА", language: "ru").isEmpty)
         #expect(TranscriptionOutputFilter.filter("ЛАЙ СОБАК", language: "ru").isEmpty)
