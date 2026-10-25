@@ -83,7 +83,10 @@ public struct TranscriptionOutputFilter {
         // Also a sentence hallucination above; kept here so a silence-only
         // clip with quotes or a "?" around it is still dropped whole.
         #"Продолжение\s+следует\.{0,3}"#,
-        #"Смотрите\s+продолжение[^\n]{0,60}"#,
+        // One sentence only: the tail sweep anchors at the end of the text,
+        // so a suffix that crossed a terminator would swallow the real speech
+        // that follows.
+        #"Смотрите\s+продолжение[^\n.!?…]{0,60}"#,
         #"ПОДПИШИСЬ\s+НА\s+КАНАЛ!?"#,
         // All-caps sound labels the model emits over noise.
         #"(?:ВЕС[ЕЁ]ЛАЯ|СПОКОЙНАЯ|ГРУСТНАЯ|ТРЕВОЖНАЯ)\s+(?:МУЗЫКА|МЕЛОДИЯ)"#,

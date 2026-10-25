@@ -169,6 +169,24 @@ struct TranscriptionHallucinationFilterTests {
         #expect(sut == input)
     }
 
+    /// Regression: an open-ended suffix let the trailing sweep run past the
+    /// hallucinated sentence and delete the real one after it.
+    @Test func filter_tailPhraseFollowedByRealSentence_isKept() {
+        let input = "Привет. Смотрите продолжение. Встреча завтра в десять."
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == input)
+    }
+
+    @Test func filter_smotriteProdolzhenieTail_stripped() {
+        let sut = TranscriptionOutputFilter.filter(
+            "Привет, как дела? Смотрите продолжение на нашем канале!",
+            language: "ru"
+        )
+
+        #expect(sut == "Привет, как дела?")
+    }
+
     @Test func filter_soundLabelWordInsideRealSpeech_isKept() {
         let input = "У меня третий день сильный кашель."
         let sut = TranscriptionOutputFilter.filter(input, language: "ru")
