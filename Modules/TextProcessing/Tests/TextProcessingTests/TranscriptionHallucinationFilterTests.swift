@@ -123,6 +123,13 @@ struct TranscriptionHallucinationFilterTests {
         #expect(sut == "Первая мысль. Вторая мысль.")
     }
 
+    @Test(arguments: ["«Продолжение следует...»", "Продолжение следует?"])
+    func filter_prodolzhenieSleduetAloneWithWrapping_returnsEmpty(_ input: String) {
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut.isEmpty, "expected \(input) to be stripped, got \(sut)")
+    }
+
     @Test func filter_prodolzhenieSleduetStartingRealSentence_isKept() {
         let input = "Сезон закончился. Продолжение следует в следующем году."
         let sut = TranscriptionOutputFilter.filter(input, language: "ru")

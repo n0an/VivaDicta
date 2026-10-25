@@ -74,6 +74,9 @@ public struct TranscriptionOutputFilter {
     private static let standaloneHallucinations = [
         #"Спасибо\s+за\s+субтитры!?"#,
         #"Спасибо\s+за\s+просмотр!?"#,
+        // Also a sentence hallucination below; kept here so a silence-only
+        // clip with quotes or a "?" around it is still dropped whole.
+        #"Продолжение\s+следует\.{0,3}"#,
         #"Смотрите\s+продолжение[^\n]{0,60}"#,
         #"ПОДПИШИСЬ\s+НА\s+КАНАЛ!?"#,
         // All-caps sound labels the model emits over noise.
