@@ -50,6 +50,19 @@ public struct TranscriptionOutputFilter {
         #"ترجمة\s+نانسي\s+قنقر"#
     ]
 
+    /// Hallucinations stripped wherever they stand as a **sentence of their
+    /// own**: at the start of the text or after a sentence terminator, and
+    /// ending the text or closed by terminal punctuation.
+    ///
+    /// "Продолжение следует..." is a memorized episode outro that lands after
+    /// real speech when a recording ends in silence. As a whole-transcript
+    /// match it was missed in exactly that case, and nobody dictates it as a
+    /// sentence. The sentence boundary keeps real speech that merely contains
+    /// the words: "продолжение следует в другой раз" is untouched.
+    private static let sentenceHallucinations = [
+        #"Продолжение\s+следует"#
+    ]
+
     /// Hallucinations that are ordinary phrases in isolation, so they are only
     /// dropped when they are the **entire** transcript. "Спасибо за просмотр!"
     /// mid-sentence is somebody talking; on its own after a silent recording it
@@ -61,7 +74,6 @@ public struct TranscriptionOutputFilter {
     private static let standaloneHallucinations = [
         #"Спасибо\s+за\s+субтитры!?"#,
         #"Спасибо\s+за\s+просмотр!?"#,
-        #"Продолжение\s+следует\.{0,3}"#,
         #"Смотрите\s+продолжение[^\n]{0,60}"#,
         #"ПОДПИШИСЬ\s+НА\s+КАНАЛ!?"#,
         // All-caps sound labels the model emits over noise.
@@ -200,9 +212,9 @@ public struct TranscriptionOutputFilter {
 
     /// Removes memorized subtitle-credit hallucinations.
     ///
-    /// Signature strings go anywhere in the text; the ambiguous ones only count
-    /// when they are the whole transcript, so real speech that happens to end
-    /// with "продолжение следует" survives.
+    /// Signature strings go anywhere in the text, sentence hallucinations
+    /// wherever they form a sentence of their own, and the ambiguous ones only
+    /// count when they are the whole transcript.
     private static func stripHallucinations(_ text: String) -> String {
         var result = text
 
@@ -210,6 +222,15 @@ public struct TranscriptionOutputFilter {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { continue }
             let range = NSRange(result.startIndex..., in: result)
             result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "")
+        }
+
+        for pattern in sentenceHallucinations {
+            // Group 1 keeps the preceding terminator. The tail is either the
+            // end of the text or terminal punctuation followed by more speech.
+            let sentence = #"(^|[.!?…])\s*(?:"# + pattern + #")(?:[.!…]*\s*$|[.!…]+(?=\s))"#
+            guard let regex = try? NSRegularExpression(pattern: sentence, options: .caseInsensitive) else { continue }
+            let range = NSRange(result.startIndex..., in: result)
+            result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$1")
         }
 
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)

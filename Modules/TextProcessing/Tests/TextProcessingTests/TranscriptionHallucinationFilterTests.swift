@@ -97,6 +97,39 @@ struct TranscriptionHallucinationFilterTests {
         #expect(sut == input)
     }
 
+    // MARK: Sentence hallucinations (stripped as a sentence of their own)
+
+    @Test(arguments: [
+        "Привет, как дела? Продолжение следует...",
+        "Привет, как дела? Продолжение следует…",
+        "Привет, как дела? Продолжение следует.",
+        "Привет, как дела? продолжение следует",
+        "Привет, как дела?\nПродолжение следует..."
+    ])
+    func filter_prodolzhenieSleduetTrailingRealSpeech_keepsSpeech(_ input: String) {
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == "Привет, как дела?", "expected the tail of \(input) to be stripped, got \(sut)")
+    }
+
+    /// A silent gap mid-recording produces the same outro between two real
+    /// sentences.
+    @Test func filter_prodolzhenieSleduetBetweenSentences_stripped() {
+        let sut = TranscriptionOutputFilter.filter(
+            "Первая мысль. Продолжение следует... Вторая мысль.",
+            language: "ru"
+        )
+
+        #expect(sut == "Первая мысль. Вторая мысль.")
+    }
+
+    @Test func filter_prodolzhenieSleduetStartingRealSentence_isKept() {
+        let input = "Сезон закончился. Продолжение следует в следующем году."
+        let sut = TranscriptionOutputFilter.filter(input, language: "ru")
+
+        #expect(sut == input)
+    }
+
     @Test func filter_soundLabelAlone_returnsEmpty() {
         #expect(TranscriptionOutputFilter.filter("ВЕСЕЛАЯ МУЗЫКА", language: "ru").isEmpty)
         #expect(TranscriptionOutputFilter.filter("ЛАЙ СОБАК", language: "ru").isEmpty)
