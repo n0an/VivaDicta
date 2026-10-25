@@ -63,18 +63,24 @@ public struct TranscriptionOutputFilter {
         #"Продолжение\s+следует"#
     ]
 
-    /// Hallucinations that are ordinary phrases in isolation, so they are only
-    /// dropped when they are the **entire** transcript. "Спасибо за просмотр!"
-    /// mid-sentence is somebody talking; on its own after a silent recording it
-    /// is the model filling a void.
+    /// Hallucinations that are ordinary phrases mid-sentence, so position is
+    /// what gives them away. "Спасибо за просмотр!" inside a sentence is
+    /// somebody talking; arriving as the last sentence, or as the whole
+    /// transcript, it is the model filling the silence the recording ended on.
+    ///
+    /// Dropped in both of those positions. The trailing case is the one that
+    /// actually occurs: a silent tail is appended to real speech far more often
+    /// than it arrives alone. To keep real speech safe the phrase must start
+    /// its own sentence - preceded by a sentence terminator or the start of the
+    /// text - so "я думаю, спасибо за просмотр" is left alone.
     ///
     /// English equivalents ("Thanks for watching!", "Thank you.") are
     /// deliberately absent: this is a dictation app, and those are things
     /// people genuinely dictate on their own.
-    private static let standaloneHallucinations = [
+    private static let tailHallucinations = [
         #"Спасибо\s+за\s+субтитры!?"#,
         #"Спасибо\s+за\s+просмотр!?"#,
-        // Also a sentence hallucination below; kept here so a silence-only
+        // Also a sentence hallucination above; kept here so a silence-only
         // clip with quotes or a "?" around it is still dropped whole.
         #"Продолжение\s+следует\.{0,3}"#,
         #"Смотрите\s+продолжение[^\n]{0,60}"#,
@@ -217,7 +223,8 @@ public struct TranscriptionOutputFilter {
     ///
     /// Signature strings go anywhere in the text, sentence hallucinations
     /// wherever they form a sentence of their own, and the ambiguous ones only
-    /// count when they are the whole transcript.
+    /// when they are the whole transcript or its final sentence - see
+    /// `tailHallucinations` for why position is the tell.
     private static func stripHallucinations(_ text: String) -> String {
         var result = text
 
@@ -237,13 +244,40 @@ public struct TranscriptionOutputFilter {
         }
 
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
-        for pattern in standaloneHallucinations {
+        for pattern in tailHallucinations {
             let anchored = "^\\W*(?:\(pattern))\\W*$"
             guard let regex = try? NSRegularExpression(pattern: anchored, options: .caseInsensitive) else { continue }
             let range = NSRange(trimmed.startIndex..., in: trimmed)
             if regex.firstMatch(in: trimmed, options: [], range: range) != nil {
                 return ""
             }
+        }
+
+        return stripTrailingHallucinations(result)
+    }
+
+    /// Strips hallucinated phrases sitting as the last sentence of otherwise
+    /// real speech.
+    ///
+    /// Group 1 keeps the terminator that ended the real sentence, so only the
+    /// fabricated tail goes. Several can stack ("Спасибо за субтитры! Спасибо
+    /// за просмотр!"), and each pass exposes the next one, so the sweep repeats
+    /// until nothing more matches - bounded, since a pass that changes nothing
+    /// ends it.
+    private static func stripTrailingHallucinations(_ text: String) -> String {
+        var result = text
+
+        for _ in 0..<tailHallucinations.count {
+            let before = result
+
+            for pattern in tailHallucinations {
+                let trailing = "(^|[.!?…\\n])\\s*(?:\(pattern))[\\s.!?…]*$"
+                guard let regex = try? NSRegularExpression(pattern: trailing, options: .caseInsensitive) else { continue }
+                let range = NSRange(result.startIndex..., in: result)
+                result = regex.stringByReplacingMatches(in: result, options: [], range: range, withTemplate: "$1")
+            }
+
+            if result == before { break }
         }
 
         return result
