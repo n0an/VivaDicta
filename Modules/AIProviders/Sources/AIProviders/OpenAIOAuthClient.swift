@@ -25,9 +25,9 @@ public enum OpenAIOAuthClient {
 
     /// Models the Codex endpoint actually serves, verified against it on
     /// 2026-08-27; the GPT-6 generation verified on 2026-09-28 and gpt-6.1-sol
-    /// on 2026-10-03, the whole list re-checked on 2026-10-11 (an id it does not
-    /// serve comes back as HTTP 400 "not supported when using Codex with a
-    /// ChatGPT account").
+    /// on 2026-10-03, the whole list re-checked on 2026-10-11 and gpt-6.1-terra
+    /// on 2026-10-31 (an id it does not serve comes back as HTTP 400 "not
+    /// supported when using Codex with a ChatGPT account").
     ///
     /// Verify with the request this client sends, not with the Codex CLI: the
     /// endpoint hides new models from CLI versions older than their launch, so
@@ -47,6 +47,7 @@ public enum OpenAIOAuthClient {
     public static let supportedModels: [String] = [
         "gpt-6-astra",
         "gpt-6.1-sol",
+        "gpt-6.1-terra",
         "gpt-6-sol",
         "gpt-6-luna",
         "gpt-5.6-sol",
