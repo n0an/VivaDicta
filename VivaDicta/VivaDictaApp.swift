@@ -729,6 +729,23 @@ struct VivaDictaApp: App {
         "com.teacapps.QRbot",           // QRbot - qrbot.net AASA covers the x-callback-url scan/create actions only
         "com.whoop.iphone",             // WHOOP - AASA has no root path; /home would pull the user out of the coach chat or journal
 
+        // Checked 2026-10-31: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "apify.privateai.macos.prod",   // Enclave - enclaveai.app serves no AASA, closed source
+        "app.atomicchat.com",           // Atomic Chat - AtomicBot-ai/Atomic-Chat holds only the desktop build (chat.atomic.app); atomic.chat AASA does not list this id
+        "com.blubox.prod",              // blu box - no seller site, no known scheme
+        "com.bookfusion.bookfusion",    // BookFusion - AASA covers /highlights/*/open only
+        "com.deewarmarket.ios",         // Deewar - deewarmarket.com serves no AASA
+        "com.gluegroups.glue",          // Glue - AASA catch-all, but the root is the inbox and would pull the user out of the thread
+        "com.kingdee.MyMoneyPro",       // 随手记Pro (Feidee) - feidee.com serves no AASA, no known scheme
+        "com.lucas.goals",              // not on the App Store, nothing to verify
+        "com.mocomediallc.fastfriend",  // DrugVokrug - drugvokrug.ru AASA root is shared with com.myfriends.live and com.myfriends.dv, so iOS picks between them
+        "com.mwaldman.loci-ai",         // Loci - lociai.app AASA covers /link pairing paths only
+        "com.spliiit.spliiit",          // Spliiit - spliiit.com serves no AASA
+        "com.starshipBattle.commander", // not on the App Store, nothing to verify
+        "de.caseprep.app",              // CasePrep - no seller site, no known scheme
+        "dk.simonbs.RunestoneEditor",   // Runestone - app source is closed (only the editor framework is open), runestone.app serves no AASA
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -1015,6 +1032,14 @@ struct VivaDictaApp: App {
             "com.walmart.electronics": "https://www.walmart.com/",           // Walmart; AASA component /
             "fr.leboncoin.Leboncoin": "https://www.leboncoin.fr/",           // leboncoin; AASA path /
             "im.vector.app": "element://",                                   // Element Classic; Config/AppIdentifiers.xcconfig APPLICATION_SCHEME in element-hq/element-ios; NOT matrix://, shared with other Matrix clients
+
+            // 2026-10-31. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.ebaykleinanzeigen.ebc": "https://www.kleinanzeigen.de/",    // Kleinanzeigen; AASA path / for the bundle
+            "com.ss.iphone.ugc.Aweme": "https://www.douyin.com/",            // Douyin; AASA path / for the bundle
+            "dev.herdr.HerdrChat": "herdrchat://",                           // HerdrChat; app.json in cobanov/herdrchat (Expo "scheme")
+            "ru.yandex.ytaxi": "https://go.yandex/",                         // Yandex Go; AASA path / for the bundle
+            "wiki.qaq.flow": "flowdown://",                                  // FlowDown; FlowDown/Resources/InfoPlist/Info-iOS.plist + Configuration/Base.xcconfig in Lakr233/FlowDown
 
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
