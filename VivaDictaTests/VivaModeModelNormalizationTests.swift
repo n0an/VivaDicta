@@ -65,6 +65,26 @@ struct VivaModeModelNormalizationTests {
         #expect(decoded.transcriptionModel == "gemini-3.1-pro-preview")
     }
 
+    /// The mode editor resets a selection it can't find in the catalog, so a
+    /// realtime mode saved under the previous Soniox generation has to come
+    /// out of decoding already on the current realtime slug.
+    @Test func decoder_rewritesRetiredSonioxRealtimeModelOnDecode() throws {
+        let payload: [String: Any] = [
+            "id": UUID().uuidString,
+            "name": "Legacy Soniox Realtime Mode",
+            "transcriptionProvider": "soniox",
+            "transcriptionModel": "stt-rt-v5",
+            "aiProvider": "openAI",
+            "aiModel": "gpt-5",
+            "aiEnhanceEnabled": false
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let decoded = try JSONDecoder().decode(VivaMode.self, from: data)
+
+        #expect(decoded.transcriptionModel == TranscriptionModelProvider.sonioxRealtimeModel)
+    }
+
     @Test func decoder_rewritesRetiredAIModelOnDecode() throws {
         let modeID = UUID()
         let payload: [String: Any] = [

@@ -230,14 +230,9 @@ struct VivaMode: Identifiable, Hashable, Codable {
             // mode saved with the realtime slug keeps streaming, and so the mode
             // editor - which resets a selection it can't find in the catalog to
             // the first model - doesn't quietly turn a realtime mode into async.
-            switch modelID {
-            case "stt-async-v4", "stt-async-v5":
-                return TranscriptionModelProvider.sonioxAsyncModel
-            case "stt-rt-v4", "stt-rt-v5":
-                return TranscriptionModelProvider.sonioxRealtimeModel
-            default:
-                return modelID
-            }
+            // The slugs live in `renamedCloudModels` only, so the next
+            // generation is added in one place.
+            return TranscriptionModelProvider.normalizedCloudModelName(modelID)
         default:
             return modelID
         }
