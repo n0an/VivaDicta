@@ -440,7 +440,7 @@ private struct LiveTranslationSessionView: View {
         let transcription = Transcription(
             text: combined,
             audioDuration: 0,
-            transcriptionModelName: "stt-rt-v4",
+            transcriptionModelName: TranscriptionModelProvider.sonioxRealtimeModel,
             transcriptionProviderName: TranscriptionModelProvider.soniox.rawValue,
             sourceTag: SourceTag.liveTranslation
         )

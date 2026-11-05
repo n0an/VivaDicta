@@ -217,10 +217,27 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// `TranscriptionManager.getCurrentTranscriptionModel()`'s exact lookup in `allCloudModels`
     /// and the user would get `TranscriptionError.transcriptionFailed` before any network call.
     static func normalizedTranscriptionModelID(_ modelID: String, provider: TranscriptionModelProvider) -> String {
-        guard provider == .gemini else { return modelID }
-        switch modelID {
-        case "gemini-3-pro-preview":
-            return "gemini-3.1-pro-preview"
+        switch provider {
+        case .gemini:
+            switch modelID {
+            case "gemini-3-pro-preview":
+                return "gemini-3.1-pro-preview"
+            default:
+                return modelID
+            }
+        case .soniox:
+            // Soniox replaces a whole generation at once. Rewrite on decode so a
+            // mode saved with the realtime slug keeps streaming, and so the mode
+            // editor - which resets a selection it can't find in the catalog to
+            // the first model - doesn't quietly turn a realtime mode into async.
+            switch modelID {
+            case "stt-async-v4", "stt-async-v5":
+                return TranscriptionModelProvider.sonioxAsyncModel
+            case "stt-rt-v4", "stt-rt-v5":
+                return TranscriptionModelProvider.sonioxRealtimeModel
+            default:
+                return modelID
+            }
         default:
             return modelID
         }

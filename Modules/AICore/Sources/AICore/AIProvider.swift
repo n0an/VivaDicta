@@ -413,7 +413,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
         case .openRouter:
             return "openai/gpt-oss-120b"
         case .soniox:
-            return "stt-async-v5"
+            return "stt-async-v6"
         case .gladia:
             return "solaria-1"
         case .speechmatics:

@@ -29,7 +29,13 @@ struct VivaModeModelNormalizationTests {
     @Test(arguments: [
         (input: "gemini-3-pro-preview", provider: TranscriptionModelProvider.gemini, expected: "gemini-3.1-pro-preview"),
         (input: "gemini-3.5-flash", provider: .gemini, expected: "gemini-3.5-flash"),
-        (input: "gemini-3-pro-preview", provider: .openAI, expected: "gemini-3-pro-preview")
+        (input: "gemini-3-pro-preview", provider: .openAI, expected: "gemini-3-pro-preview"),
+        (input: "stt-async-v5", provider: .soniox, expected: "stt-async-v6"),
+        (input: "stt-rt-v5", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-async-v4", provider: .soniox, expected: "stt-async-v6"),
+        (input: "stt-rt-v4", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-rt-v6", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-rt-v5", provider: .openAI, expected: "stt-rt-v5")
     ])
     func transcriptionModel_normalization(
         input: String,
