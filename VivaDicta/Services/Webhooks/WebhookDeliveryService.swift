@@ -83,14 +83,19 @@ final class WebhookDeliveryService {
         // Nothing pending: no need to spin up the background session. A relaunch
         // for background events creates it in `handleBackgroundEvents`.
         guard !items.isEmpty, let transport = ensureTransport() else { return }
-        if items.contains(where: \.isInFlight) {
+        // Snapshot the attempts in flight *before* awaiting the task list. A
+        // completion handled during the await can start a newer attempt that
+        // the list predates; only attempts that are still unchanged afterwards
+        // may be judged lost, or the same body would be uploaded twice.
+        let inFlightSnapshot = Dictionary(
+            uniqueKeysWithValues: items.filter(\.isInFlight).map { ($0.id, $0.attempts) }
+        )
+        if !inFlightSnapshot.isEmpty {
             let active = await transport.activeTags()
             for index in items.indices {
                 let item = items[index]
-                // Checked after the await: an item restarted meanwhile carries a
-                // newer attempt and is not mistaken for a lost one only if its
-                // task is listed, so compare against the current attempt.
                 guard item.isInFlight,
+                      inFlightSnapshot[item.id] == item.attempts,
                       !active.contains(WebhookTaskTag(itemID: item.id, attempt: item.attempts)) else { continue }
                 logger.logInfo("🪝 Re-arming outbox item \(item.id.uuidString.prefix(8)) - its upload task is gone")
                 items[index].isInFlight = false
@@ -184,7 +189,9 @@ final class WebhookDeliveryService {
         let currentDate = now()
         for index in items.indices where items[index].webhookID == webhookID {
             if items[index].isInFlight {
-                transport?.cancel(itemID: items[index].id)
+                // Cancel exactly the old attempt: cancellation is asynchronous,
+                // and the pump below starts a newer attempt of the same item.
+                transport?.cancel(tag: WebhookTaskTag(itemID: items[index].id, attempt: items[index].attempts))
                 items[index].isInFlight = false
             }
             items[index].nextAttemptAt = currentDate

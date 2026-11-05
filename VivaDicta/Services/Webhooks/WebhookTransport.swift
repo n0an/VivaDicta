@@ -59,6 +59,8 @@ nonisolated protocol WebhookTransport: AnyObject, Sendable {
     func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL, earliestBeginDate: Date?)
     /// Cancels every task of the item, whatever its attempt.
     func cancel(itemID: UUID)
+    /// Cancels only the task of one attempt, leaving newer attempts of the item alone.
+    func cancel(tag: WebhookTaskTag)
     /// Attempts that still have a running or scheduled task.
     func activeTags() async -> Set<WebhookTaskTag>
 }
@@ -113,6 +115,15 @@ nonisolated final class URLSessionWebhookTransport: WebhookTransport {
     func cancel(itemID: UUID) {
         session.getAllTasks { tasks in
             for task in tasks where WebhookTaskTag(taskDescription: task.taskDescription)?.itemID == itemID {
+                task.cancel()
+            }
+        }
+    }
+
+    func cancel(tag: WebhookTaskTag) {
+        let description = tag.taskDescription
+        session.getAllTasks { tasks in
+            for task in tasks where task.taskDescription == description {
                 task.cancel()
             }
         }

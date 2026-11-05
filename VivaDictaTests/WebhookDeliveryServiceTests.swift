@@ -333,6 +333,124 @@ final class WebhookDeliveryServiceTests {
     }
 }
 
+/// Scriptable transport for races the real `URLSession` cannot reproduce on demand.
+nonisolated final class FakeWebhookTransport: WebhookTransport {
+    struct State {
+        var handler: (@Sendable (WebhookTransportEvent) -> Void)?
+        var started: [WebhookTaskTag] = []
+        var cancelledTags: [WebhookTaskTag] = []
+        var cancelledItems: [UUID] = []
+        /// Runs inside `activeTags()` before it returns, to simulate events
+        /// arriving while the caller awaits the task list.
+        var duringActiveTags: (@Sendable () async -> Void)?
+        var activeTagsResult: Set<WebhookTaskTag> = []
+    }
+
+    let state = Mutex(State())
+    let supportsDeferredStart = true
+
+    func setEventHandler(_ handler: @escaping @Sendable (WebhookTransportEvent) -> Void) {
+        state.withLock { $0.handler = handler }
+    }
+
+    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL, earliestBeginDate: Date?) {
+        state.withLock { $0.started.append(tag) }
+    }
+
+    func cancel(itemID: UUID) {
+        state.withLock { $0.cancelledItems.append(itemID) }
+    }
+
+    func cancel(tag: WebhookTaskTag) {
+        state.withLock { $0.cancelledTags.append(tag) }
+    }
+
+    func activeTags() async -> Set<WebhookTaskTag> {
+        let (hook, result) = state.withLock { ($0.duringActiveTags, $0.activeTagsResult) }
+        await hook?()
+        return result
+    }
+
+    func complete(_ tag: WebhookTaskTag, statusCode: Int) {
+        let handler = state.withLock { $0.handler }
+        handler?(.completed(WebhookTransportResult(
+            tag: tag, statusCode: statusCode, retryAfter: nil, errorCode: nil, errorDescription: nil
+        )))
+    }
+}
+
+@MainActor
+@Suite(.serialized)
+final class WebhookDeliveryRaceTests {
+    private let directory = URL.temporaryDirectory.appending(path: "WebhookRaceTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    private let fake = FakeWebhookTransport()
+    private let store: WebhookStore
+    private let service: WebhookDeliveryService
+
+    init() {
+        store = WebhookStore(
+            defaults: UserDefaults(suiteName: "WebhookDeliveryRaceTests-\(UUID().uuidString)")!,
+            keychain: MockKeychainService()
+        )
+        let fake = fake
+        service = WebhookDeliveryService(
+            store: store,
+            storage: WebhookOutboxStorage(directory: directory),
+            makeTransport: { fake },
+            appVersion: "9.9.9"
+        )
+    }
+
+    deinit {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    private func enqueueOne() throws -> UUID {
+        let webhook = WebhookDefinition(name: "Meetings", url: URL(string: "https://example.com/hooks/meetings")!)
+        try store.save(webhook, token: .keep)
+        let input = WebhookPayloadInput(
+            transcriptionID: UUID(), text: "raw", enhancedText: nil, modeName: "Meeting",
+            timestamp: Date(), audioDuration: 1, language: nil, sourceTag: "app",
+            transcriptionModelName: nil, aiModelName: nil
+        )
+        let itemID = try #require(service.enqueue(input, to: webhook))
+        return itemID
+    }
+
+    @Test func resume_doesNotRestartAnAttemptStartedWhileItAwaitedTheTaskList() async throws {
+        let itemID = try enqueueOne()
+        let first = WebhookTaskTag(itemID: itemID, attempt: 1)
+        #expect(fake.state.withLock { $0.started } == [first])
+
+        // While resume() awaits the task list, attempt 1 fails with a 503 and the
+        // service schedules attempt 2. The list (taken earlier) contains neither.
+        let fake = fake
+        fake.state.withLock {
+            $0.duringActiveTags = {
+                fake.complete(first, statusCode: 503)
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
+
+        await service.resume()
+
+        let started = fake.state.withLock { $0.started }
+        #expect(started == [first, WebhookTaskTag(itemID: itemID, attempt: 2)])
+        #expect(service.items.first?.isInFlight == true)
+    }
+
+    @Test func rearm_cancelsOnlyTheOldAttempt() throws {
+        let itemID = try enqueueOne()
+
+        service.rearmItems(forWebhook: try #require(store.webhooks.first).id)
+
+        let state = fake.state.withLock { $0 }
+        #expect(state.cancelledTags == [WebhookTaskTag(itemID: itemID, attempt: 1)])
+        #expect(state.cancelledItems.isEmpty)
+        #expect(state.started.last == WebhookTaskTag(itemID: itemID, attempt: 2))
+    }
+}
+
 @MainActor
 struct WebhookStoreTests {
 
