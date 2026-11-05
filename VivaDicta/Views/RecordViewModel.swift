@@ -886,6 +886,13 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     mode: aiService.selectedMode
                 )
 
+                // Queued to a persistent outbox; never blocks or delays this flow.
+                WebhookDeliveryService.shared.enqueueIfEnabled(
+                    transcription: savedTranscription,
+                    mode: aiService.selectedMode,
+                    languageOverride: languageOverride
+                )
+
                 appGroupBridge.shareTranscribedText(textToShare)
 
                 // Cache for keyboard "Recent Notes" feature
@@ -1193,6 +1200,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     )
 
                     FolderExportService.saveIfEnabled(
+                        transcription: transcription,
+                        mode: aiService.selectedMode
+                    )
+
+                    WebhookDeliveryService.shared.enqueueIfEnabled(
                         transcription: transcription,
                         mode: aiService.selectedMode
                     )

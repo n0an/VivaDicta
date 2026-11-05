@@ -96,6 +96,7 @@ public enum LogCategory: String {
     // MARK: - Utility
     case installInputTapNonisolated = "installInputTapNonisolated"
     case folderExportService = "FolderExportService"
+    case webhooks = "Webhooks"
 }
 
 /// The app's subsystem identifier for all loggers

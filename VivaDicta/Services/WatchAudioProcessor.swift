@@ -138,6 +138,13 @@ final class WatchAudioProcessor {
 
             try context.save()
             Task { await ChatsDiscoveryTip.transcriptionCreatedEvent.donate() }
+
+            // Still inside the temporary mode switch above, so this is the
+            // mode the watch recording was made with.
+            WebhookDeliveryService.shared.enqueueIfEnabled(
+                transcription: transcription,
+                mode: aiService.selectedMode
+            )
             logger.logInfo("⌚ [DONE] Watch audio processed and saved: \(audioURL.lastPathComponent)")
 
         } catch {

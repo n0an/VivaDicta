@@ -388,6 +388,18 @@ class AIService {
         logger.logInfo("Deleted mode: \(mode.name)")
     }
 
+    /// Detaches a deleted webhook from every mode that sent to it.
+    public func clearWebhookReferences(to webhookID: UUID) {
+        var changed = false
+        for index in modes.indices where modes[index].webhookID == webhookID {
+            modes[index].webhookID = nil
+            changed = true
+        }
+        guard changed else { return }
+        saveModes()
+        logger.logInfo("Cleared deleted webhook from modes")
+    }
+
     public func duplicateMode(_ mode: VivaMode) {
         let newName = generateUniqueName(baseName: mode.name)
 
@@ -409,7 +421,8 @@ class AIService {
             isSmartInsertEnabled: mode.isSmartInsertEnabled,
             speakerLabelsEnabled: mode.speakerLabelsEnabled,
             obsidianEnabled: mode.obsidianEnabled,
-            folderExportEnabled: mode.folderExportEnabled
+            folderExportEnabled: mode.folderExportEnabled,
+            webhookID: mode.webhookID
         )
 
         addMode(duplicatedMode)
@@ -482,7 +495,8 @@ class AIService {
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     speakerLabelsEnabled: mode.speakerLabelsEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
-                    folderExportEnabled: mode.folderExportEnabled
+                    folderExportEnabled: mode.folderExportEnabled,
+                    webhookID: mode.webhookID
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to API key deletion for provider: \(provider.rawValue)" }
@@ -513,7 +527,8 @@ class AIService {
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     speakerLabelsEnabled: mode.speakerLabelsEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
-                    folderExportEnabled: mode.folderExportEnabled
+                    folderExportEnabled: mode.folderExportEnabled,
+                    webhookID: mode.webhookID
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to preset deletion" }
@@ -544,7 +559,8 @@ class AIService {
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     speakerLabelsEnabled: mode.speakerLabelsEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
-                    folderExportEnabled: mode.folderExportEnabled
+                    folderExportEnabled: mode.folderExportEnabled,
+                    webhookID: mode.webhookID
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Ollama connection failure" }
@@ -641,7 +657,8 @@ class AIService {
                 isSmartInsertEnabled: defaultMode.isSmartInsertEnabled,
                 speakerLabelsEnabled: defaultMode.speakerLabelsEnabled,
                 obsidianEnabled: defaultMode.obsidianEnabled,
-                folderExportEnabled: defaultMode.folderExportEnabled
+                folderExportEnabled: defaultMode.folderExportEnabled,
+                webhookID: defaultMode.webhookID
             )
 
             // Update the mode
@@ -1775,7 +1792,8 @@ class AIService {
                     isSmartInsertEnabled: mode.isSmartInsertEnabled,
                     speakerLabelsEnabled: mode.speakerLabelsEnabled,
                     obsidianEnabled: mode.obsidianEnabled,
-                    folderExportEnabled: mode.folderExportEnabled
+                    folderExportEnabled: mode.folderExportEnabled,
+                    webhookID: mode.webhookID
                 )
             },
             logMessage: { "Disabled AI processing for mode '\($0.name)' due to Custom OpenAI configuration removal" }

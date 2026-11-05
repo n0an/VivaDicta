@@ -72,6 +72,8 @@ struct TranscriptionDetailView: View {
 
     @State private var folderExportAlertMessage: String = ""
     @State private var showFolderExportAlert: Bool = false
+    @State private var webhookAlertMessage: String = ""
+    @State private var showWebhookAlert: Bool = false
 
     private var appendWithVoiceStyle: AppendWithVoiceStyle {
         AppendWithVoiceStyle(rawValue: appendWithVoiceStyleRaw) ?? .toolbar
@@ -671,6 +673,11 @@ struct TranscriptionDetailView: View {
         } message: {
             Text(folderExportAlertMessage)
         }
+        .alert("Send to Webhook", isPresented: $showWebhookAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(webhookAlertMessage)
+        }
     }
 
     private var exportSheetBinding: Binding<Bool> {
@@ -840,6 +847,37 @@ struct TranscriptionDetailView: View {
             case .writeFailed(let message):
                 folderExportAlertMessage = "Could not write the markdown file: \(message)"
                 showFolderExportAlert = true
+            }
+        }
+    }
+
+    /// Sends the note's latest text (AI output when present, otherwise the
+    /// transcript) through the webhook outbox. Reuses the transcription ID, so
+    /// a re-send is recognizable to the receiver.
+    private func sendToWebhook(_ webhook: WebhookDefinition) {
+        HapticManager.lightImpact()
+        let mode: VivaMode? = transcription.powerModeId
+            .flatMap(UUID.init(uuidString:))
+            .flatMap { id in appState.aiService.modes.first { $0.id == id } }
+        let input = WebhookPayloadBuilder.input(
+            for: transcription,
+            modeName: mode?.name,
+            language: mode?.transcriptionLanguage
+        )
+        Task {
+            let result = await WebhookDeliveryService.shared.sendManually(input, to: webhook)
+            switch result {
+            case .delivered(let statusCode):
+                logger.logInfo("🪝 Manual send delivered (HTTP \(statusCode))")
+                HapticManager.success()
+            case .failed(let reason):
+                HapticManager.error()
+                webhookAlertMessage = "\(webhook.displayName) rejected the note: \(reason)"
+                showWebhookAlert = true
+            case .queued(let reason):
+                webhookAlertMessage = reason.map { "Could not reach \(webhook.displayName) yet (\($0)). VivaDicta keeps retrying in the background." }
+                    ?? "Still sending to \(webhook.displayName). VivaDicta keeps retrying in the background; see Settings → Integrations for the result."
+                showWebhookAlert = true
             }
         }
     }
@@ -1066,6 +1104,25 @@ struct TranscriptionDetailView: View {
                     exportTranscriptionAsMarkdown()
                 } label: {
                     Label("Export as Markdown", systemImage: "doc.text")
+                }
+            }
+
+            let webhooks = WebhookStore.shared.enabledWebhooks
+            if !webhooks.isEmpty {
+                Section("Webhooks") {
+                    if webhooks.count == 1, let webhook = webhooks.first {
+                        Button("Send to \(webhook.displayName)", systemImage: "paperplane") {
+                            sendToWebhook(webhook)
+                        }
+                    } else {
+                        Menu("Send to Webhook", systemImage: "paperplane") {
+                            ForEach(webhooks) { webhook in
+                                Button(webhook.displayName) {
+                                    sendToWebhook(webhook)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } label: {

@@ -1,0 +1,377 @@
+//
+//  WebhookDeliveryServiceTests.swift
+//  VivaDictaTests
+//
+//  Created by Anton Novoselov on 2026.11.05
+//
+
+import Foundation
+import Synchronization
+import Testing
+import KeychainMocks
+@testable import VivaDicta
+
+/// Intercepts webhook uploads made through a real `URLSession` and answers
+/// from a queue of canned responses. Process-global, so the suite is serialized.
+nonisolated final class WebhookURLProtocolStub: URLProtocol, @unchecked Sendable {
+    enum Reply: Sendable {
+        case status(Int, headers: [String: String] = [:])
+        case failure(URLError.Code)
+    }
+
+    struct Captured: Sendable {
+        let url: URL?
+        let headers: [String: String]
+        let body: Data
+    }
+
+    private struct State {
+        var replies: [Reply] = []
+        var captured: [Captured] = []
+    }
+
+    private static let state = Mutex(State())
+
+    static func reset(replies: [Reply]) {
+        state.withLock { $0 = State(replies: replies) }
+    }
+
+    static var captured: [Captured] {
+        state.withLock { $0.captured }
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        let body = request.httpBody ?? Self.read(request.httpBodyStream)
+        let reply = Self.state.withLock { state -> Reply in
+            state.captured.append(Captured(url: request.url, headers: request.allHTTPHeaderFields ?? [:], body: body))
+            return state.replies.isEmpty ? .status(200) : state.replies.removeFirst()
+        }
+        switch reply {
+        case .status(let code, let headers):
+            let response = HTTPURLResponse(url: request.url!, statusCode: code, httpVersion: "HTTP/1.1", headerFields: headers)!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: Data("{}".utf8))
+            client?.urlProtocolDidFinishLoading(self)
+        case .failure(let code):
+            client?.urlProtocol(self, didFailWithError: URLError(code))
+        }
+    }
+
+    override func stopLoading() {}
+
+    private static func read(_ stream: InputStream?) -> Data {
+        guard let stream else { return Data() }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 16_384)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count > 0 else { break }
+            data.append(buffer, count: count)
+        }
+        return data
+    }
+}
+
+@MainActor
+@Suite(.serialized, .tags(.networking))
+final class WebhookDeliveryServiceTests {
+
+    private final class Clock {
+        var now = Date(timeIntervalSince1970: 1_800_000_000)
+    }
+
+    private let clock = Clock()
+    private let directory: URL
+    private let defaults: UserDefaults
+    private let keychain = MockKeychainService()
+    private let store: WebhookStore
+    private let service: WebhookDeliveryService
+
+    init() {
+        directory = URL.temporaryDirectory.appending(path: "WebhookTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defaults = UserDefaults(suiteName: "WebhookDeliveryServiceTests-\(UUID().uuidString)")!
+        store = WebhookStore(defaults: defaults, keychain: keychain)
+        let clock = clock
+        service = WebhookDeliveryService(
+            store: store,
+            storage: WebhookOutboxStorage(directory: directory),
+            makeTransport: {
+                let configuration = URLSessionConfiguration.ephemeral
+                configuration.protocolClasses = [WebhookURLProtocolStub.self]
+                return URLSessionWebhookTransport(configuration: configuration)
+            },
+            now: { clock.now },
+            appVersion: "9.9.9"
+        )
+    }
+
+    deinit {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    // MARK: - Helpers
+
+    private func addWebhook(token: String? = nil) throws -> WebhookDefinition {
+        let webhook = WebhookDefinition(name: "Meetings", url: URL(string: "https://example.com/hooks/meetings")!)
+        try store.save(webhook, token: token.map { .set($0) } ?? .keep)
+        return try #require(store.webhook(id: webhook.id))
+    }
+
+    private func input(id: UUID = UUID(), enhanced: String? = "Polished") -> WebhookPayloadInput {
+        WebhookPayloadInput(
+            transcriptionID: id,
+            text: "raw",
+            enhancedText: enhanced,
+            modeName: "Meeting",
+            timestamp: clock.now,
+            audioDuration: 60,
+            language: "en",
+            sourceTag: "shareExtension",
+            transcriptionModelName: "Parakeet",
+            aiModelName: "gpt-test"
+        )
+    }
+
+    /// Waits for async transport completions to land on the main actor.
+    private func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5)) async throws {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        while !condition() {
+            guard ContinuousClock.now < deadline else {
+                Issue.record("Timed out waiting for condition")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
+    // MARK: - Tests
+
+    @Test func delivers_withContractHeadersAndBody() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(200)])
+        let webhook = try addWebhook(token: "secret-token")
+        let note = input()
+
+        service.enqueue(note, to: webhook)
+        try await waitUntil { service.items.isEmpty }
+
+        let request = try #require(WebhookURLProtocolStub.captured.first)
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+        #expect(request.url == webhook.url)
+        #expect(request.headers["Authorization"] == "Bearer secret-token")
+        #expect(request.headers["Idempotency-Key"] == note.transcriptionID.uuidString)
+        #expect(request.headers["Content-Type"] == "application/json; charset=utf-8")
+        #expect(request.headers["User-Agent"] == "VivaDicta/9.9.9")
+        let body = try #require(JSONSerialization.jsonObject(with: request.body) as? [String: Any])
+        #expect(body["id"] as? String == note.transcriptionID.uuidString)
+        #expect(body["text"] as? String == "Polished")
+        #expect(body["rawText"] as? String == "raw")
+        #expect(store.statuses[webhook.id]?.outcome == .delivered)
+        #expect(store.statuses[webhook.id]?.statusCode == 200)
+    }
+
+    @Test func retryableFailure_isRetriedWithTheSameIdempotencyKey() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(503), .failure(.notConnectedToInternet), .status(204)])
+        let webhook = try addWebhook()
+        let note = input()
+
+        service.enqueue(note, to: webhook)
+        try await waitUntil { service.items.first?.isInFlight == false }
+        #expect(store.statuses[webhook.id]?.outcome == .retrying)
+        #expect(service.items.first?.nextAttemptAt == clock.now.addingTimeInterval(30))
+
+        // Not due yet: nothing is sent.
+        service.pump()
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+
+        clock.now.addTimeInterval(30)
+        service.pump()
+        try await waitUntil { WebhookURLProtocolStub.captured.count == 2 && service.items.first?.isInFlight == false }
+        #expect(service.items.first?.nextAttemptAt == clock.now.addingTimeInterval(120))
+
+        clock.now.addTimeInterval(120)
+        service.pump()
+        try await waitUntil { service.items.isEmpty }
+
+        let keys = WebhookURLProtocolStub.captured.map { $0.headers["Idempotency-Key"] }
+        #expect(keys == Array(repeating: note.transcriptionID.uuidString, count: 3))
+        #expect(store.statuses[webhook.id]?.outcome == .delivered)
+    }
+
+    @Test func nonRetryable4xx_stopsAndSurfacesTheFailure() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(401)])
+        let webhook = try addWebhook()
+
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.isEmpty }
+
+        clock.now.addTimeInterval(3600)
+        service.pump()
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+        let status = try #require(store.statuses[webhook.id])
+        #expect(status.outcome == .failed)
+        #expect(status.statusCode == 401)
+        #expect(status.message?.hasPrefix("HTTP 401") == true)
+    }
+
+    @Test func expiredItems_areDroppedAsFailed() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(500)])
+        let webhook = try addWebhook()
+
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.first?.isInFlight == false }
+
+        clock.now.addTimeInterval(WebhookRetryPolicy.maxAge)
+        service.pump()
+        #expect(service.items.isEmpty)
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+        #expect(store.statuses[webhook.id]?.outcome == .failed)
+        #expect(store.statuses[webhook.id]?.message?.hasPrefix("Gave up after 24 hours") == true)
+    }
+
+    @Test func manualResend_reusesTheTranscriptionID() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(200), .status(200)])
+        let webhook = try addWebhook()
+        let note = input()
+
+        let first = await service.sendManually(note, to: webhook)
+        let second = await service.sendManually(note, to: webhook)
+
+        #expect(first == .delivered(statusCode: 200))
+        #expect(second == .delivered(statusCode: 200))
+        let ids = try WebhookURLProtocolStub.captured.map { captured in
+            try #require(JSONSerialization.jsonObject(with: captured.body) as? [String: Any])["id"] as? String
+        }
+        #expect(ids == [note.transcriptionID.uuidString, note.transcriptionID.uuidString])
+    }
+
+    @Test func manualSend_reportsTheRejection() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(404)])
+        let webhook = try addWebhook()
+
+        let result = await service.sendManually(input(), to: webhook)
+        guard case .failed(let reason) = result else {
+            Issue.record("Expected a failure, got \(result)")
+            return
+        }
+        #expect(reason.hasPrefix("HTTP 404"))
+    }
+
+    @Test func lockedKeychain_holdsTheItemInsteadOfSendingUnauthenticated() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(200)])
+        let webhook = try addWebhook(token: "secret-token")
+        keychain.stubGetString = .some(nil) // The Keychain answers "nothing" while locked.
+
+        service.enqueue(input(), to: webhook)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(WebhookURLProtocolStub.captured.isEmpty)
+        #expect(service.items.count == 1)
+
+        keychain.stubGetString = nil
+        service.pump()
+        try await waitUntil { service.items.isEmpty }
+        #expect(WebhookURLProtocolStub.captured.first?.headers["Authorization"] == "Bearer secret-token")
+    }
+
+    @Test func editingAWebhook_resendsPendingItemsToTheNewURLRightAway() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(503), .status(200)])
+        var webhook = try addWebhook()
+
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.first?.isInFlight == false }
+
+        webhook.url = URL(string: "https://example.com/hooks/moved")!
+        try store.save(webhook, token: .keep)
+        service.rearmItems(forWebhook: webhook.id)
+        try await waitUntil { service.items.isEmpty }
+
+        #expect(WebhookURLProtocolStub.captured.map(\.url?.path) == ["/hooks/meetings", "/hooks/moved"])
+    }
+
+    @Test func deletingAWebhook_dropsItsPendingItems() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(500)])
+        let webhook = try addWebhook()
+        store.onWebhookDeleted = { [service] id in service.discardItems(forWebhook: id) }
+
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.first?.isInFlight == false }
+
+        store.delete(id: webhook.id)
+        #expect(service.items.isEmpty)
+        #expect(store.statuses[webhook.id] == nil)
+    }
+
+    @Test func pendingItems_surviveARestart() async throws {
+        WebhookURLProtocolStub.reset(replies: [.failure(.networkConnectionLost)])
+        let webhook = try addWebhook()
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.first?.isInFlight == false }
+
+        // A fresh service over the same directory picks the item up again.
+        WebhookURLProtocolStub.reset(replies: [.status(200)])
+        let clock = clock
+        clock.now.addTimeInterval(60)
+        let restarted = WebhookDeliveryService(
+            store: store,
+            storage: WebhookOutboxStorage(directory: directory),
+            makeTransport: {
+                let configuration = URLSessionConfiguration.ephemeral
+                configuration.protocolClasses = [WebhookURLProtocolStub.self]
+                return URLSessionWebhookTransport(configuration: configuration)
+            },
+            now: { clock.now },
+            appVersion: "9.9.9"
+        )
+        await restarted.resume()
+        try await waitUntil { restarted.items.isEmpty }
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+        #expect(store.statuses[webhook.id]?.outcome == .delivered)
+    }
+}
+
+@MainActor
+struct WebhookStoreTests {
+
+    @Test func token_isKeptInTheKeychainNotUserDefaults() throws {
+        let suite = "WebhookStoreTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let keychain = MockKeychainService()
+        let store = WebhookStore(defaults: defaults, keychain: keychain)
+        let webhook = WebhookDefinition(name: "Thoughts", url: URL(string: "https://example.com/hooks/thoughts")!)
+
+        try store.save(webhook, token: .set("top-secret"))
+
+        #expect(store.token(for: webhook.id) == "top-secret")
+        #expect(store.webhook(id: webhook.id)?.hasBearerToken == true)
+        let stored = try #require(defaults.data(forKey: "webhookDefinitions_v1"))
+        #expect(String(decoding: stored, as: UTF8.self).contains("top-secret") == false)
+
+        // Reloading from the same defaults keeps the definition.
+        let reloaded = WebhookStore(defaults: defaults, keychain: keychain)
+        #expect(reloaded.webhook(id: webhook.id)?.name == "Thoughts")
+
+        store.delete(id: webhook.id)
+        #expect(store.token(for: webhook.id) == nil)
+        #expect(store.webhooks.isEmpty)
+    }
+
+    @Test func keepTokenChange_preservesTheSavedToken() throws {
+        let defaults = try #require(UserDefaults(suiteName: "WebhookStoreTests-\(UUID().uuidString)"))
+        let store = WebhookStore(defaults: defaults, keychain: MockKeychainService())
+        var webhook = WebhookDefinition(name: "A", url: URL(string: "https://example.com/hooks/a")!)
+        try store.save(webhook, token: .set("t"))
+
+        webhook.name = "B"
+        try store.save(webhook, token: .keep)
+        #expect(store.webhook(id: webhook.id)?.hasBearerToken == true)
+        #expect(store.token(for: webhook.id) == "t")
+
+        try store.save(webhook, token: .remove)
+        #expect(store.webhook(id: webhook.id)?.hasBearerToken == false)
+        #expect(store.token(for: webhook.id) == nil)
+    }
+}

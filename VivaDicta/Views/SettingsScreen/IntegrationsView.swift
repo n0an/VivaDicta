@@ -8,14 +8,15 @@
 import SwiftUI
 import AppGroup
 
-/// Settings screen for third-party integrations (Obsidian today; Webhooks /
-/// Zapier later). Two sibling toggles control the Obsidian hand-off:
+/// Settings screen for third-party integrations: Obsidian and Webhooks.
+/// Two sibling toggles control the Obsidian hand-off:
 /// "Auto-open after transcription" (`isObsidianGloballyEnabled`) drives the
 /// automatic open in `RecordViewModel.openObsidianIfEnabled` and gates the
 /// per-mode opt-out in `ModeEditView`; "Show Send to Obsidian button"
 /// (`isObsidianSendButtonEnabled`) reveals a manual send button on the
 /// transcription detail screen. The note-name template and the optional custom
-/// URL template are shared by both.
+/// URL template are shared by both. Webhooks are listed in their own section
+/// (`WebhooksSection`) and picked per mode in `ModeEditView`.
 struct IntegrationsView: View {
     @AppStorage(UserDefaultsStorage.Keys.isObsidianGloballyEnabled)
     private var isObsidianAutoOpenEnabled = false
@@ -31,6 +32,8 @@ struct IntegrationsView: View {
 
     @AppStorage(UserDefaultsStorage.Keys.obsidianCustomURLTemplate)
     private var obsidianCustomURLTemplate = ""
+
+    @State private var webhookSheetTarget: WebhookSheetTarget?
 
     private static let customURLExample = "obsidian://open?file=Daily%2F{date}&prepend={text}"
 
@@ -100,6 +103,18 @@ struct IntegrationsView: View {
                     }
                 }
             }
+
+            WebhooksSection(sheetTarget: $webhookSheetTarget)
+        }
+        // Attached to the Form rather than to the Section: sheet modifiers on
+        // list content are unreliable, and Settings is itself a full-screen cover.
+        .sheet(item: $webhookSheetTarget) { target in
+            switch target {
+            case .add:
+                WebhookEditView(webhook: nil)
+            case .edit(let webhook):
+                WebhookEditView(webhook: webhook)
+            }
         }
         .navigationTitle("Integrations")
         .navigationBarTitleDisplayMode(.inline)
@@ -115,5 +130,74 @@ struct IntegrationsView: View {
                 Text("An Obsidian note is created for new transcriptions and appended to when an existing note name matches. Placeholders: \(NoteTemplate.placeholderList). To instead append to a daily note, set the name to just {date}. Per-mode opt-out for auto-open is available in each mode's settings. The clipboard is overwritten each time.")
             }
         }
+    }
+}
+
+/// What the webhook editor sheet is presenting.
+private enum WebhookSheetTarget: Identifiable {
+    case add
+    case edit(WebhookDefinition)
+
+    var id: String {
+        switch self {
+        case .add: "add"
+        case .edit(let webhook): webhook.id.uuidString
+        }
+    }
+}
+
+/// Lists the configured webhooks with their last delivery result and asks the
+/// parent to open the add / edit sheet.
+private struct WebhooksSection: View {
+    @Binding var sheetTarget: WebhookSheetTarget?
+
+    private var store: WebhookStore { .shared }
+
+    var body: some View {
+        Section {
+            ForEach(store.webhooks) { webhook in
+                Button {
+                    sheetTarget = .edit(webhook)
+                } label: {
+                    WebhookRow(webhook: webhook, status: store.statuses[webhook.id])
+                }
+                .tint(.primary)
+            }
+
+            Button("Add Webhook", systemImage: "plus") {
+                sheetTarget = .add
+            }
+        } header: {
+            Text("Webhooks")
+        } footer: {
+            Text("After transcription and AI processing, VivaDicta POSTs the note as JSON to the webhook picked in a mode's settings. Works with n8n, Zapier, Make or your own server. Failed deliveries are retried in the background for up to 24 hours.")
+        }
+    }
+}
+
+private struct WebhookRow: View {
+    let webhook: WebhookDefinition
+    let status: WebhookDeliveryStatus?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(webhook.displayName)
+                    .font(.body)
+                Spacer()
+                if !webhook.isEnabled {
+                    Text("Off")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Text(webhook.url.host() ?? webhook.url.absoluteString)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if let status {
+                WebhookStatusLabel(status: status)
+            }
+        }
+        .contentShape(.rect)
     }
 }

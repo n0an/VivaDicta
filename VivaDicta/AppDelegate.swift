@@ -19,7 +19,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // Arm the on-device LLM memory monitor (frees the model under pressure so
         // we don't get jetsammed while holding a ~1-2 GB model).
         OnDeviceModelMemory.shared.activate()
+        // Resume webhook deliveries that were pending when the app last ran.
+        WebhookDeliveryService.shared.activate()
         return true
+    }
+
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+        guard identifier == URLSessionWebhookTransport.backgroundSessionIdentifier else {
+            completionHandler()
+            return
+        }
+        logger.logInfo("🚀 handleEventsForBackgroundURLSession - webhooks")
+        WebhookDeliveryService.shared.handleBackgroundEvents(completionHandler: completionHandler)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

@@ -894,6 +894,8 @@ struct ModeEditView: View {
                 }
             }
 
+            ModeWebhookSection(webhookID: $viewModel.webhookID)
+
             if viewModel.isEditing {
                 if viewModel.isValid {
                     Section {
@@ -1474,4 +1476,34 @@ private struct ModelPickerSheet: View {
         presetManager: presetManager,
         transcriptionManager: transcriptionManager,
         navigationPath: $navigationPath)
+}
+
+/// Per-mode webhook choice. Hidden until at least one webhook exists in
+/// Settings → Integrations, like the Obsidian and folder-export sections that
+/// only show once their global integration is on.
+private struct ModeWebhookSection: View {
+    @Binding var webhookID: UUID?
+
+    private var store: WebhookStore { .shared }
+
+    var body: some View {
+        if !store.webhooks.isEmpty {
+            Section {
+                Picker("Webhook", selection: $webhookID) {
+                    Text("None").tag(UUID?.none)
+                    ForEach(store.webhooks) { webhook in
+                        Text(webhook.isEnabled ? webhook.displayName : "\(webhook.displayName) (off)")
+                            .tag(UUID?.some(webhook.id))
+                    }
+                }
+                .onChange(of: webhookID) { _, _ in
+                    HapticManager.selectionChanged()
+                }
+            } header: {
+                Text("Webhook")
+            } footer: {
+                Text("Send this mode's transcriptions to a webhook after transcription and AI processing. Manage webhooks in Settings → Integrations.")
+            }
+        }
+    }
 }

@@ -102,6 +102,10 @@ struct VivaMode: Identifiable, Hashable, Codable {
     /// global folder-export integration is enabled in Settings → Integrations.
     var folderExportEnabled: Bool
 
+    /// The webhook this mode's transcriptions are POSTed to, or `nil` for none.
+    /// Refers to a `WebhookDefinition` managed in Settings → Integrations.
+    var webhookID: UUID?
+
     /// Creates a new VivaMode with the specified settings.
     init(id: UUID,
          name: String,
@@ -120,7 +124,8 @@ struct VivaMode: Identifiable, Hashable, Codable {
          isSmartInsertEnabled: Bool = false,
          speakerLabelsEnabled: Bool = false,
          obsidianEnabled: Bool = true,
-         folderExportEnabled: Bool = true) {
+         folderExportEnabled: Bool = true,
+         webhookID: UUID? = nil) {
         self.id = id
         self.name = name
         self.transcriptionProvider = transcriptionProvider
@@ -139,6 +144,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         self.speakerLabelsEnabled = speakerLabelsEnabled
         self.obsidianEnabled = obsidianEnabled
         self.folderExportEnabled = folderExportEnabled
+        self.webhookID = webhookID
     }
 
     // MARK: - Backward-Compatible Decoding
@@ -179,6 +185,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
             ?? AppGroupCoordinator.shared.isSpeakerDiarizationEnabled
         obsidianEnabled = try container.decodeIfPresent(Bool.self, forKey: .obsidianEnabled) ?? true
         folderExportEnabled = try container.decodeIfPresent(Bool.self, forKey: .folderExportEnabled) ?? true
+        webhookID = try container.decodeIfPresent(UUID.self, forKey: .webhookID)
 
         // Try new format first
         if let preset = try container.decodeIfPresent(String.self, forKey: .presetId) {
@@ -236,6 +243,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         case speakerLabelsEnabled
         case obsidianEnabled
         case folderExportEnabled
+        case webhookID
     }
 
     /// Encodes using the new format only (presetId).
@@ -259,6 +267,7 @@ struct VivaMode: Identifiable, Hashable, Codable {
         try container.encode(speakerLabelsEnabled, forKey: .speakerLabelsEnabled)
         try container.encode(obsidianEnabled, forKey: .obsidianEnabled)
         try container.encode(folderExportEnabled, forKey: .folderExportEnabled)
+        try container.encodeIfPresent(webhookID, forKey: .webhookID)
     }
 
     /// The default mode used when no custom mode is configured.
