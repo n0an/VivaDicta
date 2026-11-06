@@ -124,6 +124,9 @@ class AppState {
     /// Audio file URL received via "Open With" from Files app.
     var openedAudioFileURL: URL?
 
+    /// What is known about when the "Open With" file was recorded. Set before ``openedAudioFileURL``.
+    var openedAudioRecordingTime: RecordingTime?
+
     init(
         modelContainer: ModelContainer,
         transcriptionManager: TranscriptionManager = TranscriptionManager(),

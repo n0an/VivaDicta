@@ -414,6 +414,8 @@ class ShareViewController: UIViewController {
 
     private let viewModel = ShareExtensionViewModel()
     private var hostingController: UIHostingController<ShareExtensionView>?
+    /// When the shared audio was recorded, if the file says so and the date is trustworthy.
+    private var recordedAt: Date?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -492,6 +494,10 @@ class ShareViewController: UIViewController {
     }
 
     private func copyAudioToSharedContainer(from sourceURL: URL) async {
+        // Read before the copy below, which gets a new file creation date.
+        recordedAt = await ImportedAudioRecordingDate.read(from: sourceURL)
+        logger.info("Recording date found in the shared file: \(self.recordedAt != nil)")
+
         // Get shared container directory
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId) else {
             cancelExtension(message: "Failed to get app group container URL")
@@ -542,6 +548,8 @@ class ShareViewController: UIViewController {
             return
         }
 
+        // The date first, so the app never sees the file name without it.
+        AppGroupCoordinator.shared.setPendingRecordedAt(recordedAt)
         sharedDefaults.set(audioFileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
         sharedDefaults.set("shareExtension", forKey: AppGroupCoordinator.kPendingSourceTag)
         sharedDefaults.synchronize()

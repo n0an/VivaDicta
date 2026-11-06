@@ -108,6 +108,12 @@ class Transcription {
     /// Source that created this transcription (app, keyboard, shareExtension, actionExtension, macApp).
     var sourceTag: String?
 
+    /// When the audio was recorded, if known: the recording start for live
+    /// recordings, or the date found in an imported file when it is
+    /// trustworthy (see `ImportedAudioRecordingDate`). `nil` when unknown,
+    /// never a guess. ``timestamp`` stays the time the note was created.
+    var recordedAt: Date?
+
     /// AI-generated text variations (Summary, Action Points, Professional, etc.).
     @Relationship(deleteRule: .cascade)
     var variations: [TranscriptionVariation]? = []

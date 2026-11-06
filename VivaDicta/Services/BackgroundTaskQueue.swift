@@ -14,15 +14,18 @@ nonisolated struct BackgroundWorkItem: Codable, Sendable {
     let sourceTag: String
     let modeId: String?
     let recordingTimestamp: Date
+    /// When the recording started, if the watch said so. Absent in items queued by older versions.
+    let recordedAt: Date?
     let createdAt: Date
     var retryCount: Int
 
-    init(audioFileURL: URL, sourceTag: String, modeId: String?, recordingTimestamp: Date = Date()) {
+    init(audioFileURL: URL, sourceTag: String, modeId: String?, recordingTimestamp: Date = Date(), recordedAt: Date? = nil) {
         self.id = UUID()
         self.audioFileURL = audioFileURL
         self.sourceTag = sourceTag
         self.modeId = modeId
         self.recordingTimestamp = recordingTimestamp
+        self.recordedAt = recordedAt
         self.createdAt = Date()
         self.retryCount = 0
     }

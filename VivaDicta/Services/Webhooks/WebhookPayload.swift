@@ -15,13 +15,19 @@ import Foundation
 nonisolated struct WebhookPayload: Encodable, Equatable, Sendable {
     /// Transcription UUID. Stable across retries and manual re-sends.
     let id: String
-    /// Final text: the AI-processed text when processing ran, otherwise the transcript.
+    /// The text the webhook asked for (see ``textContent``): the last
+    /// AI-processed text, or the original transcript.
     let text: String
-    /// The original transcript, only when it differs from ``text``.
+    /// The original transcript. Only with ``textContent`` `both`, and only when it differs from ``text``.
     let rawText: String?
+    /// What ``text`` holds: `original`, `processed` or `both` (``WebhookTextContent``).
+    let textContent: String
     let mode: String?
-    /// ISO 8601 with a time zone offset, the recording time.
+    /// ISO 8601 with a time zone offset, when the note was created (transcribed).
     let createdAt: String
+    /// ISO 8601 with a time zone offset, when the audio was recorded.
+    /// Omitted when unknown or not trustworthy.
+    let recordedAt: String?
     /// Audio length in seconds.
     let duration: Double?
     let language: String?
@@ -41,6 +47,7 @@ nonisolated struct WebhookPayloadInput: Sendable, Equatable {
     var enhancedText: String?
     var modeName: String?
     var timestamp: Date
+    var recordedAt: Date? = nil
     var audioDuration: TimeInterval
     var language: String?
     var sourceTag: String?
@@ -59,19 +66,23 @@ nonisolated enum WebhookPayloadBuilder {
 
     static func payload(
         for input: WebhookPayloadInput,
+        textContent: WebhookTextContent = .default,
         appVersion: String?,
         timeZone: TimeZone = .current
     ) -> WebhookPayload {
-        let enhanced = nonEmpty(input.enhancedText)
+        let enhanced = textContent == .original ? nil : nonEmpty(input.enhancedText)
         let finalText = enhanced ?? input.text
         let usedEnhanced = enhanced != nil
+        let rawText = textContent == .both && finalText != input.text ? input.text : nil
 
         return WebhookPayload(
             id: input.transcriptionID.uuidString,
             text: finalText,
-            rawText: finalText == input.text ? nil : input.text,
+            rawText: rawText,
+            textContent: textContent.rawValue,
             mode: nonEmpty(input.modeName),
             createdAt: iso8601(input.timestamp, timeZone: timeZone),
+            recordedAt: input.recordedAt.map { iso8601($0, timeZone: timeZone) },
             duration: input.audioDuration > 0 ? input.audioDuration : nil,
             language: normalizedLanguage(input.language),
             source: nonEmpty(input.sourceTag),
@@ -83,25 +94,36 @@ nonisolated enum WebhookPayloadBuilder {
         )
     }
 
-    /// A sample payload for the "Send test" button.
-    static func testPayload(appVersion: String?, now: Date = Date(), timeZone: TimeZone = .current) -> WebhookPayload {
+    /// A sample payload for the "Send test" button. It has an original and a
+    /// processed text, so the webhook's ``WebhookTextContent`` shows in the result.
+    static func testPayload(
+        textContent: WebhookTextContent = .default,
+        appVersion: String?,
+        now: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> WebhookPayload {
         payload(
             for: WebhookPayloadInput(
                 transcriptionID: UUID(),
-                text: "This is a test message from VivaDicta.",
-                enhancedText: nil,
+                text: "this is a test message from viva dicta",
+                enhancedText: "This is a test message from VivaDicta.",
                 modeName: "Test",
                 timestamp: now,
+                recordedAt: now.addingTimeInterval(-testRecordingAge),
                 audioDuration: 3,
                 language: "en",
                 sourceTag: "test",
                 transcriptionModelName: nil,
                 aiModelName: nil
             ),
+            textContent: textContent,
             appVersion: appVersion,
             timeZone: timeZone
         )
     }
+
+    /// How long before "now" the sample note was recorded.
+    static let testRecordingAge: TimeInterval = 60 * 60
 
     static func encode(_ payload: WebhookPayload) throws -> Data {
         let encoder = JSONEncoder()
@@ -137,6 +159,7 @@ extension WebhookPayloadBuilder {
             enhancedText: transcription.enhancedText,
             modeName: modeName,
             timestamp: transcription.timestamp,
+            recordedAt: transcription.recordedAt,
             audioDuration: transcription.audioDuration,
             language: language,
             sourceTag: transcription.sourceTag,

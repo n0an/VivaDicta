@@ -21,6 +21,23 @@ struct AppGroupCoordinatorStateTests {
         sut = AppGroupCoordinator(userDefaults: defaults)
     }
 
+    // MARK: - Pending Recording Date
+
+    @Test func pendingRecordedAt_isConsumedOnce() {
+        let recorded = Date(timeIntervalSince1970: 1_790_000_000)
+        sut.setPendingRecordedAt(recorded)
+
+        #expect(sut.getAndConsumePendingRecordedAt() == recorded)
+        #expect(sut.getAndConsumePendingRecordedAt() == nil)
+    }
+
+    @Test func pendingRecordedAt_nilClearsAnEarlierFilesDate() {
+        sut.setPendingRecordedAt(Date(timeIntervalSince1970: 1_790_000_000))
+        sut.setPendingRecordedAt(nil)
+
+        #expect(sut.getAndConsumePendingRecordedAt() == nil)
+    }
+
     // MARK: - Audio Level Tests
 
     @Test func audioLevel_clampsNegativeToZero() {

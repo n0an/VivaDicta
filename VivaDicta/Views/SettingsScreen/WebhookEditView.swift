@@ -61,6 +61,16 @@ struct WebhookEditView: View {
                 }
 
                 Section {
+                    Picker("Text to Send", selection: $viewModel.textContent) {
+                        ForEach(WebhookTextContent.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                } footer: {
+                    Text("Both: the last AI-processed text, plus the original transcript when it differs. Last Processed Only: the processed text alone, or the transcript when no AI processing ran. Original Only: the transcript as recognized.")
+                }
+
+                Section {
                     Button {
                         Task { await viewModel.sendTest() }
                     } label: {

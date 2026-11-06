@@ -96,6 +96,11 @@ final class WatchRecordViewModel {
             "timestamp": Date().timeIntervalSince1970,
             "duration": recordingDuration
         ]
+        // Exact start for the phone's recordedAt. "timestamp" minus "duration"
+        // is up to a timer tick short, so the phone uses it only for older watch builds.
+        if let recordingStartTime {
+            metadata["recordingStartedAt"] = recordingStartTime.timeIntervalSince1970
+        }
         if let selectedModeId {
             metadata["modeId"] = selectedModeId
         }

@@ -71,7 +71,7 @@ final class PhoneWatchConnectivityService: NSObject {
         logger.logInfo("Synced \(modes.count) modes to watch via transferUserInfo")
     }
 
-    private func processInBackground(audioURL: URL, sourceTag: String, recordingTimestamp: Date, modeId: String?) {
+    private func processInBackground(audioURL: URL, sourceTag: String, recordingTimestamp: Date, recordedAt: Date?, modeId: String?) {
         guard let audioProcessor else {
             logger.logError("WatchAudioProcessor not configured")
             return
@@ -86,7 +86,8 @@ final class PhoneWatchConnectivityService: NSObject {
             audioURL: audioURL,
             sourceTag: sourceTag,
             modeId: modeId,
-            recordingTimestamp: recordingTimestamp
+            recordingTimestamp: recordingTimestamp,
+            recordedAt: recordedAt
         )
 
         // Begin background task to prevent iOS from suspending during processing
@@ -102,12 +103,29 @@ final class PhoneWatchConnectivityService: NSObject {
                 at: audioURL,
                 sourceTag: sourceTag,
                 recordingTimestamp: recordingTimestamp,
+                recordedAt: recordedAt,
                 modeId: modeId
             )
             // On success, remove from queue and cancel the BGProcessingTask
             backgroundTaskService?.removeFromQueueIfProcessed(audioFileName: fileName)
             backgroundTaskService?.endBackgroundTask(bgTaskID)
         }
+    }
+}
+
+extension PhoneWatchConnectivityService {
+    /// When the watch recording started. Current watch builds send it as
+    /// `recordingStartedAt`. Older ones send only the stop time (`timestamp`)
+    /// and the recorded length (`duration`), which can be up to a timer tick
+    /// short. `nil` when neither is available, rather than a guess.
+    nonisolated static func recordingStart(metadata: [String: Any]) -> Date? {
+        if let start = (metadata["recordingStartedAt"] as? NSNumber)?.doubleValue, start > 0 {
+            return Date(timeIntervalSince1970: start)
+        }
+        guard let stop = (metadata["timestamp"] as? NSNumber)?.doubleValue,
+              let duration = (metadata["duration"] as? NSNumber)?.doubleValue,
+              stop > 0, duration >= 0 else { return nil }
+        return Date(timeIntervalSince1970: stop - duration)
     }
 }
 
@@ -157,6 +175,7 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
         let sourceTag = rawMetadata["sourceTag"] as? String ?? "appleWatch"
         let timestamp = rawMetadata["timestamp"] as? Double ?? Date().timeIntervalSince1970
         let recordingTimestamp = Date(timeIntervalSince1970: timestamp)
+        let recordedAt = Self.recordingStart(metadata: rawMetadata)
         let modeId = rawMetadata["modeId"] as? String
 
         let audioDir = URL.documentsDirectory.appending(path: "Audio")
@@ -169,7 +188,13 @@ extension PhoneWatchConnectivityService: WCSessionDelegate {
             logger.logInfo("Received watch audio: \(destURL.lastPathComponent)")
 
             Task { @MainActor in
-                self.processInBackground(audioURL: destURL, sourceTag: sourceTag, recordingTimestamp: recordingTimestamp, modeId: modeId)
+                self.processInBackground(
+                    audioURL: destURL,
+                    sourceTag: sourceTag,
+                    recordingTimestamp: recordingTimestamp,
+                    recordedAt: recordedAt,
+                    modeId: modeId
+                )
             }
         } catch {
             logger.logError("Failed to move watch audio file: \(error.localizedDescription)")

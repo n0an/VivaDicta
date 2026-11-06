@@ -49,6 +49,7 @@ private struct PendingTranscriptionData {
     let transcriptionDuration: TimeInterval
     let modelContext: ModelContext
     let sourceTag: String?
+    let recordedAt: Date?
 }
 
 /// View model managing audio recording, transcription, and enhancement workflow.
@@ -167,6 +168,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private var pendingTranscription: PendingTranscriptionData?
     private var activeRecordingDestination: RecordingDestination = .newNote
     private var activeSourceTag: String = SourceTag.app
+    /// When the current recording started. Becomes `Transcription.recordedAt`.
+    private var recordingStartedAt: Date?
 
     /// True from the moment a keyboard voice instruction starts recording until
     /// its rewrite is delivered or failed.
@@ -294,6 +297,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             }
 
             activeSourceTag = sourceTag
+            recordingStartedAt = Date()
             // Clear any stale selection now; the filter-inherited tags are seeded only
             // once capture has actually started, so failed/denied starts leave it empty.
             pendingTagIds.removeAll()
@@ -498,8 +502,10 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         HapticManager.mediumImpact()
         let destination = activeRecordingDestination
         let sourceTag = activeSourceTag
+        let recordingTime = recordingStartedAt.map(RecordingTime.known)
         activeRecordingDestination = .newNote
         activeSourceTag = SourceTag.app
+        recordingStartedAt = nil
 
         // Stop real recorder if in prewarm mode (dummy continues running)
         if prewarmManager.isSessionActive {
@@ -551,7 +557,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         recordURL: finalURL,
                         modelContext: modelContext,
                         sourceTag: sourceTag,
-                        destination: destination
+                        destination: destination,
+                        recordingTime: recordingTime
                     )
                 } catch {
                     logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
@@ -588,7 +595,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 }
 
                 resetValues()
-                finishRecording(sourceTag: sourceTag, destination: destination, modelContext: modelContext)
+                finishRecording(sourceTag: sourceTag, destination: destination, recordingTime: recordingTime, modelContext: modelContext)
             }
         } else {
             // Normal mode
@@ -597,7 +604,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             // Notify keyboard that recording has stopped
             appGroupBridge.updateRecordingState(false)
 
-            finishRecording(sourceTag: sourceTag, destination: destination, modelContext: modelContext)
+            finishRecording(sourceTag: sourceTag, destination: destination, recordingTime: recordingTime, modelContext: modelContext)
         }
     }
 
@@ -606,6 +613,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private func finishRecording(
         sourceTag: String,
         destination: RecordingDestination,
+        recordingTime: RecordingTime?,
         modelContext: ModelContext
     ) {
         let finalURL = FileManager.appDirectory(for: .audio).appendingPathComponent("\(UUID().uuidString).wav")
@@ -615,7 +623,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                 recordURL: finalURL,
                 modelContext: modelContext,
                 sourceTag: sourceTag,
-                destination: destination
+                destination: destination,
+                recordingTime: recordingTime
             )
         } catch {
             logger.logError("📱 Failed to move audio file: \(error.localizedDescription)")
@@ -627,7 +636,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         modelContext: ModelContext,
         sourceTag: String? = nil,
         destination: RecordingDestination = .newNote,
-        languageOverride: String? = nil
+        languageOverride: String? = nil,
+        recordingTime: RecordingTime? = nil
     ) -> Task<Void, Never> {
         Task {
             // Begin background task to allow transcription to complete if user switches apps
@@ -644,6 +654,9 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             // actually on disk - downsampling deletes the original and swaps in
             // the 16kHz copy, and the rescue below has to save the survivor.
             var audioURLToTranscribe = recordURL
+            // Read before downsampling replaces the file: an imported file's
+            // own metadata is one of the sources.
+            let recordedAt = await recordingTime?.resolve(audioURL: recordURL)
 
             do {
                 self.recordingState = .transcribing
@@ -778,7 +791,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         transcriptionProviderName: transcriptionManager.currentMode.transcriptionProvider.displayName,
                         transcriptionDuration: transcriptionDuration,
                         modelContext: modelContext,
-                        sourceTag: resolvedSourceTag
+                        sourceTag: resolvedSourceTag,
+                        recordedAt: recordedAt
                     )
 
                     // Update state to show enhancing animation
@@ -840,7 +854,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         audioDuration: audioDuration,
                         transcriptionDuration: transcriptionDuration,
                         modelContext: modelContext,
-                        sourceTag: resolvedSourceTag
+                        sourceTag: resolvedSourceTag,
+                        recordedAt: recordedAt
                     )
                     textToShare = enhancedText ?? transcribedText
 
@@ -852,7 +867,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         modelContext: modelContext,
                         audioDuration: audioDuration,
                         transcriptionDuration: transcriptionDuration,
-                        sourceTag: resolvedSourceTag
+                        sourceTag: resolvedSourceTag,
+                        recordedAt: recordedAt
                     )
                     textToShare = transcribedText
 
@@ -941,7 +957,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     await saveFailedTranscription(
                         audioURL: audioURLToTranscribe,
                         modelContext: modelContext,
-                        sourceTag: sourceTag ?? SourceTag.app
+                        sourceTag: sourceTag ?? SourceTag.app,
+                        recordedAt: recordedAt
                     )
                 }
 
@@ -1160,6 +1177,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     powerModeId: aiService.selectedMode.id.uuidString,
                     sourceTag: pending.sourceTag
                 )
+                transcription.recordedAt = pending.recordedAt
 
                 pending.modelContext.insert(transcription)
                 applyPendingTags(to: transcription, modelContext: pending.modelContext)
@@ -1328,7 +1346,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         audioDuration: Double,
         transcriptionDuration: TimeInterval?,
         modelContext: ModelContext,
-        sourceTag: String?
+        sourceTag: String?,
+        recordedAt: Date?
     ) throws -> Transcription {
         let transcription = Transcription(
             text: transcribedText,
@@ -1345,6 +1364,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             powerModeId: aiService.selectedMode.id.uuidString,
             sourceTag: sourceTag
         )
+        transcription.recordedAt = recordedAt
 
         modelContext.insert(transcription)
 
@@ -1407,7 +1427,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
     private func saveFailedTranscription(
         audioURL: URL,
         modelContext: ModelContext,
-        sourceTag: String?
+        sourceTag: String?,
+        recordedAt: Date?
     ) async -> Transcription? {
         // Existence, not readability, is the gate: a note pointing at audio that
         // AVFoundation happens to choke on is still worth keeping, because the
@@ -1431,6 +1452,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             sourceTag: sourceTag
         )
         transcription.transcriptionStatus = TranscriptionStatus.failed.rawValue
+        transcription.recordedAt = recordedAt
 
         modelContext.insert(transcription)
         applyPendingTags(to: transcription, modelContext: modelContext)
@@ -1468,7 +1490,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         modelContext: ModelContext,
         audioDuration: Double,
         transcriptionDuration: TimeInterval?,
-        sourceTag: String?
+        sourceTag: String?,
+        recordedAt: Date?
     ) throws -> Transcription {
         let descriptor = FetchDescriptor<Transcription>(
             predicate: #Predicate { $0.id == transcriptionID }
@@ -1505,7 +1528,8 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             audioDuration: audioDuration,
             transcriptionDuration: transcriptionDuration,
             modelContext: modelContext,
-            sourceTag: sourceTag
+            sourceTag: sourceTag,
+            recordedAt: recordedAt
         )
     }
 

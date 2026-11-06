@@ -19,13 +19,23 @@ nonisolated struct WebhookDefinition: Codable, Identifiable, Hashable, Sendable 
     var url: URL
     var isEnabled: Bool
     var hasBearerToken: Bool
+    /// Which text the payload carries.
+    var textContent: WebhookTextContent
 
-    init(id: UUID = UUID(), name: String, url: URL, isEnabled: Bool = true, hasBearerToken: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        url: URL,
+        isEnabled: Bool = true,
+        hasBearerToken: Bool = false,
+        textContent: WebhookTextContent = .default
+    ) {
         self.id = id
         self.name = name
         self.url = url
         self.isEnabled = isEnabled
         self.hasBearerToken = hasBearerToken
+        self.textContent = textContent
     }
 
     init(from decoder: any Decoder) throws {
@@ -35,6 +45,10 @@ nonisolated struct WebhookDefinition: Codable, Identifiable, Hashable, Sendable 
         url = try container.decode(URL.self, forKey: .url)
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         hasBearerToken = try container.decodeIfPresent(Bool.self, forKey: .hasBearerToken) ?? false
+        // Webhooks saved before this option existed, and values from a newer
+        // version this one does not know, fall back to today's behavior.
+        textContent = try container.decodeIfPresent(String.self, forKey: .textContent)
+            .flatMap(WebhookTextContent.init(rawValue:)) ?? .default
     }
 
     /// Name shown in lists and menus, falling back to the host when the user left it empty.
@@ -42,6 +56,29 @@ nonisolated struct WebhookDefinition: Codable, Identifiable, Hashable, Sendable 
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
         return url.host() ?? "Webhook"
+    }
+}
+
+/// Which text a webhook receives. The raw value is also the payload's
+/// `textContent` field, so receivers know what `text` holds.
+nonisolated enum WebhookTextContent: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// `text` is the original transcript. No `rawText`, no `aiModel`.
+    case original
+    /// `text` is the last AI-processed text (the transcript when no processing ran). No `rawText`.
+    case processed
+    /// `text` is the last AI-processed text, `rawText` the original transcript when it differs.
+    case both
+
+    static let `default`: WebhookTextContent = .both
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .original: "Original Only"
+        case .processed: "Last Processed Only"
+        case .both: "Both"
+        }
     }
 }
 

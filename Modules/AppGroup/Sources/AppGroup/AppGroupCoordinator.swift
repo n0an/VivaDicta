@@ -88,6 +88,7 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     public static let kPendingSharedAudioFileName = "pendingSharedAudioFileName"
     public static let kPendingLanguageOverride = "pendingLanguageOverride"
     public static let kPendingSourceTag = "pendingSourceTag"
+    public static let kPendingRecordedAt = "pendingRecordedAt"
 
     private enum UserDefaultsKeys {
         static let isRecording = "isRecording"
@@ -1028,6 +1029,27 @@ public final class AppGroupCoordinator: @unchecked Sendable {
         sharedDefaults?.synchronize()
         logger.logInfo("🏷️ Consumed pending source tag: \(tag)")
         return tag
+    }
+
+    /// Saves when the pending shared audio was recorded. `nil` clears it, so a
+    /// file without a trustworthy date never inherits an earlier file's date.
+    public func setPendingRecordedAt(_ date: Date?) {
+        if let date {
+            sharedDefaults?.set(date.timeIntervalSince1970, forKey: AppGroupCoordinator.kPendingRecordedAt)
+        } else {
+            sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingRecordedAt)
+        }
+        sharedDefaults?.synchronize()
+    }
+
+    /// Retrieves and clears when the pending shared audio was recorded.
+    public func getAndConsumePendingRecordedAt() -> Date? {
+        guard let interval = sharedDefaults?.object(forKey: AppGroupCoordinator.kPendingRecordedAt) as? Double else {
+            return nil
+        }
+        sharedDefaults?.removeObject(forKey: AppGroupCoordinator.kPendingRecordedAt)
+        sharedDefaults?.synchronize()
+        return Date(timeIntervalSince1970: interval)
     }
 
     // MARK: - Darwin Notifications (Real-time Communication)
