@@ -34,10 +34,26 @@ public final class DefaultKeychainService: KeychainService, Sendable {
 
     @discardableResult
     public func save(data: Data, forKey key: String, syncable: Bool) -> Bool {
+        save(data: data, forKey: key, syncable: syncable, accessibility: nil)
+    }
+
+    @discardableResult
+    public func save(_ value: String, forKey key: String, accessibility: KeychainAccessibility) -> Bool {
+        save(data: Data(value.utf8), forKey: key, syncable: false, accessibility: accessibility)
+    }
+
+    private func save(data: Data, forKey key: String, syncable: Bool, accessibility: KeychainAccessibility?) -> Bool {
         delete(forKey: key, syncable: syncable)
 
         var query = baseQuery(forKey: key, syncable: syncable)
         query[kSecValueData as String] = data
+        switch accessibility {
+        case .afterFirstUnlockThisDeviceOnly:
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        case .whenUnlocked, nil:
+            // Leave the system default (kSecAttrAccessibleWhenUnlocked).
+            break
+        }
 
         let status = SecItemAdd(query as CFDictionary, nil)
         if status == errSecSuccess {

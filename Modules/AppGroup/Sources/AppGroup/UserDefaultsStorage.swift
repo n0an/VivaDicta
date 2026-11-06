@@ -138,6 +138,13 @@ public enum UserDefaultsStorage {
         /// Entry template used by the append / prepend write modes.
         public static let folderExportEntryTemplate = "folderExportEntryTemplate"
 
+        // Integrations - Webhooks
+        /// JSON-encoded `[WebhookDefinition]`. Bearer tokens are never stored
+        /// here; they live in the Keychain.
+        public static let webhookDefinitions = "webhookDefinitions_v1"
+        /// JSON-encoded last delivery result per webhook ID.
+        public static let webhookDeliveryStatuses = "webhookDeliveryStatuses_v1"
+
         // Live Translation
         public static let liveTranslationSourceLanguage = "liveTranslation.sourceLanguage"
         public static let liveTranslationTargetLanguage = "liveTranslation.targetLanguage"

@@ -161,6 +161,11 @@ class AppState {
             self?.watchConnectivityService?.syncModesToWatch(modes: modes)
         }
 
+        WebhookStore.shared.onWebhookDeleted = { [weak self] webhookID in
+            self?.aiService.clearWebhookReferences(to: webhookID)
+            WebhookDeliveryService.shared.discardItems(forWebhook: webhookID)
+        }
+
         transcriptionManager.onCloudModelsUpdate = { [weak self] in
             self?.handleCloudModelsUpdate()
         }

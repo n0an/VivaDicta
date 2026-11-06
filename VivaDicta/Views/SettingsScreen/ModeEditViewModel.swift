@@ -38,6 +38,7 @@ class ModeEditViewModel {
 
     var obsidianEnabled: Bool = true
     var folderExportEnabled: Bool = true
+    var webhookID: UUID?
 
     let aiService: AIService
     private let transcriptionManager: TranscriptionManager
@@ -202,6 +203,7 @@ class ModeEditViewModel {
             speakerLabelsEnabled = existingMode.speakerLabelsEnabled
             obsidianEnabled = existingMode.obsidianEnabled
             folderExportEnabled = existingMode.folderExportEnabled
+            webhookID = existingMode.webhookID
 
             validateLanguageSelection()
             validateAIModelSelection()
@@ -251,7 +253,8 @@ class ModeEditViewModel {
             isSmartInsertEnabled: isSmartInsertEnabled,
             speakerLabelsEnabled: isSpeakerLabelsAvailable() ? speakerLabelsEnabled : false,
             obsidianEnabled: obsidianEnabled,
-            folderExportEnabled: folderExportEnabled
+            folderExportEnabled: folderExportEnabled,
+            webhookID: webhookID
         )
     }
 

@@ -8,6 +8,7 @@
 import Foundation
 import Testing
 import Keychain
+import Security
 
 /// Exercises the real `DefaultKeychainService` against the system keychain.
 ///
@@ -25,6 +26,28 @@ struct DefaultKeychainServiceTests {
 
     private func makeSUT() -> DefaultKeychainService {
         DefaultKeychainService(service: "com.antonnovoselov.VivaDicta.tests.\(UUID().uuidString)")
+    }
+
+    @Test func afterFirstUnlockItems_carryThatAccessibilityClass() throws {
+        let service = "com.antonnovoselov.VivaDicta.tests.\(UUID().uuidString)"
+        let sut = DefaultKeychainService(service: service)
+        defer { sut.delete(forKey: "token", syncable: false) }
+
+        #expect(sut.save("secret", forKey: "token", accessibility: .afterFirstUnlockThisDeviceOnly))
+        #expect(sut.getString(forKey: "token", syncable: false) == "secret")
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "token",
+            kSecUseDataProtectionKeychain as String: true,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        #expect(SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess)
+        let attributes = try #require(result as? [String: Any])
+        #expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
     }
 
     @Test func savesAndReadsBackString() {

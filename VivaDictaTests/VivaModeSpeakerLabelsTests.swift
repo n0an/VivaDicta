@@ -97,7 +97,7 @@ struct VivaModeSpeakerLabelsTests {
         (provider: .groq, model: "whisper-large-v3", expected: false)
     ])
     func providerCapability(provider: TranscriptionModelProvider, model: String, expected: Bool) {
-        struct StubModel: TranscriptionModel {
+        nonisolated struct StubModel: TranscriptionModel {
             let id = UUID()
             let name: String
             let displayName = ""

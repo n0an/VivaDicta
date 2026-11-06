@@ -19,6 +19,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         // Arm the on-device LLM memory monitor (frees the model under pressure so
         // we don't get jetsammed while holding a ~1-2 GB model).
         OnDeviceModelMemory.shared.activate()
+        // Resume webhook deliveries that were pending when the app last ran.
+        WebhookDeliveryService.shared.activate()
         return true
     }
 

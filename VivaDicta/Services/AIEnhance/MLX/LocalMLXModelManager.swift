@@ -30,7 +30,7 @@ enum LocalMLXError: LocalizedError {
 }
 
 /// Seam for the view model (and tests) so the UI doesn't depend on the actor directly.
-protocol LocalMLXModelEngine: Sendable {
+nonisolated protocol LocalMLXModelEngine: Sendable {
     func ensureLoaded(model: LocalMLXModel, progress: @escaping @Sendable (Double) -> Void) async throws
     func isDownloaded(_ model: LocalMLXModel) async -> Bool
     func downloadedBytes(_ model: LocalMLXModel) async -> Int64
