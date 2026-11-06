@@ -100,8 +100,52 @@ struct WebhookRetryPolicyTests {
         #expect(delays == [30, 120, 600, 1800, 3600, 3600, 3600, 3600])
     }
 
+    @Test(arguments: [301, 302, 303, 307, 308])
+    func redirectStatuses_stopWithAHint(status: Int) {
+        guard case .giveUp(let reason) = decide(status: status) else {
+            Issue.record("Expected to stop for HTTP \(status)")
+            return
+        }
+        #expect(reason.hasPrefix("HTTP \(status)"))
+        #expect(reason.contains(WebhookRedirects.notFollowedMessage))
+    }
+
+    @Test func followedRedirect_isNeverDelivered() {
+        let decision = WebhookRetryPolicy.decide(
+            statusCode: 200, retryAfter: nil, errorCode: nil, errorDescription: nil,
+            failedAttempts: 1, redirected: true, now: now
+        )
+        guard case .giveUp(let reason) = decision else {
+            Issue.record("Expected to stop, got \(decision)")
+            return
+        }
+        #expect(reason.hasPrefix("Redirected to another URL"))
+    }
+
     @Test func expiry_afterMaxAge() {
         #expect(!WebhookRetryPolicy.isExpired(createdAt: now, now: now.addingTimeInterval(23 * 3600)))
         #expect(WebhookRetryPolicy.isExpired(createdAt: now, now: now.addingTimeInterval(24 * 3600)))
+    }
+}
+
+struct WebhookRedirectsTests {
+
+    private func same(_ lhs: String, _ rhs: String) -> Bool {
+        WebhookRedirects.isSameEndpoint(URL(string: lhs)!, URL(string: rhs)!)
+    }
+
+    @Test func sameEndpoint_toleratesCanonicalization() {
+        #expect(same("https://example.com/hooks/a?x=1", "https://example.com/hooks/a?x=1"))
+        #expect(same("https://Example.COM/hooks/a", "https://example.com/hooks/a"))
+        #expect(same("https://example.com", "https://example.com/"))
+        #expect(same("https://example.com/hooks/a", "https://example.com:443/hooks/a"))
+    }
+
+    @Test func otherEndpoint_isARedirect() {
+        #expect(!same("https://example.com/hooks/a", "https://example.org/hooks/a"))
+        #expect(!same("https://example.com/hooks/a", "http://example.com/hooks/a"))
+        #expect(!same("https://example.com/hooks/a", "https://example.com:8443/hooks/a"))
+        #expect(!same("https://example.com/hooks/a", "https://example.com/hooks/b"))
+        #expect(!same("https://example.com/hooks/a?x=1", "https://example.com/hooks/a?x=2"))
     }
 }

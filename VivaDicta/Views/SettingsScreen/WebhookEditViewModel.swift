@@ -42,7 +42,7 @@ final class WebhookEditViewModel {
 
     init(webhook: WebhookDefinition?,
          store: WebhookStore? = nil,
-         session: URLSession = .shared,
+         session: URLSession = WebhookRedirects.testSession,
          appVersion: String? = WebhookPayloadBuilder.currentAppVersion) {
         original = webhook
         name = webhook?.name ?? ""
@@ -149,6 +149,12 @@ final class WebhookEditViewModel {
             let (data, response) = try await session.upload(for: request, from: body)
             guard let http = response as? HTTPURLResponse else {
                 testState = .failed("No HTTP response")
+                return
+            }
+            // The session refuses redirects, so a 3xx is the final answer.
+            if (300..<400).contains(http.statusCode) {
+                testState = .failed("HTTP \(http.statusCode). \(WebhookRedirects.notFollowedMessage)")
+                logger.logInfo("🪝 Test send got HTTP \(http.statusCode) - redirect not followed")
                 return
             }
             testState = .finished(statusCode: http.statusCode, body: Self.preview(of: data))

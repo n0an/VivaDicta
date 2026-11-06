@@ -295,6 +295,7 @@ final class WebhookDeliveryService {
             errorCode: result.errorCode,
             errorDescription: result.errorDescription,
             failedAttempts: item.attempts,
+            redirected: result.redirected,
             now: currentDate
         )
 

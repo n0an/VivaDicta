@@ -46,15 +46,22 @@ nonisolated enum WebhookRetryPolicy {
     ///   - errorCode: transport error, if any.
     ///   - errorDescription: human-readable transport error, if any.
     ///   - failedAttempts: attempts made so far, including this one.
+    ///   - redirected: the response came from another URL (a redirect was
+    ///     followed). Never counts as delivered, never retried.
     static func decide(
         statusCode: Int?,
         retryAfter: String?,
         errorCode: URLError.Code?,
         errorDescription: String?,
         failedAttempts: Int,
+        redirected: Bool = false,
         now: Date
     ) -> WebhookAttemptDecision {
         let backoff = backoff(afterFailedAttempts: failedAttempts)
+
+        if redirected {
+            return .giveUp(reason: "Redirected to another URL. \(WebhookRedirects.notFollowedMessage)")
+        }
 
         if let errorCode {
             let reason = errorDescription ?? "Network error (\(errorCode.rawValue))"
@@ -82,6 +89,8 @@ nonisolated enum WebhookRetryPolicy {
             return .retry(after: delay, reason: reason)
         case 500..<600:
             return .retry(after: backoff, reason: reason)
+        case 300..<400:
+            return .giveUp(reason: "\(reason). \(WebhookRedirects.notFollowedMessage)")
         default:
             return .giveUp(reason: reason)
         }

@@ -16,6 +16,7 @@ Delivery goes through a persistent outbox and a background `URLSession`, so a se
 | `WebhookRetryPolicy` | `Services/Webhooks/WebhookRetryPolicy.swift` | Pure retry and stop rules, backoff, `Retry-After`, max age |
 | `WebhookOutboxStorage` | `Services/Webhooks/WebhookOutbox.swift` | `Application Support/Webhooks/outbox.json` plus one body file per item |
 | `URLSessionWebhookTransport` | `Services/Webhooks/WebhookTransport.swift` | File-backed upload tasks in a background session (`com.antonnovoselov.VivaDicta.webhooks`) |
+| `WebhookRedirects` | `Services/Webhooks/WebhookRedirects.swift` | Redirect rules: the Send Test session, `WebhookRedirectRefuser`, and the check that a response came from the requested URL |
 | `WebhookDeliveryService` | `Services/Webhooks/WebhookDeliveryService.swift` | Orchestrates enqueue, delivery, retries, reconciliation and manual sends |
 
 `VivaMode.webhookID` holds the per-mode choice. It is decoded with `decodeIfPresent`, so modes saved by older versions still load. Deleting a webhook clears it from every mode (`AIService.clearWebhookReferences(to:)`) and drops its pending items.
@@ -42,6 +43,7 @@ Manual send: the share menu on the transcription detail screen lists enabled web
 4. On completion `WebhookRetryPolicy` decides:
    - 2xx: delivered, item removed
    - network error, 408, 429, 5xx: retry. `Retry-After` (seconds or HTTP date) is honored on 429/503, otherwise backoff 30s, 2m, 10m, 30m, then hourly
+   - 3xx, or a response that came from another URL than the one requested: stop and record the failure (see Redirects)
    - any other status, or a malformed URL: stop and record the failure
    - older than 24 hours: dropped and recorded as failed
 5. Retries are new upload tasks with `earliestBeginDate`, so they run while the app is suspended or not running. The system relaunches the app in the background (`handleEventsForBackgroundURLSession`) to report the result.
@@ -49,6 +51,14 @@ Manual send: the share menu on the transcription detail screen lists enabled web
 While an upload task exists, `nsurlsessiond` keeps its request, including the `Authorization` header, until the task finishes (at most 24 hours for a scheduled retry). The token is otherwise never written outside the Keychain, logged or sent to analytics.
 
 `AppDelegate.didFinishLaunching` and the scene becoming active call `activate()`, which re-arms items whose task disappeared and starts what is due. Editing a webhook's URL or token re-arms its pending items; disabling or deleting it drops them.
+
+## Redirects
+
+Webhook requests must reach only the exact https URL the user entered. Because the app sets `NSAllowsArbitraryLoads`, ATS would not stop a redirect to plain http.
+
+- **Send test** uses `WebhookRedirects.testSession`, an ephemeral session whose delegate (`WebhookRedirectRefuser`) refuses every redirect. The 3xx response is the result and is shown as a failure with "Redirects are not followed".
+- **Deliveries** run in a background session. Per Apple's documentation, `urlSession(_:task:willPerformHTTPRedirection:newRequest:completionHandler:)` is called only for default and ephemeral sessions, and background sessions follow redirects automatically. Measured on the iOS 26.5 simulator: a 307 or 308 re-sends the body to the new URL (another host, or plain http) without the `Authorization` header, and keeps the other headers. The transport compares the response URL with the requested one (`WebhookRedirects.isSameEndpoint`). A mismatch is recorded as failed, not delivered, and is not retried. The re-sent body is not prevented. Closing that needs delivery to leave the background session, which is still an open decision.
+- The transport delegate also refuses redirects. That only takes effect for non-background configurations, such as the ones the tests use.
 
 ## Contract v1
 
@@ -82,4 +92,4 @@ Settings → Integrations → Webhooks lists webhooks with their last delivery r
 
 ## Tests
 
-`WebhookPayloadTests`, `VivaModeWebhookDecodingTests`, `WebhookRetryPolicyTests`, `WebhookDeliveryServiceTests` (real `URLSession` through `WebhookURLProtocolStub`), `WebhookStoreTests`.
+`WebhookPayloadTests`, `VivaModeWebhookDecodingTests`, `WebhookRetryPolicyTests`, `WebhookRedirectsTests`, `WebhookDeliveryServiceTests` (real `URLSession` through `WebhookURLProtocolStub`, including redirect and Send Test cases), `WebhookStoreTests`.

@@ -37,6 +37,9 @@ nonisolated struct WebhookTransportResult: Sendable, Equatable {
     let retryAfter: String?
     let errorCode: URLError.Code?
     let errorDescription: String?
+    /// The response came from another URL than the one requested: a
+    /// background session followed a redirect without asking.
+    var redirected = false
 }
 
 nonisolated enum WebhookTransportEvent: Sendable {
@@ -149,14 +152,32 @@ nonisolated final class URLSessionWebhookTransport: WebhookTransport {
             guard let tag = WebhookTaskTag(taskDescription: task.taskDescription) else { return }
             let response = task.response as? HTTPURLResponse
             let urlError = error as? URLError
+            var redirected = false
+            if let requested = task.originalRequest?.url, let answered = response?.url {
+                redirected = !WebhookRedirects.isSameEndpoint(requested, answered)
+            }
             let result = WebhookTransportResult(
                 tag: tag,
                 statusCode: error == nil ? response?.statusCode : nil,
                 retryAfter: response?.value(forHTTPHeaderField: "Retry-After"),
                 errorCode: urlError?.code ?? (error != nil ? .unknown : nil),
-                errorDescription: error?.localizedDescription
+                errorDescription: error?.localizedDescription,
+                redirected: redirected
             )
             deliver(.completed(result))
+        }
+
+        /// Default and ephemeral sessions: refuse, so the 3xx is the result.
+        /// Background sessions never call this and follow redirects; their
+        /// completions are flagged as `redirected` above instead.
+        func urlSession(
+            _ session: URLSession,
+            task: URLSessionTask,
+            willPerformHTTPRedirection response: HTTPURLResponse,
+            newRequest request: URLRequest,
+            completionHandler: @escaping @Sendable (URLRequest?) -> Void
+        ) {
+            completionHandler(nil)
         }
 
         func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {

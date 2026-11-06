@@ -17,6 +17,12 @@ nonisolated final class WebhookURLProtocolStub: URLProtocol, @unchecked Sendable
     enum Reply: Sendable {
         case status(Int, headers: [String: String] = [:])
         case failure(URLError.Code)
+        /// Answers with a redirect. If the session follows it, the stub
+        /// captures the request to `to`.
+        case redirect(Int, to: URL)
+        /// Answers as if a redirect had already been followed (what a
+        /// background session reports): the response URL differs from the request's.
+        case servedFrom(URL, status: Int)
     }
 
     struct Captured: Sendable {
@@ -57,6 +63,22 @@ nonisolated final class WebhookURLProtocolStub: URLProtocol, @unchecked Sendable
             client?.urlProtocolDidFinishLoading(self)
         case .failure(let code):
             client?.urlProtocol(self, didFailWithError: URLError(code))
+        case .redirect(let code, let target):
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: code, httpVersion: "HTTP/1.1", headerFields: ["Location": target.absoluteString]
+            )!
+            var newRequest = request
+            newRequest.url = target
+            client?.urlProtocol(self, wasRedirectedTo: newRequest, redirectResponse: response)
+            // Reached when the redirect is refused: the 3xx is the final response.
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: Data("{}".utf8))
+            client?.urlProtocolDidFinishLoading(self)
+        case .servedFrom(let url, let code):
+            let response = HTTPURLResponse(url: url, statusCode: code, httpVersion: "HTTP/1.1", headerFields: [:])!
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: Data("{}".utf8))
+            client?.urlProtocolDidFinishLoading(self)
         }
     }
 
@@ -231,6 +253,71 @@ final class WebhookDeliveryServiceTests {
         #expect(WebhookURLProtocolStub.captured.count == 1)
         #expect(store.statuses[webhook.id]?.outcome == .failed)
         #expect(store.statuses[webhook.id]?.message?.hasPrefix("Gave up after 24 hours") == true)
+    }
+
+    // MARK: Redirects
+
+    private let redirectTarget = URL(string: "http://example.org/elsewhere")!
+
+    @Test(arguments: [301, 302, 303, 307, 308])
+    func redirect_isNotFollowed_andStopsDelivery(status: Int) async throws {
+        WebhookURLProtocolStub.reset(replies: [.redirect(status, to: redirectTarget)])
+        let webhook = try addWebhook(token: "secret-token")
+
+        service.enqueue(input(), to: webhook)
+        try await waitUntil { service.items.isEmpty }
+
+        clock.now.addTimeInterval(3600)
+        service.pump()
+        // Only the configured URL was ever requested: no follow, no retry.
+        #expect(WebhookURLProtocolStub.captured.map(\.url) == [webhook.url])
+        let deliveryStatus = try #require(store.statuses[webhook.id])
+        #expect(deliveryStatus.outcome == .failed)
+        #expect(deliveryStatus.statusCode == status)
+        #expect(deliveryStatus.message?.contains(WebhookRedirects.notFollowedMessage) == true)
+    }
+
+    @Test func responseFromAnotherURL_isNotCountedAsDelivered() async throws {
+        // What a background session reports after following a redirect on its own.
+        WebhookURLProtocolStub.reset(replies: [.servedFrom(redirectTarget, status: 200)])
+        let webhook = try addWebhook()
+
+        let result = await service.sendManually(input(), to: webhook)
+
+        guard case .failed(let reason) = result else {
+            Issue.record("Expected a failure, got \(result)")
+            return
+        }
+        #expect(reason.hasPrefix("Redirected to another URL"))
+        #expect(store.statuses[webhook.id]?.outcome == .failed)
+        #expect(service.items.isEmpty)
+        #expect(WebhookURLProtocolStub.captured.count == 1)
+    }
+
+    @Test(arguments: [307, 308])
+    func sendTest_doesNotFollowRedirects(status: Int) async throws {
+        WebhookURLProtocolStub.reset(replies: [.redirect(status, to: redirectTarget)])
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WebhookURLProtocolStub.self]
+        let viewModel = WebhookEditViewModel(
+            webhook: nil,
+            store: store,
+            session: WebhookRedirects.makeSession(configuration: configuration),
+            appVersion: "9.9.9"
+        )
+        viewModel.urlString = "https://example.com/hooks/test"
+        viewModel.tokenInput = "secret-token"
+
+        await viewModel.sendTest()
+
+        #expect(viewModel.testState == .failed("HTTP \(status). \(WebhookRedirects.notFollowedMessage)"))
+        let captured = WebhookURLProtocolStub.captured
+        #expect(captured.map(\.url) == [URL(string: "https://example.com/hooks/test")!])
+        #expect(captured.first?.headers["Authorization"] == "Bearer secret-token")
+    }
+
+    @Test func sendTest_productionSessionRefusesRedirects() {
+        #expect(WebhookRedirects.testSession.delegate is WebhookRedirectRefuser)
     }
 
     @Test func manualResend_reusesTheTranscriptionID() async throws {
