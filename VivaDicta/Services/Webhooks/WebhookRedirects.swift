@@ -14,8 +14,9 @@ import Foundation
 ///
 /// Default and ephemeral sessions ask their delegate before following, so
 /// ``WebhookRedirectRefuser`` turns the 3xx response itself into the result.
-/// Background sessions follow redirects without asking, so their completions
-/// are checked afterwards with ``isSameEndpoint(_:_:)``.
+/// Background sessions follow redirects without asking, which is why webhook
+/// requests never use one. ``isSameEndpoint(_:_:)`` is a second check on
+/// every completion.
 nonisolated enum WebhookRedirects {
     static let notFollowedMessage = "Redirects are not followed. Enter the final URL instead."
 

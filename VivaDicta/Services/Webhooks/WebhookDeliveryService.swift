@@ -6,16 +6,19 @@
 //
 
 import Foundation
+import OAuth
 import os
 
 /// Delivers finished transcriptions to webhooks through a persistent outbox.
 ///
 /// Every send is written to disk first (index + body file), then uploaded by a
-/// ``WebhookTransport`` - in production a background `URLSession`, so an
-/// upload that starts as the app gets suspended still completes. Failed
-/// attempts are retried per ``WebhookRetryPolicy``; retries are scheduled as
-/// upload tasks with an `earliestBeginDate`, so they also run while the app is
-/// not. Pending items are reconciled on launch and on foreground.
+/// ``WebhookTransport``: an in-process `URLSession` that refuses redirects
+/// (a background session would follow them, see ``WebhookRedirects``). While
+/// an upload is in flight the service holds background time, so a send that
+/// starts as the app leaves the foreground can still finish. Failed attempts
+/// are retried per ``WebhookRetryPolicy`` while the app runs: a timer starts
+/// each retry when it is due, and launch and foreground resume whatever came
+/// due while the app was suspended or not running.
 ///
 /// Nothing here throws to callers or blocks them: a failing webhook never
 /// delays transcription, the Obsidian hand-off or folder export.
@@ -27,7 +30,7 @@ final class WebhookDeliveryService {
     enum ManualSendResult: Equatable {
         case delivered(statusCode: Int)
         case failed(String)
-        /// Not delivered yet; the outbox keeps retrying in the background.
+        /// Not delivered yet; the outbox keeps retrying while the app runs.
         case queued(String?)
     }
 
@@ -41,47 +44,46 @@ final class WebhookDeliveryService {
     private let makeTransport: () -> any WebhookTransport
     private let now: () -> Date
     private let appVersion: String?
+    private let backgroundTasks: any BackgroundTaskService
     private let logger = Logger(category: .webhooks)
 
     private var transport: (any WebhookTransport)?
     private var isLoaded = false
-    private var backgroundCompletionHandlers: [() -> Void] = []
+    /// Background time held while an upload is in flight.
+    private(set) var backgroundTaskID: UInt?
+    /// Starts the next retry when it comes due.
+    private var retryTimer: Task<Void, Never>?
     private var manualWaiters: [UUID: CheckedContinuation<ManualSendResult, Never>] = [:]
 
     init(
         store: WebhookStore? = nil,
         storage: WebhookOutboxStorage = WebhookOutboxStorage(),
-        makeTransport: @escaping () -> any WebhookTransport = { URLSessionWebhookTransport.makeBackground() },
+        makeTransport: @escaping () -> any WebhookTransport = { URLSessionWebhookTransport.makeDefault() },
+        backgroundTasks: (any BackgroundTaskService)? = nil,
         now: @escaping () -> Date = { Date() },
         appVersion: String? = WebhookPayloadBuilder.currentAppVersion
     ) {
         self.store = store ?? .shared
         self.storage = storage
         self.makeTransport = makeTransport
+        self.backgroundTasks = backgroundTasks ?? BackgroundTaskServiceAdapter()
         self.now = now
         self.appVersion = appVersion
     }
 
     // MARK: - Lifecycle
 
-    /// Recreates the background session (so it receives pending events) and
-    /// resumes pending items. Safe to call repeatedly.
+    /// Resumes pending items: on launch and whenever the app becomes active.
+    /// Safe to call repeatedly.
     func activate() {
         Task { await resume() }
-    }
-
-    /// Called from `application(_:handleEventsForBackgroundURLSession:completionHandler:)`.
-    func handleBackgroundEvents(completionHandler: @escaping () -> Void) {
-        backgroundCompletionHandlers.append(completionHandler)
-        _ = ensureTransport()
     }
 
     /// Re-arms items whose upload task no longer exists, drops expired ones and
     /// starts everything that is due.
     func resume() async {
         loadIfNeeded()
-        // Nothing pending: no need to spin up the background session. A relaunch
-        // for background events creates it in `handleBackgroundEvents`.
+        // Nothing pending: no need to create the session.
         guard !items.isEmpty, let transport = ensureTransport() else { return }
         // Snapshot the attempts in flight *before* awaiting the task list. A
         // completion handled during the await can start a newer attempt that
@@ -207,6 +209,8 @@ final class WebhookDeliveryService {
             discard(item)
         }
         persist()
+        scheduleNextPump()
+        updateBackgroundTime()
     }
 
     // MARK: - Delivery
@@ -232,7 +236,7 @@ final class WebhookDeliveryService {
                 discard(item)
                 continue
             }
-            if !transport.supportsDeferredStart && item.nextAttemptAt > currentDate {
+            if item.nextAttemptAt > currentDate {
                 continue
             }
 
@@ -253,32 +257,21 @@ final class WebhookDeliveryService {
                 appVersion: appVersion
             )
             guard let index = items.firstIndex(where: { $0.id == item.id }) else { continue }
-            let beginDate = item.nextAttemptAt > currentDate ? item.nextAttemptAt : nil
             items[index].isInFlight = true
             items[index].attempts += 1
             transport.start(
                 tag: WebhookTaskTag(itemID: item.id, attempt: items[index].attempts),
                 request: request,
-                bodyFileURL: storage.bodyURL(for: item.id),
-                earliestBeginDate: beginDate
+                bodyFileURL: storage.bodyURL(for: item.id)
             )
-            logger.logInfo("🪝 Attempt \(items[index].attempts) to '\(webhook.displayName)'\(beginDate.map { " at \($0.formatted(.iso8601))" } ?? "")")
+            logger.logInfo("🪝 Attempt \(items[index].attempts) to '\(webhook.displayName)'")
         }
         persist()
+        scheduleNextPump()
+        updateBackgroundTime()
     }
 
-    func handle(_ event: WebhookTransportEvent) {
-        switch event {
-        case .finishedBackgroundEvents:
-            let handlers = backgroundCompletionHandlers
-            backgroundCompletionHandlers.removeAll()
-            handlers.forEach { $0() }
-        case .completed(let result):
-            handle(result)
-        }
-    }
-
-    private func handle(_ result: WebhookTransportResult) {
+    func handle(_ result: WebhookTransportResult) {
         loadIfNeeded()
         // Unknown, not in flight, or an older attempt: the item was discarded,
         // superseded or re-armed, and this completion is stale.
@@ -378,11 +371,50 @@ final class WebhookDeliveryService {
     private func ensureTransport() -> (any WebhookTransport)? {
         if let transport { return transport }
         let created = makeTransport()
-        created.setEventHandler { [weak self] event in
-            Task { @MainActor in self?.handle(event) }
+        created.setCompletionHandler { [weak self] result in
+            Task { @MainActor in self?.handle(result) }
         }
         transport = created
         return created
+    }
+
+    /// Arms one timer for the earliest pending retry. While the app is
+    /// suspended the timer does not run; `activate()` on foreground or launch
+    /// picks up what came due.
+    private func scheduleNextPump() {
+        retryTimer?.cancel()
+        retryTimer = nil
+        guard let next = items.filter({ !$0.isInFlight }).map(\.nextAttemptAt).min() else { return }
+        let delay = max(0, next.timeIntervalSince(now()))
+        retryTimer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            self?.pump()
+        }
+    }
+
+    /// Holds background time while any upload is in flight, so a send that
+    /// started in the foreground can finish after the app leaves it.
+    private func updateBackgroundTime() {
+        let needsTime = items.contains(where: \.isInFlight)
+        if needsTime, backgroundTaskID == nil {
+            backgroundTaskID = backgroundTasks.beginBackgroundTask(name: "Webhook delivery") { [weak self] in
+                Task { @MainActor in self?.backgroundTimeExpired() }
+            }
+        } else if !needsTime, let backgroundTaskID {
+            backgroundTasks.endBackgroundTask(backgroundTaskID)
+            self.backgroundTaskID = nil
+        }
+    }
+
+    /// The system is about to suspend the app. An in-flight upload either
+    /// completes after the app resumes or fails and is retried then; on a
+    /// relaunch `resume()` re-arms it.
+    private func backgroundTimeExpired() {
+        guard let backgroundTaskID else { return }
+        logger.logInfo("🪝 Background time expired with an upload in flight")
+        backgroundTasks.endBackgroundTask(backgroundTaskID)
+        self.backgroundTaskID = nil
     }
 
     private func persist() {

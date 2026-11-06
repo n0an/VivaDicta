@@ -77,8 +77,8 @@ final class WebhookStore {
                 keychain.delete(forKey: Self.tokenKey(for: webhook.id), syncable: false)
                 webhook.hasBearerToken = false
             } else {
-                // After-first-unlock: retries run in background relaunches,
-                // often while the phone is locked in a pocket.
+                // After-first-unlock: sends also run while the phone is locked
+                // (watch recordings processed in the background, background time).
                 guard keychain.save(trimmed, forKey: Self.tokenKey(for: webhook.id), accessibility: .afterFirstUnlockThisDeviceOnly) else {
                     throw StoreError.keychainWriteFailed
                 }

@@ -875,8 +875,8 @@ struct TranscriptionDetailView: View {
                 webhookAlertMessage = "\(webhook.displayName) rejected the note: \(reason)"
                 showWebhookAlert = true
             case .queued(let reason):
-                webhookAlertMessage = reason.map { "Could not reach \(webhook.displayName) yet (\($0)). VivaDicta keeps retrying in the background." }
-                    ?? "Still sending to \(webhook.displayName). VivaDicta keeps retrying in the background; see Settings → Integrations for the result."
+                webhookAlertMessage = reason.map { "Could not reach \(webhook.displayName) yet (\($0)). VivaDicta retries while the app is running." }
+                    ?? "Still sending to \(webhook.displayName). VivaDicta retries while the app is running; see Settings → Integrations for the result."
                 showWebhookAlert = true
             }
         }

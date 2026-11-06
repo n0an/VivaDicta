@@ -9,6 +9,7 @@ import Foundation
 import Synchronization
 import Testing
 import KeychainMocks
+import OAuth
 @testable import VivaDicta
 
 /// Intercepts webhook uploads made through a real `URLSession` and answers
@@ -20,8 +21,8 @@ nonisolated final class WebhookURLProtocolStub: URLProtocol, @unchecked Sendable
         /// Answers with a redirect. If the session follows it, the stub
         /// captures the request to `to`.
         case redirect(Int, to: URL)
-        /// Answers as if a redirect had already been followed (what a
-        /// background session reports): the response URL differs from the request's.
+        /// Answers as if a redirect had already been followed: the response
+        /// URL differs from the request's.
         case servedFrom(URL, status: Int)
     }
 
@@ -111,6 +112,7 @@ final class WebhookDeliveryServiceTests {
     private let directory: URL
     private let defaults: UserDefaults
     private let keychain = MockKeychainService()
+    private let backgroundTasks = FakeBackgroundTaskService()
     private let store: WebhookStore
     private let service: WebhookDeliveryService
 
@@ -119,6 +121,7 @@ final class WebhookDeliveryServiceTests {
         defaults = UserDefaults(suiteName: "WebhookDeliveryServiceTests-\(UUID().uuidString)")!
         store = WebhookStore(defaults: defaults, keychain: keychain)
         let clock = clock
+        let backgroundTasks = backgroundTasks
         service = WebhookDeliveryService(
             store: store,
             storage: WebhookOutboxStorage(directory: directory),
@@ -127,6 +130,7 @@ final class WebhookDeliveryServiceTests {
                 configuration.protocolClasses = [WebhookURLProtocolStub.self]
                 return URLSessionWebhookTransport(configuration: configuration)
             },
+            backgroundTasks: backgroundTasks,
             now: { clock.now },
             appVersion: "9.9.9"
         )
@@ -278,7 +282,7 @@ final class WebhookDeliveryServiceTests {
     }
 
     @Test func responseFromAnotherURL_isNotCountedAsDelivered() async throws {
-        // What a background session reports after following a redirect on its own.
+        // Second line of defense: a response from another URL is never a delivery.
         WebhookURLProtocolStub.reset(replies: [.servedFrom(redirectTarget, status: 200)])
         let webhook = try addWebhook()
 
@@ -410,6 +414,7 @@ final class WebhookDeliveryServiceTests {
                 configuration.protocolClasses = [WebhookURLProtocolStub.self]
                 return URLSessionWebhookTransport(configuration: configuration)
             },
+            backgroundTasks: backgroundTasks,
             now: { clock.now },
             appVersion: "9.9.9"
         )
@@ -423,7 +428,7 @@ final class WebhookDeliveryServiceTests {
 /// Scriptable transport for races the real `URLSession` cannot reproduce on demand.
 nonisolated final class FakeWebhookTransport: WebhookTransport {
     struct State {
-        var handler: (@Sendable (WebhookTransportEvent) -> Void)?
+        var handler: (@Sendable (WebhookTransportResult) -> Void)?
         var started: [WebhookTaskTag] = []
         var cancelledTags: [WebhookTaskTag] = []
         var cancelledItems: [UUID] = []
@@ -434,13 +439,12 @@ nonisolated final class FakeWebhookTransport: WebhookTransport {
     }
 
     let state = Mutex(State())
-    let supportsDeferredStart = true
 
-    func setEventHandler(_ handler: @escaping @Sendable (WebhookTransportEvent) -> Void) {
+    func setCompletionHandler(_ handler: @escaping @Sendable (WebhookTransportResult) -> Void) {
         state.withLock { $0.handler = handler }
     }
 
-    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL, earliestBeginDate: Date?) {
+    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL) {
         state.withLock { $0.started.append(tag) }
     }
 
@@ -458,11 +462,33 @@ nonisolated final class FakeWebhookTransport: WebhookTransport {
         return result
     }
 
-    func complete(_ tag: WebhookTaskTag, statusCode: Int) {
+    func complete(_ tag: WebhookTaskTag, statusCode: Int, retryAfter: String? = nil) {
         let handler = state.withLock { $0.handler }
-        handler?(.completed(WebhookTransportResult(
-            tag: tag, statusCode: statusCode, retryAfter: nil, errorCode: nil, errorDescription: nil
-        )))
+        handler?(WebhookTransportResult(
+            tag: tag, statusCode: statusCode, retryAfter: retryAfter, errorCode: nil, errorDescription: nil
+        ))
+    }
+}
+
+/// Records background-time requests instead of asking UIKit.
+@MainActor
+final class FakeBackgroundTaskService: BackgroundTaskService {
+    private(set) var begun: [UInt] = []
+    private(set) var ended: [UInt] = []
+    private(set) var expirationHandlers: [UInt: @Sendable () -> Void] = [:]
+    private var nextID: UInt = 1
+
+    var active: Set<UInt> { Set(begun).subtracting(ended) }
+
+    func beginBackgroundTask(name: String, onExpiration: @escaping @Sendable () -> Void) -> UInt? {
+        defer { nextID += 1 }
+        begun.append(nextID)
+        expirationHandlers[nextID] = onExpiration
+        return nextID
+    }
+
+    func endBackgroundTask(_ identifier: UInt) {
+        ended.append(identifier)
     }
 }
 
@@ -471,8 +497,16 @@ nonisolated final class FakeWebhookTransport: WebhookTransport {
 final class WebhookDeliveryRaceTests {
     private let directory = URL.temporaryDirectory.appending(path: "WebhookRaceTests-\(UUID().uuidString)", directoryHint: .isDirectory)
     private let fake = FakeWebhookTransport()
+    private let backgroundTasks = FakeBackgroundTaskService()
     private let store: WebhookStore
     private let service: WebhookDeliveryService
+
+    /// Real time plus a skew the tests can advance.
+    private nonisolated final class Clock: @unchecked Sendable {
+        var skew: TimeInterval = 0
+        var now: Date { Date().addingTimeInterval(skew) }
+    }
+    private let clock = Clock()
 
     init() {
         store = WebhookStore(
@@ -480,12 +514,26 @@ final class WebhookDeliveryRaceTests {
             keychain: MockKeychainService()
         )
         let fake = fake
+        let clock = clock
         service = WebhookDeliveryService(
             store: store,
             storage: WebhookOutboxStorage(directory: directory),
             makeTransport: { fake },
+            backgroundTasks: backgroundTasks,
+            now: { clock.now },
             appVersion: "9.9.9"
         )
+    }
+
+    private func waitUntil(_ condition: () -> Bool, timeout: Duration = .seconds(5)) async throws {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        while !condition() {
+            guard ContinuousClock.now < deadline else {
+                Issue.record("Timed out waiting for condition")
+                return
+            }
+            try await Task.sleep(for: .milliseconds(20))
+        }
     }
 
     deinit {
@@ -509,13 +557,18 @@ final class WebhookDeliveryRaceTests {
         let first = WebhookTaskTag(itemID: itemID, attempt: 1)
         #expect(fake.state.withLock { $0.started } == [first])
 
-        // While resume() awaits the task list, attempt 1 fails with a 503 and the
-        // service schedules attempt 2. The list (taken earlier) contains neither.
+        // While resume() awaits the task list, attempt 1 fails with a 503 and,
+        // its backoff already over, the service starts attempt 2. The list
+        // (taken earlier) contains neither.
         let fake = fake
+        let clock = clock
+        let service = service
         fake.state.withLock {
             $0.duringActiveTags = {
                 fake.complete(first, statusCode: 503)
                 try? await Task.sleep(for: .milliseconds(200))
+                clock.skew += WebhookRetryPolicy.backoff(afterFailedAttempts: 1)
+                await service.pump()
             }
         }
 
@@ -524,6 +577,44 @@ final class WebhookDeliveryRaceTests {
         let started = fake.state.withLock { $0.started }
         #expect(started == [first, WebhookTaskTag(itemID: itemID, attempt: 2)])
         #expect(service.items.first?.isInFlight == true)
+    }
+
+    @Test func inFlightUpload_holdsBackgroundTimeUntilItCompletes() async throws {
+        let itemID = try enqueueOne()
+        #expect(backgroundTasks.active.count == 1)
+
+        fake.complete(WebhookTaskTag(itemID: itemID, attempt: 1), statusCode: 200)
+        try await waitUntil { service.items.isEmpty }
+
+        #expect(backgroundTasks.active.isEmpty)
+        #expect(backgroundTasks.begun.count == 1)
+        #expect(service.backgroundTaskID == nil)
+    }
+
+    @Test func expiredBackgroundTime_isReleased_andTheItemStaysPending() async throws {
+        _ = try enqueueOne()
+        let id = try #require(backgroundTasks.begun.first)
+
+        backgroundTasks.expirationHandlers[id]?()
+        try await waitUntil { service.backgroundTaskID == nil }
+
+        #expect(backgroundTasks.active.isEmpty)
+        #expect(service.items.first?.isInFlight == true)
+    }
+
+    @Test func dueRetry_startsOnItsOwn_whileTheAppRuns() async throws {
+        let itemID = try enqueueOne()
+
+        fake.complete(WebhookTaskTag(itemID: itemID, attempt: 1), statusCode: 503, retryAfter: "1")
+        try await waitUntil { service.items.first?.isInFlight == false }
+        #expect(fake.state.withLock { $0.started.count } == 1)
+        // Nothing waits on an upload, so no background time is held.
+        #expect(backgroundTasks.active.isEmpty)
+
+        // No pump(), resume() or new send: the retry timer starts attempt 2.
+        try await waitUntil { fake.state.withLock { $0.started.count } == 2 }
+        #expect(fake.state.withLock { $0.started.last } == WebhookTaskTag(itemID: itemID, attempt: 2))
+        #expect(backgroundTasks.active.count == 1)
     }
 
     @Test func rearm_cancelsOnlyTheOldAttempt() throws {

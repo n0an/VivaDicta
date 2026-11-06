@@ -25,8 +25,8 @@ nonisolated struct WebhookOutboxItem: Codable, Identifiable, Equatable, Sendable
 }
 
 /// File-backed persistence for the outbox: an index file plus one JSON body
-/// file per item. Bodies are files so background `URLSession` upload tasks can
-/// stream them (an hour-long meeting is 40-100 KB of text, never truncated).
+/// file per item. Bodies are files so they survive relaunches and upload tasks
+/// can stream them (an hour-long meeting is 40-100 KB of text, never truncated).
 nonisolated struct WebhookOutboxStorage: Sendable {
     let directory: URL
 

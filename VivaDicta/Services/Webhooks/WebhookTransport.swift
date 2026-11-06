@@ -10,7 +10,7 @@ import Synchronization
 
 /// Identifies one upload attempt of one outbox item. Stored in the task's
 /// `taskDescription`, so a completion that arrives after the item was re-armed
-/// (or in a later launch) can be matched to the attempt that produced it.
+/// can be matched to the attempt that produced it.
 nonisolated struct WebhookTaskTag: Hashable, Sendable {
     let itemID: UUID
     let attempt: Int
@@ -37,81 +37,60 @@ nonisolated struct WebhookTransportResult: Sendable, Equatable {
     let retryAfter: String?
     let errorCode: URLError.Code?
     let errorDescription: String?
-    /// The response came from another URL than the one requested: a
-    /// background session followed a redirect without asking.
+    /// The response came from another URL than the one requested. The session
+    /// refuses redirects, so this is a second line of defense.
     var redirected = false
 }
 
-nonisolated enum WebhookTransportEvent: Sendable {
-    case completed(WebhookTransportResult)
-    /// A background session delivered all events queued while the app was not running.
-    case finishedBackgroundEvents
-}
-
-/// Starts file-backed uploads and reports their completion.
-///
-/// Delegate-based rather than `async` on purpose: in production the uploads
-/// run in a background `URLSession` and their completions can arrive in a
-/// later launch of the app, when nothing is awaiting them.
+/// Starts file-backed uploads and reports their completion through a handler,
+/// so completions reach the service even when nothing awaits them (a manual
+/// send that stopped waiting, or an automatic send).
 nonisolated protocol WebhookTransport: AnyObject, Sendable {
-    /// Whether ``start(tag:request:bodyFileURL:earliestBeginDate:)`` honors a
-    /// future begin date. When `false` the caller must start the task when it is due.
-    var supportsDeferredStart: Bool { get }
-
-    func setEventHandler(_ handler: @escaping @Sendable (WebhookTransportEvent) -> Void)
-    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL, earliestBeginDate: Date?)
+    func setCompletionHandler(_ handler: @escaping @Sendable (WebhookTransportResult) -> Void)
+    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL)
     /// Cancels every task of the item, whatever its attempt.
     func cancel(itemID: UUID)
     /// Cancels only the task of one attempt, leaving newer attempts of the item alone.
     func cancel(tag: WebhookTaskTag)
-    /// Attempts that still have a running or scheduled task.
+    /// Attempts that still have a running task.
     func activeTags() async -> Set<WebhookTaskTag>
 }
 
-/// `URLSession`-backed transport. With a background configuration uploads
-/// keep running while the app is suspended or terminated, and retries start
-/// at their `earliestBeginDate` without the app being alive.
+/// `URLSession`-backed transport running in the app's process.
+///
+/// Deliberately not a background session: background sessions follow HTTP
+/// redirects without asking their delegate, which would re-send the note to
+/// whatever URL the server names (see ``WebhookRedirects``). This session
+/// refuses every redirect. Uploads therefore run only while the app runs;
+/// ``WebhookDeliveryService`` asks for background time while one is in flight.
 nonisolated final class URLSessionWebhookTransport: WebhookTransport {
-    static let backgroundSessionIdentifier = "com.antonnovoselov.VivaDicta.webhooks"
-
-    let supportsDeferredStart: Bool
     private let session: URLSession
     private let delegate: Delegate
 
     init(configuration: URLSessionConfiguration) {
-        supportsDeferredStart = configuration.identifier != nil
         delegate = Delegate()
         session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
     }
 
-    static func makeBackground() -> URLSessionWebhookTransport {
-        let configuration = URLSessionConfiguration.background(withIdentifier: backgroundSessionIdentifier)
-        configuration.isDiscretionary = false
-        configuration.sessionSendsLaunchEvents = true
+    static func makeDefault() -> URLSessionWebhookTransport {
+        let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.urlCache = nil
         configuration.httpCookieStorage = nil
-        configuration.timeoutIntervalForResource = WebhookRetryPolicy.maxAge
+        // Fail fast when offline; the retry policy decides when to try again.
+        configuration.waitsForConnectivity = false
+        configuration.timeoutIntervalForRequest = WebhookRequestBuilder.timeout
+        configuration.timeoutIntervalForResource = 2 * WebhookRequestBuilder.timeout
         return URLSessionWebhookTransport(configuration: configuration)
     }
 
-    func setEventHandler(_ handler: @escaping @Sendable (WebhookTransportEvent) -> Void) {
-        // Events can arrive as soon as the session exists (a relaunch for
-        // background events), possibly before the handler is installed.
-        let buffered = delegate.state.withLock { state in
-            state.handler = handler
-            defer { state.buffered.removeAll() }
-            return state.buffered
-        }
-        buffered.forEach(handler)
+    func setCompletionHandler(_ handler: @escaping @Sendable (WebhookTransportResult) -> Void) {
+        delegate.handler.withLock { $0 = handler }
     }
 
-    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL, earliestBeginDate: Date?) {
+    func start(tag: WebhookTaskTag, request: URLRequest, bodyFileURL: URL) {
         let task = session.uploadTask(with: request, fromFile: bodyFileURL)
         task.taskDescription = tag.taskDescription
-        if supportsDeferredStart, let earliestBeginDate {
-            task.earliestBeginDate = earliestBeginDate
-        }
         task.resume()
     }
 
@@ -141,12 +120,7 @@ nonisolated final class URLSessionWebhookTransport: WebhookTransport {
     }
 
     private final class Delegate: NSObject, URLSessionDataDelegate, Sendable {
-        struct State {
-            var handler: (@Sendable (WebhookTransportEvent) -> Void)?
-            var buffered: [WebhookTransportEvent] = []
-        }
-
-        let state = Mutex(State())
+        let handler = Mutex<(@Sendable (WebhookTransportResult) -> Void)?>(nil)
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
             guard let tag = WebhookTaskTag(taskDescription: task.taskDescription) else { return }
@@ -164,12 +138,10 @@ nonisolated final class URLSessionWebhookTransport: WebhookTransport {
                 errorDescription: error?.localizedDescription,
                 redirected: redirected
             )
-            deliver(.completed(result))
+            handler.withLock { $0 }?(result)
         }
 
-        /// Default and ephemeral sessions: refuse, so the 3xx is the result.
-        /// Background sessions never call this and follow redirects; their
-        /// completions are flagged as `redirected` above instead.
+        /// Refuses every redirect, so the 3xx response is the result.
         func urlSession(
             _ session: URLSession,
             task: URLSessionTask,
@@ -178,18 +150,6 @@ nonisolated final class URLSessionWebhookTransport: WebhookTransport {
             completionHandler: @escaping @Sendable (URLRequest?) -> Void
         ) {
             completionHandler(nil)
-        }
-
-        func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-            deliver(.finishedBackgroundEvents)
-        }
-
-        private func deliver(_ event: WebhookTransportEvent) {
-            let handler = state.withLock { state -> (@Sendable (WebhookTransportEvent) -> Void)? in
-                if state.handler == nil { state.buffered.append(event) }
-                return state.handler
-            }
-            handler?(event)
         }
     }
 }

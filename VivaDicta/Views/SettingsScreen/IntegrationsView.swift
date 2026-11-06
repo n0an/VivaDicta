@@ -170,7 +170,7 @@ private struct WebhooksSection: View {
         } header: {
             Text("Webhooks")
         } footer: {
-            Text("After transcription and AI processing, VivaDicta POSTs the note as JSON to the webhook picked in a mode's settings. Works with n8n, Zapier, Make or your own server. Failed deliveries are retried in the background for up to 24 hours.")
+            Text("After transcription and AI processing, VivaDicta POSTs the note as JSON to the webhook picked in a mode's settings. Works with n8n, Zapier, Make or your own server. Failed deliveries are retried while VivaDicta is running, for up to 24 hours.")
         }
     }
 }
