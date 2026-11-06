@@ -939,6 +939,8 @@ struct MainView: View {
             let audioDirectory = FileManager.appDirectory(for: .audio)
             let fileExtension = selectedURL.pathExtension.isEmpty ? "m4a" : selectedURL.pathExtension
             let destinationURL = audioDirectory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
+            // Read before the copy, which gets a new file creation date.
+            let recordingTime = RecordingTime.importing(from: selectedURL)
 
             do {
                 try FileManager.default.copyItem(at: selectedURL, to: destinationURL)
@@ -947,7 +949,8 @@ struct MainView: View {
                 vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                     recordURL: destinationURL,
                     modelContext: modelContext,
-                    sourceTag: SourceTag.app
+                    sourceTag: SourceTag.app,
+                    recordingTime: recordingTime
                 )
             } catch {
                 logger.logError("Failed to copy imported file: \(error.localizedDescription)")
@@ -967,6 +970,8 @@ struct MainView: View {
     private func handleOpenedAudioTranscription() {
         guard let audioURL = appState.openedAudioFileURL else { return }
         appState.openedAudioFileURL = nil
+        let recordingTime = appState.openedAudioRecordingTime
+        appState.openedAudioRecordingTime = nil
 
         guard let vm = appState.recordViewModel else { return }
 
@@ -987,7 +992,8 @@ struct MainView: View {
         vm.transcribingSpeechTask = vm.transcribeSpeechTask(
             recordURL: audioURL,
             modelContext: modelContext,
-            sourceTag: SourceTag.app
+            sourceTag: SourceTag.app,
+            recordingTime: recordingTime
         )
     }
 
@@ -1043,12 +1049,16 @@ struct MainView: View {
             // Consume source tag from extension (shareExtension or actionExtension)
             let sourceTag = AppGroupCoordinator.shared.getAndConsumePendingSourceTag()
 
+            // Resolved by the extension from the file the user shared, before its copy.
+            let recordedAt = AppGroupCoordinator.shared.getAndConsumePendingRecordedAt()
+
             // Start transcription
             vm.transcribingSpeechTask = vm.transcribeSpeechTask(
                 recordURL: destinationURL,
                 modelContext: modelContext,
                 sourceTag: sourceTag,
-                languageOverride: languageOverride
+                languageOverride: languageOverride,
+                recordingTime: recordedAt.map(RecordingTime.known)
             )
         } catch {
             logger.logError("Failed to copy shared audio file: \(error.localizedDescription)")

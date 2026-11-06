@@ -144,7 +144,7 @@ final class WebhookDeliveryService {
     @discardableResult
     func enqueue(_ input: WebhookPayloadInput, to webhook: WebhookDefinition, startImmediately: Bool = true) -> UUID? {
         loadIfNeeded()
-        let payload = WebhookPayloadBuilder.payload(for: input, appVersion: appVersion)
+        let payload = WebhookPayloadBuilder.payload(for: input, textContent: webhook.textContent, appVersion: appVersion)
         let body: Data
         do {
             body = try WebhookPayloadBuilder.encode(payload)

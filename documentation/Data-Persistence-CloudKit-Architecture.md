@@ -140,6 +140,7 @@ Transcription (@Model)
 ├── powerModeEmoji: String?
 ├── powerModeId: String?
 ├── transcriptionStatus: String?      — synced from macOS
+├── recordedAt: Date?                 - when the audio was recorded, nil when unknown (see Webhooks-Architecture.md)
 └── @Relationship(deleteRule: .cascade)
     variations: [TranscriptionVariation]?
 ```

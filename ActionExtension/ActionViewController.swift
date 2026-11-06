@@ -413,6 +413,8 @@ class ActionViewController: UIViewController {
 
     private let viewModel = ActionExtensionViewModel()
     private var hostingController: UIHostingController<ActionExtensionView>?
+    /// When the shared audio was recorded, if the file says so and the date is trustworthy.
+    private var recordedAt: Date?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -491,6 +493,10 @@ class ActionViewController: UIViewController {
     }
 
     private func copyAudioToSharedContainer(from sourceURL: URL) async {
+        // Read before the copy below, which gets a new file creation date.
+        recordedAt = await ImportedAudioRecordingDate.read(from: sourceURL)
+        logger.info("Recording date found in the shared file: \(self.recordedAt != nil)")
+
         // Get shared container directory
         guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppGroupCoordinator.shared.appGroupId) else {
             cancelExtension(message: "Failed to get app group container URL")
@@ -542,6 +548,7 @@ class ActionViewController: UIViewController {
         }
 
         sharedDefaults.set(audioFileName, forKey: AppGroupCoordinator.kPendingSharedAudioFileName)
+        AppGroupCoordinator.shared.setPendingRecordedAt(recordedAt)
         sharedDefaults.set("actionExtension", forKey: AppGroupCoordinator.kPendingSourceTag)
         sharedDefaults.synchronize()
         logger.info("Saved pending audio filename to UserDefaults: \(audioFileName)")

@@ -320,6 +320,62 @@ final class WebhookDeliveryServiceTests {
         #expect(captured.first?.headers["Authorization"] == "Bearer secret-token")
     }
 
+    @Test func delivery_usesTheWebhooksTextContent_andSendsRecordedAt() async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(200)])
+        var webhook = try addWebhook()
+        webhook.textContent = .original
+        try store.save(webhook, token: .keep)
+        var note = input()
+        note.recordedAt = clock.now.addingTimeInterval(-3 * 3600)
+
+        service.enqueue(note, to: try #require(store.webhook(id: webhook.id)))
+        try await waitUntil { service.items.isEmpty }
+
+        let request = try #require(WebhookURLProtocolStub.captured.first)
+        let body = try #require(JSONSerialization.jsonObject(with: request.body) as? [String: Any])
+        #expect(body["textContent"] as? String == "original")
+        #expect(body["text"] as? String == "raw")
+        #expect(body["rawText"] == nil)
+        #expect(body["aiModel"] == nil)
+        #expect(body["recordedAt"] as? String == WebhookPayloadBuilder.iso8601(clock.now.addingTimeInterval(-3 * 3600), timeZone: .current))
+    }
+
+    @Test(arguments: WebhookTextContent.allCases)
+    func sendTest_honoursTheSelectedTextContent(option: WebhookTextContent) async throws {
+        WebhookURLProtocolStub.reset(replies: [.status(200)])
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WebhookURLProtocolStub.self]
+        let viewModel = WebhookEditViewModel(
+            webhook: nil,
+            store: store,
+            session: WebhookRedirects.makeSession(configuration: configuration),
+            appVersion: "9.9.9"
+        )
+        viewModel.urlString = "https://example.com/hooks/test"
+        viewModel.textContent = option
+
+        await viewModel.sendTest()
+
+        let request = try #require(WebhookURLProtocolStub.captured.first)
+        let body = try #require(JSONSerialization.jsonObject(with: request.body) as? [String: Any])
+        #expect(body["textContent"] as? String == option.rawValue)
+        #expect((body["rawText"] != nil) == (option == .both))
+        #expect(body["recordedAt"] is String)
+    }
+
+    @Test func savingTheForm_storesTheTextContent() throws {
+        let viewModel = WebhookEditViewModel(webhook: nil, store: store, appVersion: "9.9.9")
+        viewModel.urlString = "https://example.com/hooks/test"
+        #expect(viewModel.textContent == .both)
+
+        viewModel.textContent = .processed
+        #expect(viewModel.save())
+
+        #expect(store.webhooks.first?.textContent == .processed)
+        let reopened = WebhookEditViewModel(webhook: store.webhooks.first, store: store, appVersion: "9.9.9")
+        #expect(reopened.textContent == .processed)
+    }
+
     @Test func sendTest_productionSessionRefusesRedirects() {
         #expect(WebhookRedirects.testSession.delegate is WebhookRedirectRefuser)
     }

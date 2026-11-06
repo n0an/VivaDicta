@@ -87,7 +87,7 @@ struct WebhookPayloadTests {
             appVersion: nil,
             timeZone: berlin
         ))
-        #expect(Set(object.keys) == ["id", "text", "createdAt", "app", "platform"])
+        #expect(Set(object.keys) == ["id", "text", "textContent", "createdAt", "app", "platform"])
         #expect(!object.values.contains { $0 is NSNull })
     }
 

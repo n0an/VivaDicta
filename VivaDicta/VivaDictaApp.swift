@@ -550,9 +550,13 @@ struct VivaDictaApp: App {
         let fileExtension = url.pathExtension.isEmpty ? "m4a" : url.pathExtension
         let destinationURL = audioDirectory.appendingPathComponent("\(UUID().uuidString).\(fileExtension)")
 
+        // Read before the copy, which gets a new file creation date.
+        let recordingTime = RecordingTime.importing(from: url)
+
         do {
             try FileManager.default.copyItem(at: url, to: destinationURL)
             logger.logInfo("📂 Copied audio file to: \(destinationURL.lastPathComponent)")
+            appState.openedAudioRecordingTime = recordingTime
             appState.openedAudioFileURL = destinationURL
         } catch {
             logger.logError("❌ Failed to copy opened audio file: \(error.localizedDescription)")

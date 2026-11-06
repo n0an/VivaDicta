@@ -179,12 +179,19 @@ final class BackgroundTaskManager {
 
     /// Enqueues a work item for later processing. Thread-safe - can be called from
     /// expiration handlers without a MainActor hop.
-    nonisolated func enqueueForLaterProcessing(audioURL: URL, sourceTag: String, modeId: String?, recordingTimestamp: Date = Date()) {
+    nonisolated func enqueueForLaterProcessing(
+        audioURL: URL,
+        sourceTag: String,
+        modeId: String?,
+        recordingTimestamp: Date = Date(),
+        recordedAt: Date? = nil
+    ) {
         let item = BackgroundWorkItem(
             audioFileURL: audioURL,
             sourceTag: sourceTag,
             modeId: modeId,
-            recordingTimestamp: recordingTimestamp
+            recordingTimestamp: recordingTimestamp,
+            recordedAt: recordedAt
         )
         queue.enqueue(item)
         scheduleBGProcessingTask()
@@ -250,6 +257,7 @@ final class BackgroundTaskManager {
                 at: item.audioFileURL,
                 sourceTag: item.sourceTag,
                 recordingTimestamp: item.recordingTimestamp,
+                recordedAt: item.recordedAt,
                 modeId: item.modeId
             )
 

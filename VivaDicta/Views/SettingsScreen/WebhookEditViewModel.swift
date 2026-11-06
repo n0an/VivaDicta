@@ -23,6 +23,7 @@ final class WebhookEditViewModel {
     var name: String
     var urlString: String
     var isEnabled: Bool
+    var textContent: WebhookTextContent
     /// New token typed by the user. Empty keeps the saved one (if any).
     var tokenInput: String = ""
     /// The user asked to remove the saved token.
@@ -48,6 +49,7 @@ final class WebhookEditViewModel {
         name = webhook?.name ?? ""
         urlString = webhook?.url.absoluteString ?? ""
         isEnabled = webhook?.isEnabled ?? true
+        textContent = webhook?.textContent ?? .default
         self.store = store ?? .shared
         self.session = session
         self.appVersion = appVersion
@@ -87,7 +89,8 @@ final class WebhookEditViewModel {
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             url: url,
             isEnabled: isEnabled,
-            hasBearerToken: original?.hasBearerToken ?? false
+            hasBearerToken: original?.hasBearerToken ?? false,
+            textContent: textContent
         )
         let change: WebhookStore.TokenChange
         let typedToken = tokenInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -137,7 +140,7 @@ final class WebhookEditViewModel {
             token = nil
         }
 
-        let payload = WebhookPayloadBuilder.testPayload(appVersion: appVersion)
+        let payload = WebhookPayloadBuilder.testPayload(textContent: textContent, appVersion: appVersion)
         do {
             let body = try WebhookPayloadBuilder.encode(payload)
             let request = WebhookRequestBuilder.request(
