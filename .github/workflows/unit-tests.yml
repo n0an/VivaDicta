@@ -6,21 +6,26 @@ on:
 permissions:
   contents: read
 
+env:
+  # Keep in step with the Xcode used for release builds. The app uses APIs
+  # that older SDKs lack, so a stale pin here fails the build.
+  XCODE_VERSION: "27.2"
+
 jobs:
   test:
-    runs-on: macos-26
+    runs-on: xcode-27
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Select Xcode 26.3
+      - name: Select Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_26.3.app
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app"
           xcodebuild -version
 
       - name: Install xcbeautify
-        run: brew install xcbeautify
+        run: command -v xcbeautify || brew install xcbeautify
 
       - name: Resolve Swift Packages
         run: |
@@ -33,10 +38,13 @@ jobs:
           xcrun simctl list runtimes
           xcrun simctl list devices available
 
+      - name: Pick simulator
+        run: echo "SIMULATOR_UDID=$(.github/scripts/pick-simulator.sh)" >> "$GITHUB_ENV"
+
       - name: Boot simulator
         run: |
-          xcrun simctl boot "iPhone 17 Pro" || true
-          xcrun simctl bootstatus "iPhone 17 Pro" -b
+          xcrun simctl boot "$SIMULATOR_UDID" || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
 
       - name: Run Tests
         run: |
@@ -44,7 +52,7 @@ jobs:
           xcodebuild test \
             -scheme VivaDicta \
             -workspace ./VivaDicta.xcodeproj/project.xcworkspace \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
             -configuration Debug \
             -skipMacroValidation \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee xcodebuild.log | xcbeautify
