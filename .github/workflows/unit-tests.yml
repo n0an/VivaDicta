@@ -14,6 +14,8 @@ env:
 jobs:
   test:
     runs-on: xcode-27
+    # A hung simulator or build must not run to the 6-hour default.
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -43,8 +45,12 @@ jobs:
           xcrun simctl list runtimes
           xcrun simctl list devices available
 
+      # Assign first: a failed command substitution inside the echo arguments
+      # would not stop the step, and the UDID would be written empty.
       - name: Pick simulator
-        run: echo "SIMULATOR_UDID=$(.github/scripts/pick-simulator.sh)" >> "$GITHUB_ENV"
+        run: |
+          udid=$(.github/scripts/pick-simulator.sh)
+          echo "SIMULATOR_UDID=$udid" >> "$GITHUB_ENV"
 
       - name: Boot simulator
         run: |
