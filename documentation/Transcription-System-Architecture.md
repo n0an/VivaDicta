@@ -158,7 +158,7 @@ RecordViewModel          TranscriptionManager        Provider Service
 | **ElevenLabs** | Cloud | Scribe v1 | 99 languages |
 | **Gemini** | Cloud | Gemini Flash/Pro | Multi-language |
 | **Mistral** | Cloud | Mistral STT models | Multi-language |
-| **Soniox** | Cloud | stt-async-v5, stt-rt-v5 (streaming) | Multi-language |
+| **Soniox** | Cloud | stt-async-v6, stt-rt-v6 (streaming) | Multi-language |
 | **Custom** | Cloud | User-configured | Depends on endpoint |
 
 ## Realtime (Streaming) Transcription
@@ -167,7 +167,7 @@ Most providers work by upload: the recording is finished, sent, and awaited. Fiv
 
 | Model | Session actor | Settled unit | Unsettled tail |
 |---|---|---|---|
-| Soniox `stt-rt-v5` | `SonioxRealtimeDictationSession` | `is_final` tokens | non-final tokens, replaced per batch |
+| Soniox `stt-rt-v6` | `SonioxRealtimeDictationSession` | `is_final` tokens | non-final tokens, replaced per batch |
 | Deepgram Nova 3 | `DeepgramNovaRealtimeSession` | `is_final` chunks | interim string |
 | Deepgram Flux | `DeepgramFluxRealtimeSession` | `EndOfTurn` turns | open turn (`EagerEndOfTurn` is retractable) |
 | ElevenLabs Scribe | `ElevenLabsRealtimeSession` | `committed_transcript` | `partial_transcript` |

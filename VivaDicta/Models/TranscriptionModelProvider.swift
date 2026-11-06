@@ -107,15 +107,16 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// `SonioxRealtimeSTTClient` because this file is also compiled into the
     /// app extensions, which don't link the app-only realtime client.
     ///
-    /// Soniox retired `stt-rt-v4` on 2026-06-30; it still resolves as an alias
-    /// to v5, but name the current model explicitly rather than depend on that
-    /// aliasing surviving.
+    /// Soniox replaced v5 with v6 on 2026-11-03 and removes v5 on 2026-12-15.
+    /// Old slugs keep resolving as aliases, but name the current model
+    /// explicitly rather than depend on that aliasing surviving. Saved
+    /// selections of an older generation are rewritten by `renamedCloudModels`.
     /// `nonisolated` so the realtime client - an actor - can read it without
     /// hopping to MainActor just to look up a string constant.
-    nonisolated static let sonioxRealtimeModel = "stt-rt-v5"
+    nonisolated static let sonioxRealtimeModel = "stt-rt-v6"
 
     /// Soniox's current async/batch model, used by the upload-and-poll path.
-    nonisolated static let sonioxAsyncModel = "stt-async-v5"
+    nonisolated static let sonioxAsyncModel = "stt-async-v6"
 
     /// Deepgram's Flux models. Realtime-only: Flux speaks `/v2/listen`, and the
     /// pre-recorded `/v1/listen` endpoint rejects the slugs outright, so a Flux
@@ -245,7 +246,10 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
     /// selections may still carry the old name; normalize before any
     /// catalog lookup so those modes keep transcribing.
     static let renamedCloudModels: [String: String] = [
-        "stt-async-v4": "stt-async-v5",  // Soniox retired v4 on 2026-06-30
+        "stt-async-v4": "stt-async-v6",  // Soniox retired v4 on 2026-06-30
+        "stt-rt-v4": "stt-rt-v6",
+        "stt-async-v5": "stt-async-v6",  // Soniox replaced v5 on 2026-11-03, removes it on 2026-12-15
+        "stt-rt-v5": "stt-rt-v6",
         "scribe_v1": "scribe_v2",  // ElevenLabs removed Scribe v1 on 2026-07-09
         "universal-3-pro": "universal-3-5-pro"  // AssemblyAI dropped it from the speech_models enum
     ]
@@ -262,7 +266,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         case .deepgram: "nova-3"
         case .elevenLabs: "scribe_v2"
         case .openAI: "gpt-transcribe"
-        case .soniox: "stt-async-v5"
+        case .soniox: Self.sonioxAsyncModel
         case .gladia: "solaria-1"
         case .speechmatics: "speechmatics-batch-v2"
         case .cohere: "cohere-transcribe-03-2026"
@@ -337,9 +341,9 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
             ),
 
             CloudModel(
-                name: "stt-async-v5",
-                displayName: "Soniox (stt-async-v5)",
-                description: "Soniox transcription model v5 with human-parity accuracy across 60+ languages, reengineered speaker separation and better handling of numbers, dates and emails. Powers Live Translation - super-fast real-time speech-to-speech translation, ideal for lectures and workshops.",
+                name: sonioxAsyncModel,
+                displayName: "Soniox (stt-async-v6)",
+                description: "Soniox transcription model v6 with significantly higher accuracy across 60+ languages, improved speaker separation in long multi-speaker recordings and better recognition of numbers, dates, names and specialized terms. Prices and codes are written the way they are spoken. Powers Live Translation - super-fast real-time speech-to-speech translation, ideal for lectures and workshops.",
                 provider: .soniox,
                 recommended: true,
                 speed: 0.95,
@@ -351,7 +355,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
 
             CloudModel(
                 name: sonioxRealtimeModel,
-                displayName: "Soniox Realtime (stt-rt-v5)",
+                displayName: "Soniox Realtime (stt-rt-v6)",
                 description: "Streams audio to Soniox while you speak instead of uploading after you stop, so the transcript is essentially ready the moment you finish. Same 60+ language coverage as the async model. Falls back to the standard upload path if the connection drops.",
                 provider: .soniox,
                 speed: 1.0,
@@ -911,7 +915,7 @@ enum TranscriptionModelProvider: String, Sendable, Codable, CaseIterable, Identi
         return allLanguages.filter { codes.contains($0.key) }
     }()
 
-    /// Soniox stt-async-v5 supports 60 languages plus auto-detect.
+    /// Soniox stt-async-v6 supports 60 languages plus auto-detect.
     /// Translation targets are the same set.
     static let sonioxLanguages: [String: String] = {
         let codes: Set<String> = [

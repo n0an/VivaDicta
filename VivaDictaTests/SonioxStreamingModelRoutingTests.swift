@@ -6,7 +6,7 @@ import Testing
 
 /// Guards the realtime-to-async model mapping.
 ///
-/// Soniox's realtime slug (`stt-rt-v5`) is rejected by the async
+/// Soniox's realtime slug (`stt-rt-v6`) is rejected by the async
 /// `/v1/transcriptions` endpoint, but two paths deliberately reach that
 /// endpoint while the realtime model is selected: keyboard dictation, and the
 /// fallback after a dropped socket. Without the remap the fallback the whole
@@ -39,6 +39,25 @@ struct SonioxStreamingModelRoutingTests {
     @Test(arguments: ["whisper-1", "nova-3", "scribe_v1", "solaria-1", ""])
     func otherProviderModelsPassThroughUnchanged(name: String) {
         #expect(TranscriptionModelProvider.asyncEquivalent(of: name) == name)
+    }
+
+    /// A mode saved under the previous generation has to resolve to the
+    /// current slugs, otherwise a realtime selection stops being recognised as
+    /// streaming and its slug reaches the async endpoint.
+    @Test(arguments: [
+        (old: "stt-rt-v5", current: TranscriptionModelProvider.sonioxRealtimeModel),
+        (old: "stt-rt-v4", current: TranscriptionModelProvider.sonioxRealtimeModel),
+        (old: "stt-async-v5", current: TranscriptionModelProvider.sonioxAsyncModel),
+        (old: "stt-async-v4", current: TranscriptionModelProvider.sonioxAsyncModel)
+    ])
+    func retiredGenerationsResolveToCurrentModels(old: String, current: String) {
+        #expect(TranscriptionModelProvider.normalizedCloudModelName(old) == current)
+    }
+
+    @Test func retiredRealtimeSlugStillStreamsAfterNormalization() {
+        let normalized = TranscriptionModelProvider.normalizedCloudModelName("stt-rt-v5")
+
+        #expect(TranscriptionModelProvider.isStreamingModel(normalized))
     }
 
     /// The realtime entry has to exist in the catalog for the picker to offer

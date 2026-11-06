@@ -29,7 +29,13 @@ struct VivaModeModelNormalizationTests {
     @Test(arguments: [
         (input: "gemini-3-pro-preview", provider: TranscriptionModelProvider.gemini, expected: "gemini-3.1-pro-preview"),
         (input: "gemini-3.5-flash", provider: .gemini, expected: "gemini-3.5-flash"),
-        (input: "gemini-3-pro-preview", provider: .openAI, expected: "gemini-3-pro-preview")
+        (input: "gemini-3-pro-preview", provider: .openAI, expected: "gemini-3-pro-preview"),
+        (input: "stt-async-v5", provider: .soniox, expected: "stt-async-v6"),
+        (input: "stt-rt-v5", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-async-v4", provider: .soniox, expected: "stt-async-v6"),
+        (input: "stt-rt-v4", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-rt-v6", provider: .soniox, expected: "stt-rt-v6"),
+        (input: "stt-rt-v5", provider: .openAI, expected: "stt-rt-v5")
     ])
     func transcriptionModel_normalization(
         input: String,
@@ -57,6 +63,26 @@ struct VivaModeModelNormalizationTests {
         let decoded = try JSONDecoder().decode(VivaMode.self, from: data)
 
         #expect(decoded.transcriptionModel == "gemini-3.1-pro-preview")
+    }
+
+    /// The mode editor resets a selection it can't find in the catalog, so a
+    /// realtime mode saved under the previous Soniox generation has to come
+    /// out of decoding already on the current realtime slug.
+    @Test func decoder_rewritesRetiredSonioxRealtimeModelOnDecode() throws {
+        let payload: [String: Any] = [
+            "id": UUID().uuidString,
+            "name": "Legacy Soniox Realtime Mode",
+            "transcriptionProvider": "soniox",
+            "transcriptionModel": "stt-rt-v5",
+            "aiProvider": "openAI",
+            "aiModel": "gpt-5",
+            "aiEnhanceEnabled": false
+        ]
+        let data = try JSONSerialization.data(withJSONObject: payload)
+
+        let decoded = try JSONDecoder().decode(VivaMode.self, from: data)
+
+        #expect(decoded.transcriptionModel == TranscriptionModelProvider.sonioxRealtimeModel)
     }
 
     @Test func decoder_rewritesRetiredAIModelOnDecode() throws {
