@@ -27,6 +27,11 @@ jobs:
       - name: Install xcbeautify
         run: command -v xcbeautify || brew install xcbeautify
 
+      # Xcode ships the Metal compiler as a separate download and the runner
+      # image does not include it; a dependency compiles .metal shaders.
+      - name: Install Metal Toolchain
+        run: xcodebuild -downloadComponent MetalToolchain
+
       - name: Resolve Swift Packages
         run: |
           xcodebuild -resolvePackageDependencies \
