@@ -48,37 +48,56 @@ public enum ImportedAudioRecordingDate {
 
     /// Creation dates stored in the media file, most authoritative first.
     ///
-    /// `AVAsset.creationDate` can be the container's own creation time, which a
-    /// re-export resets to the export moment, so the date keys recorders write
-    /// are read as well. Only full timestamps count: a bare year or day (for
-    /// example a song's release year) is not a recording time.
+    /// The keys recorders write come first. `AVAsset.creationDate` can be the
+    /// container's own creation time, which a re-export resets to the export
+    /// moment, so it only comes after them: an export a day after the
+    /// recording must not win over the recorder's date. `©day` is last, since
+    /// on music it is a release date. Only full timestamps count: a bare year
+    /// or day is not a recording time.
     public static func mediaCreationDates(of url: URL) async -> [Date] {
         let asset = AVURLAsset(url: url)
-        var dates: [Date] = []
-        if let item = try? await asset.load(.creationDate), let date = await date(of: item) {
-            dates.append(date)
+        var items: [AVMetadataItem] = []
+        for format in (try? await asset.load(.availableMetadataFormats)) ?? [] {
+            items += (try? await asset.loadMetadata(for: format)) ?? []
         }
-        let formats = (try? await asset.load(.availableMetadataFormats)) ?? []
-        for format in formats {
-            let items = (try? await asset.loadMetadata(for: format)) ?? []
-            for identifier in recordingDateIdentifiers {
-                for item in AVMetadataItem.metadataItems(from: items, filteredByIdentifier: identifier) {
-                    if let date = await date(of: item), !dates.contains(date) {
-                        dates.append(date)
-                    }
+        var containerDate: Date?
+        if let item = try? await asset.load(.creationDate) {
+            containerDate = await date(of: item)
+        }
+        return ordered(
+            recorderDates: await dates(for: recorderDateIdentifiers, in: items),
+            containerDate: containerDate,
+            dayDates: await dates(for: [.iTunesMetadataReleaseDate], in: items)
+        )
+    }
+
+    /// Ranks the media dates: recorder keys, then the container date, then `©day`. Duplicates are dropped.
+    static func ordered(recorderDates: [Date], containerDate: Date?, dayDates: [Date]) -> [Date] {
+        var result: [Date] = []
+        for date in recorderDates + [containerDate].compactMap({ $0 }) + dayDates where !result.contains(date) {
+            result.append(date)
+        }
+        return result
+    }
+
+    private static let recorderDateIdentifiers: [AVMetadataIdentifier] = [
+        .quickTimeMetadataCreationDate,
+        .id3MetadataRecordingTime,
+        .quickTimeUserDataCreationDate,
+        .isoUserDataDate,
+    ]
+
+    private static func dates(for identifiers: [AVMetadataIdentifier], in items: [AVMetadataItem]) async -> [Date] {
+        var result: [Date] = []
+        for identifier in identifiers {
+            for item in AVMetadataItem.metadataItems(from: items, filteredByIdentifier: identifier) {
+                if let date = await date(of: item) {
+                    result.append(date)
                 }
             }
         }
-        return dates
+        return result
     }
-
-    private static let recordingDateIdentifiers: [AVMetadataIdentifier] = [
-        .quickTimeMetadataCreationDate,
-        .quickTimeUserDataCreationDate,
-        .isoUserDataDate,
-        .iTunesMetadataReleaseDate, // ©day: a re-exported file often keeps the recording time here
-        .id3MetadataRecordingTime,
-    ]
 
     private static func date(of item: AVMetadataItem) async -> Date? {
         if let string = try? await item.load(.stringValue) {

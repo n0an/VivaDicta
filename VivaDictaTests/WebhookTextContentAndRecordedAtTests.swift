@@ -202,6 +202,16 @@ struct RecordingTimeTests {
 
 struct WatchRecordingStartTests {
 
+    @Test func exactStartFromTheWatch_isPreferred() {
+        let start = PhoneWatchConnectivityService.recordingStart(metadata: [
+            "recordingStartedAt": 1_799_999_900.25,
+            "timestamp": 1_800_000_000.0,
+            "duration": 95.0,
+        ])
+        #expect(start == Date(timeIntervalSince1970: 1_799_999_900.25))
+    }
+
+    /// Older watch builds send only the stop time and the length.
     @Test func start_isTheStopTimeMinusTheDuration() {
         let start = PhoneWatchConnectivityService.recordingStart(metadata: [
             "timestamp": 1_800_000_000.0,

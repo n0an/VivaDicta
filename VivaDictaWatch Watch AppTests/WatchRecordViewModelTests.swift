@@ -128,6 +128,20 @@ struct WatchRecordViewModelTests {
         _ = try #require(connectivity.transferredFiles.first?.metadata["duration"] as? TimeInterval)
     }
 
+    @Test func stopRecording_includesTheExactStartTime() throws {
+        let (vm, connectivity, _, _) = makeViewModel()
+        let beforeStart = Date().timeIntervalSince1970
+
+        vm.toggleRecording()
+        vm.toggleRecording()
+
+        let metadata = try #require(connectivity.transferredFiles.first?.metadata)
+        let start = try #require(metadata["recordingStartedAt"] as? TimeInterval)
+        let stop = try #require(metadata["timestamp"] as? TimeInterval)
+        #expect(start >= beforeStart)
+        #expect(start <= stop)
+    }
+
     @Test func stopRecording_includesModeIdWhenSelected() throws {
         let (vm, connectivity, _, _) = makeViewModel()
         vm.selectedModeId = "professional"

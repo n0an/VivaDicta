@@ -114,10 +114,14 @@ final class PhoneWatchConnectivityService: NSObject {
 }
 
 extension PhoneWatchConnectivityService {
-    /// When the watch recording started: the watch sends the stop time
-    /// (`timestamp`) and the recorded length (`duration`). `nil` when either
-    /// is missing, rather than a guess.
+    /// When the watch recording started. Current watch builds send it as
+    /// `recordingStartedAt`. Older ones send only the stop time (`timestamp`)
+    /// and the recorded length (`duration`), which can be up to a timer tick
+    /// short. `nil` when neither is available, rather than a guess.
     nonisolated static func recordingStart(metadata: [String: Any]) -> Date? {
+        if let start = (metadata["recordingStartedAt"] as? NSNumber)?.doubleValue, start > 0 {
+            return Date(timeIntervalSince1970: start)
+        }
         guard let stop = (metadata["timestamp"] as? NSNumber)?.doubleValue,
               let duration = (metadata["duration"] as? NSNumber)?.doubleValue,
               stop > 0, duration >= 0 else { return nil }

@@ -88,6 +88,25 @@ struct ImportedAudioRecordingDateTests {
         #expect(result == recorded)
     }
 
+    /// Recorded Monday, exported Tuesday, imported Wednesday: both dates pass
+    /// the trust check, and the recorder's date must win.
+    @Test func recorderKey_winsOverAnOlderExportDateOfTheContainer() {
+        let monday = importedAt.addingTimeInterval(-2 * 86_400)
+        let tuesday = importedAt.addingTimeInterval(-86_400)
+        let dates = ImportedAudioRecordingDate.ordered(recorderDates: [monday], containerDate: tuesday, dayDates: [])
+
+        #expect(dates == [monday, tuesday])
+        #expect(ImportedAudioRecordingDate.resolve(mediaCreationDates: dates, fileCreationDate: tuesday, importedAt: importedAt) == monday)
+    }
+
+    @Test func dayKey_ranksAfterTheContainerDate_andDuplicatesAreDropped() {
+        let container = importedAt.addingTimeInterval(-3600)
+        let release = importedAt.addingTimeInterval(-400 * 86_400)
+        let dates = ImportedAudioRecordingDate.ordered(recorderDates: [container], containerDate: container, dayDates: [release])
+
+        #expect(dates == [container, release])
+    }
+
     /// A re-exported file: the container's own creation time is the export
     /// moment, and the recorder's date survives only in a metadata key.
     @Test(arguments: [MetadataKey.quickTimeCreationDate, .commonCreationDate])

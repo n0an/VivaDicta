@@ -73,7 +73,7 @@ Each webhook picks which text it receives (`WebhookTextContent`, the "Text to Se
 | Last Processed Only | `processed` | last AI-processed text, or the transcript when no processing ran | never | when processing ran |
 | Original Only | `original` | the transcript | never | never |
 
-"Last processed" is `Transcription.enhancedText`, the latest AI output. Webhooks saved before the option existed, and unknown values written by a newer version, decode as Both, which is the behavior before the option. The option is applied when an item is queued, so changing it does not rewrite pending items. Send Test uses the option currently in the form.
+"Last processed" is `Transcription.enhancedText`, the latest AI output. `textContent` says which option the webhook uses, not whether AI processing ran: with `processed` and no processing, `text` is the transcript. Check `aiModel`, which is present only when `text` is AI output. Webhooks saved before the option existed, and unknown values written by a newer version, decode as Both, which is the behavior before the option. The option is applied when an item is queued, so changing it does not rewrite pending items. Send Test uses the option currently in the form.
 
 ## Recording time
 
@@ -82,11 +82,11 @@ Each webhook picks which text it receives (`WebhookTextContent`, the "Text to Se
 | Route | Source of `recordedAt` |
 |-------|------------------------|
 | In-app recording, keyboard recordings, App Intents | Recording start (`RecordViewModel.startCaptureAudio`) |
-| Apple Watch | Stop time minus recorded length, both from the watch's file transfer metadata (`PhoneWatchConnectivityService.recordingStart(metadata:)`), carried through `BackgroundWorkItem` when processing is deferred |
+| Apple Watch | The recording start the watch sends (`recordingStartedAt`); for older watch builds, the stop time minus the recorded length (`PhoneWatchConnectivityService.recordingStart(metadata:)`). Carried through `BackgroundWorkItem` when processing is deferred |
 | Share and action extensions | `ImportedAudioRecordingDate.read(from:)` on the file the share sheet hands over, before it is copied. The date travels to the app through the App Group (`setPendingRecordedAt`) |
 | File import and "Open With" | The original's file creation date is read before the copy; the media metadata is read from the copy (same bytes) before downsampling (`RecordingTime.imported`) |
 
-For imported files the media's own creation metadata comes first (`AVAsset.creationDate`, then the QuickTime, ISO and ID3 date keys and `©day`), then the file creation date. `AVAsset.creationDate` can be the container's creation time, which a re-export resets, so all keys are read and each date is vetted on its own. Only full timestamps count: a bare year or day is ignored.
+For imported files the media's own creation metadata comes first, then the file creation date. Within the media, the keys recorders write (QuickTime and ID3 recording dates, QuickTime and ISO user data dates) rank first, then `AVAsset.creationDate`, then `©day`. `AVAsset.creationDate` can be the container's creation time, which a re-export resets, so an export a day after the recording must not win over the recorder's date. `©day` is last because on music it is a release date. The first date that passes the trust check is used. Only full timestamps count: a bare year or day is ignored.
 
 A date is trusted only when it is after 2000-01-01 (zeroed headers produce 1904 or 1970) and at least 60 seconds before the import. A date at or near the import time means it was lost on the way in (the share sheet or a copy stamped the file) and is not sent. `recordedAt` is omitted when nothing trustworthy is found. It is also omitted for orphaned audio recovered at launch, live translation sessions, and notes created before this field existed. It is never a guess.
 
