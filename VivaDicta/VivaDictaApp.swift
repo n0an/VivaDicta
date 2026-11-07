@@ -751,6 +751,18 @@ struct VivaDictaApp: App {
         "de.caseprep.app",              // CasePrep - no seller site, no known scheme
         "dk.simonbs.RunestoneEditor",   // Runestone - app source is closed (only the editor framework is open), runestone.app serves no AASA
 
+        // Checked 2026-11-07: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "app.spokenly",                 // Spokenly - spokenly.app serves no AASA, closed source (only the macOS Raycast extension is public)
+        "com.bot.doubao",               // Doubao - doubao.com AASA covers /share and /oauth/* only
+        "com.kagi.assistant",           // Kagi Assistant - kagi.com AASA lists only com.kagi.maps and com.kagi.search; bmikaili/kagi-assistant-ios is a third-party client (io.mikaili.kagiassistant)
+        "com.microsoft.smartglass",     // Xbox - www.xbox.com AASA covers /m/* only; no documented scheme
+        "com.milim.relay",              // Hermes Conduit - its only scheme conduit:// (CONDUIT_URL_SCHEME in kaishi00/hermes-conduit project.yml) is also registered by app.cogwheel.conduit, so iOS picks between them
+        "com.minimax.code",             // MiniMax Code - no AASA on minimax.io or minimaxi.com, closed source
+        "com.remio.client",             // Remio - remio.net AASA covers /pair, /connect and /guest only
+        "com.simonyam.VivaDicta-beta",  // third-party build of VivaDicta from the public repo; not a shipping app
+        "com.world.clank",              // Clank World - clank.world AASA matches / only with a ?scene= query, plus /@* profiles
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -1046,6 +1058,10 @@ struct VivaDictaApp: App {
             "ru.yandex.ytaxi": "https://go.yandex/",                         // Yandex Go; AASA path / for the bundle
             "wiki.qaq.flow": "flowdown://",                                  // FlowDown; FlowDown/Resources/InfoPlist/Info-iOS.plist + Configuration/Base.xcconfig in Lakr233/FlowDown
 
+            // 2026-11-07. Scheme read from the app's own source.
+            "aoagents.ao": "aomobile://",                                   // Orchestrator.Inc; packages/mobile/app.json in OrchestratorInc/agent-orchestrator (Expo "scheme", first of aomobile / ao-app)
+            "ch.protonmail.protonmail": "protonmail://",                    // Proton Mail; project.yml CFBundleURLSchemes in ProtonMail/ios-mail; NOT mailto:, shared
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -1082,6 +1098,9 @@ struct VivaDictaApp: App {
             "com.fogcreek.trello": "trello://",               // Trello; 2026-10-24, Atlassian support "Automate with URL Scheme" shows only trello://x-callback-url/... forms; AASA has no root path
             "com.kagi.kagiiOS": "orion://",                   // Orion Browser; 2026-10-24, help.kagi.com technical docs show only orion://open-url and orion://search forms
             "org.zulip.Zulip": "zulip://",                    // Zulip; 2026-10-24, ios/Runner/Info.plist in zulip/zulip-flutter, but the app handles only zulip://login, so a bare open just foregrounds it
+            "com.asana.Asana": "asana://",                    // Asana; 2026-11-07, community: the shipping IPA's Info.plist quoted on Stack Overflow; app.asana.com AASA lists / but that is Home and would pull the user out of the task
+            "com.cisco.squared": "webexteams://",             // Webex; 2026-11-07, help.webex.com "webexteams protocol" article shows only space/meeting forms
+            "com.microsoft.msedge": "microsoft-edge://",      // Microsoft Edge; 2026-11-07, community lists (Stack Overflow), no vendor doc for iOS; may open a new tab
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
