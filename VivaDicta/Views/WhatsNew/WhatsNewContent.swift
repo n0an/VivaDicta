@@ -31,6 +31,7 @@ enum WhatsNewCatalog {
     }
 
     private static let releases: [String: WhatsNewRelease] = [
+        "3.13": release_3_13,
         "3.12": release_3_12,
         "3.11": release_3_11,
         "3.10": release_3_10,
@@ -49,6 +50,50 @@ enum WhatsNewCatalog {
         "2.2": release_2_2
     ]
     
+    // 2026-11-07
+    private static let release_3_13 = WhatsNewRelease(
+        id: "3.13",
+        headline: "What's New in VivaDicta 3.13.0",
+        features: [
+            WhatsNewFeature(
+                icon: "point.3.connected.trianglepath.dotted",
+                iconColors: [.orange, .pink],
+                title: "Webhooks",
+                description: "Send each finished note as JSON to n8n, Zapier, Make or your own server. Add webhooks in Settings > Integrations, then pick one per Viva Mode."
+            ),
+            WhatsNewFeature(
+                icon: "paperplane.fill",
+                iconColors: [.blue, .cyan],
+                title: "Send Any Note",
+                description: "The share menu on a note lists your webhooks, so older notes can go out by hand too."
+            ),
+            WhatsNewFeature(
+                icon: "doc.text.magnifyingglass",
+                iconColors: [.indigo, .purple],
+                title: "Choose the Text",
+                description: "Each webhook sends the original transcript, the AI-processed text, or both, together with the time the audio was recorded."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.clockwise.circle.fill",
+                iconColors: [.green, .mint],
+                title: "Reliable Delivery",
+                description: "Sends are queued and retried for up to 24 hours when your server or network is down, and a token stays in the Keychain."
+            ),
+            WhatsNewFeature(
+                icon: "waveform",
+                iconColors: [.teal, .blue],
+                title: "Soniox v6",
+                description: "Soniox transcription moved to v6: higher accuracy in 60+ languages and better speaker separation. Saved modes switch over automatically."
+            ),
+            WhatsNewFeature(
+                icon: "arrow.uturn.backward.circle.fill",
+                iconColors: [.gray, .secondary],
+                title: "Return to More Apps",
+                description: "The keyboard returns you to Proton Mail, Orchestrator, Asana, Webex and Microsoft Edge."
+            ),
+        ]
+    )
+
     // 2026-10-03
     private static let release_3_12 = WhatsNewRelease(
         id: "3.12",
