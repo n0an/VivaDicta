@@ -518,10 +518,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             let streamingCoordinator = realtimeCoordinator
             self.realtimeCoordinator = nil
 
-            if let streamingCoordinator {
-                // Leave `.recording` before awaiting the flush - a second Stop
-                // tap would otherwise move the capture file out from under this.
-                recordingState = .transcribing
+            // Leave `.recording` before awaiting the delay and the flush - a
+            // second Stop tap would otherwise re-enter this branch and move the
+            // capture file out from under this.
+            recordingState = .transcribing
+            if streamingCoordinator != nil {
                 appGroupBridge.updateRecordingState(false)
             }
 
@@ -544,6 +545,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         return
                     }
                 }
+
+                // `try?` swallows the sleep's CancellationError, so a cancel
+                // during the delay has to stop here - otherwise the cancelled
+                // recording would still be transcribed and saved.
+                guard !Task.isCancelled else { return }
 
                 resetValues()
 
