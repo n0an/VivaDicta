@@ -125,6 +125,66 @@ struct AppGroupCoordinatorStateTests {
         #expect(sut.transcriptionStatus == .idle)
     }
 
+    // MARK: - Two Consumers (main app + keyboard extension)
+
+    // Both processes observe the same Darwin broadcast. Two coordinators over one
+    // defaults suite stand in for the two processes, and the main app handles the
+    // broadcast first, which is the order that used to lose the text.
+
+    @MainActor
+    @Test func transcriptionCompleted_mainAppFirst_keyboardStillReceivesText() {
+        let mainApp = sut
+        let keyboard = AppGroupCoordinator(userDefaults: defaults)
+        var mainAppObserved = 0
+        var keyboardTexts: [String] = []
+        mainApp.onTranscriptionCompletionObserved = { mainAppObserved += 1 }
+        keyboard.onTranscriptionCompleted = { keyboardTexts.append($0) }
+
+        mainApp.shareTranscribedText("Hello from the keyboard")
+        mainApp.deliverTranscriptionCompleted()
+
+        #expect(mainAppObserved == 1)
+        #expect(mainApp.transcriptionStatus == .completed)
+
+        keyboard.deliverTranscriptionCompleted()
+
+        #expect(keyboardTexts == ["Hello from the keyboard"])
+        #expect(keyboard.getAndConsumeTranscribedText() == nil)
+        #expect(keyboard.transcriptionStatus == .idle)
+    }
+
+    @MainActor
+    @Test func transcriptionCompleted_withoutTextCallback_leavesTextAndStatus() {
+        sut.shareTranscribedText("Pending")
+
+        sut.deliverTranscriptionCompleted()
+
+        #expect(sut.transcriptionStatus == .completed)
+        #expect(sut.getAndConsumeTranscribedText() == "Pending")
+    }
+
+    @MainActor
+    @Test func transcriptionError_mainAppFirst_keyboardStillReceivesMessage() {
+        let mainApp = sut
+        let keyboard = AppGroupCoordinator(userDefaults: defaults)
+        var mainAppErrors = 0
+        var keyboardErrors = 0
+        var keyboardMessages: [String] = []
+        mainApp.onTranscriptionError = { mainAppErrors += 1 }
+        keyboard.onTranscriptionError = { keyboardErrors += 1 }
+        keyboard.onTranscriptionErrorMessage = { keyboardMessages.append($0) }
+
+        mainApp.updateTranscriptionError("Transcription failed: offline")
+        mainApp.deliverTranscriptionError()
+        keyboard.deliverTranscriptionError()
+
+        #expect(mainAppErrors == 1)
+        #expect(keyboardErrors == 1)
+        #expect(keyboardMessages == ["Transcription failed: offline"])
+        #expect(keyboard.getAndConsumeTranscriptionErrorMessage() == nil)
+        #expect(keyboard.transcriptionStatus == .error)
+    }
+
     // MARK: - Clipboard Context Tests
 
     @Test func getAndConsumeClipboardContext_retrievesAndClears() {

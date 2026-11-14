@@ -469,6 +469,31 @@ struct RecordViewModelTests {
         #expect(await pendingAutoShare(of: sut)?.text == "shared note")
     }
 
+    /// The keyboard is the only consumer of the shared transcript, so only a
+    /// keyboard recording publishes its text. An in-app note publishes an empty
+    /// payload that a resumed keyboard ignores instead of inserting it.
+    @MainActor
+    @Test func sharedTranscript_carriesTextOnlyForKeyboardRecordings() async throws {
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "private note")
+        let ai = MockAIProcessingService()
+        ai.stubIsProperlyConfigured = false
+        let appGroup = MockAppGroupBridge()
+        let (sut, container) = try makeSUT(transcriber: transcriber, aiService: ai, appGroup: appGroup)
+
+        await sut.transcribeSpeechTask(
+            recordURL: try makeDummyAudioFile(),
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.app
+        ).value
+        await sut.transcribeSpeechTask(
+            recordURL: try makeDummyAudioFile(),
+            modelContext: container.mainContext,
+            sourceTag: SourceTag.keyboard
+        ).value
+
+        #expect(appGroup.sharedTranscribedTexts == ["", "private note"])
+    }
+
     /// Polls past `autoShareIfEnabled`'s deferral. Returns nil if nothing was
     /// queued within the window, which is what the negative cases assert.
     @MainActor
