@@ -202,6 +202,9 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
             AppGroupCoordinator.shared.onTranscriptionCompleted = nil
             AppGroupCoordinator.shared.onTranscriptionError = nil
+            // Whether this slot is set decides whether this process consumes the
+            // shared error message, so a stopped keyboard must not keep it.
+            AppGroupCoordinator.shared.onTranscriptionErrorMessage = nil
             AppGroupCoordinator.shared.onTranscriptionCancelled = nil
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
             AppGroupCoordinator.shared.onTextProcessingCompleted = nil
