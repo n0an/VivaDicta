@@ -173,6 +173,8 @@ struct GeminiAPIClientTests {
     /// takes `thinkingLevel`, 2.5 rejects it and takes `thinkingBudget`.
     @Test(arguments: [
         (model: "gemini-4-argon", level: "low", budget: nil),
+        (model: "gemini-4-carbon", level: "low", budget: nil),
+        (model: "gemini-4-hydrogen", level: "low", budget: nil),
         (model: "gemini-3.5-flash", level: "minimal", budget: nil),
         (model: "gemini-3.1-pro-preview", level: "low", budget: nil),
         (model: "gemini-2.5-flash", level: nil, budget: 0),
