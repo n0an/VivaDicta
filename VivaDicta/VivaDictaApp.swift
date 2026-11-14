@@ -763,6 +763,16 @@ struct VivaDictaApp: App {
         "com.simonyam.VivaDicta-beta",  // third-party build of VivaDicta from the public repo; not a shipping app
         "com.world.clank",              // Clank World - clank.world AASA matches / only with a ?scene= query, plus /@* profiles
 
+        // Checked 2026-11-14: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "com.anthropic.aibo",           // Claude Duet - claude.ai AASA lists only /magic-link/aibo, /duet-invite and the code callback for this id
+        "com.apple.PassbookUIService",  // Wallet / Apple Pay sheet hosted in another app
+        "com.doradogames.conflictnations.ww3", // Supremacy: World War 3 - playsupremacy.com serves no AASA, closed source
+        "com.willowvoice.ios",          // Willow - willowvoice.com serves no AASA, closed source
+        "local.aay.petal.app",          // not on the App Store, nothing to verify
+        "pl.edu.vulcan.hebe.ce",        // eduVULCAN - eduvulcan.pl serves no AASA, no known scheme
+        "US.Luxy.Luxy",                 // Luxy - onluxy.com serves no AASA, no known scheme
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -1062,6 +1072,14 @@ struct VivaDictaApp: App {
             "aoagents.ao": "aomobile://",                                   // Orchestrator.Inc; packages/mobile/app.json in OrchestratorInc/agent-orchestrator (Expo "scheme", first of aomobile / ao-app)
             "ch.protonmail.protonmail": "protonmail://",                    // Proton Mail; project.yml CFBundleURLSchemes in ProtonMail/ios-mail; NOT mailto:, shared
 
+            // 2026-11-14. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.beeasy.shopee.id": "https://shopee.co.id/",                 // Shopee Indonesia; AASA paths * and / for the bundle
+            "com.beeasy.shopee.sg": "https://shopee.sg/",                    // Shopee Singapore; AASA paths * and / for the bundle
+            "com.goosehouse.echo": "redde://",                               // Hermes Redde; project.yml CFBundleURLSchemes [echo, redde] in goosehouse-llc/redde; NOT echo://, too generic
+            "io.robbie.HomeAssistant": "homeassistant://",                   // Home Assistant; Info.plist ${ENV_URL_HANDLER}, set to homeassistant in HomeAssistant.xcodeproj (home-assistant/iOS)
+            "pl.znanylekarz": "https://www.znanylekarz.pl/",                 // ZnanyLekarz; AASA /* for the bundle, served at the root, not /.well-known
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -1101,6 +1119,7 @@ struct VivaDictaApp: App {
             "com.asana.Asana": "asana://",                    // Asana; 2026-11-07, community: the shipping IPA's Info.plist quoted on Stack Overflow; app.asana.com AASA lists / but that is Home and would pull the user out of the task
             "com.cisco.squared": "webexteams://",             // Webex; 2026-11-07, help.webex.com "webexteams protocol" article shows only space/meeting forms
             "com.microsoft.msedge": "microsoft-edge://",      // Microsoft Edge; 2026-11-07, community lists (Stack Overflow), no vendor doc for iOS; may open a new tab
+            "com.apple.weather": "weather://",                // Weather; 2026-11-14, community (Stack Overflow answer), not read from the binary
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 
