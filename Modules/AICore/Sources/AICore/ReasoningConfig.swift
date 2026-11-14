@@ -19,6 +19,8 @@ public struct ReasoningConfig {
     // enhancement call.
     static let geminiLowReasoningModels: Set<String> = [
         "gemini-4-argon",
+        "gemini-4-carbon",
+        "gemini-4-hydrogen",
         "gemini-3.8-flash",
         "gemini-3.7-flash",
         "gemini-3.1-pro-preview"
