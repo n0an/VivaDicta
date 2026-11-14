@@ -528,10 +528,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             let streamingCoordinator = realtimeCoordinator
             self.realtimeCoordinator = nil
 
-            if let streamingCoordinator {
-                // Leave `.recording` before awaiting the flush - a second Stop
-                // tap would otherwise move the capture file out from under this.
-                recordingState = .transcribing
+            // Leave `.recording` before awaiting the delay and the flush - a
+            // second Stop tap would otherwise re-enter this branch and move the
+            // capture file out from under this.
+            recordingState = .transcribing
+            if streamingCoordinator != nil {
                 appGroupBridge.updateRecordingState(false)
             }
 
@@ -554,6 +555,11 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                         return
                     }
                 }
+
+                // `try?` swallows the sleep's CancellationError, so a cancel
+                // during the delay has to stop here - otherwise the cancelled
+                // recording would still be transcribed and saved.
+                guard !Task.isCancelled else { return }
 
                 resetValues()
 
@@ -919,7 +925,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     languageOverride: languageOverride
                 )
 
-                appGroupBridge.shareTranscribedText(textToShare)
+                appGroupBridge.shareTranscribedText(keyboardPayload(textToShare, sourceTag: resolvedSourceTag))
 
                 // Cache for keyboard "Recent Notes" feature
                 RecentNotesCache.addNote(
@@ -1238,7 +1244,7 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
                     )
 
                     // Share with keyboard
-                    appGroupBridge.shareTranscribedText(pending.text)
+                    appGroupBridge.shareTranscribedText(keyboardPayload(pending.text, sourceTag: pending.sourceTag))
 
                     // Cache for keyboard "Recent Notes" feature
                     RecentNotesCache.addNote(
@@ -1325,6 +1331,17 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
             ClipboardManager.copyToClipboard(output.clipboardText)
             UIApplication.shared.open(output.url)
         }
+    }
+
+    /// The text to publish to the keyboard extension for a finished recording.
+    ///
+    /// Only a keyboard recording has a host text field waiting for it. The keyboard
+    /// is the only consumer of the shared text, so publishing an in-app note would
+    /// let a keyboard process that resumes later insert it into an unrelated field.
+    /// Other sources publish an empty payload: the status and the completion
+    /// broadcast still go out, and the keyboard ignores empty text.
+    private func keyboardPayload(_ text: String, sourceTag: String?) -> String {
+        sourceTag == SourceTag.keyboard ? text : ""
     }
 
     /// Queues the system share sheet for a freshly finished recording when
