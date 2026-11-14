@@ -421,6 +421,38 @@ struct RecordViewModelTests {
         #expect(sut.recordError == .interrupted)
     }
 
+    /// A failed keyboard start must reach the keyboard as an error: the app is in
+    /// the background, so its alert goes unseen, and the keyboard's start watchdog
+    /// treats the recording state broadcasts as an acknowledgement.
+    @MainActor
+    @Test func failedStart_fromKeyboard_reportsErrorToKeyboard_inAppDoesNot() async throws {
+        struct StartFailure: Error {}
+        let transcriber = MockTranscriber(currentMode: parakeetMode(), stubbedText: "")
+        let prewarm = MockAudioPrewarmer()
+        prewarm.isSessionActive = true
+        prewarm.stubStartRealCaptureError = StartFailure()
+        let appGroup = MockAppGroupBridge()
+        let (sut, _) = try makeSUT(transcriber: transcriber, appGroup: appGroup, prewarmManager: prewarm)
+
+        sut.startCaptureAudio(sourceTag: SourceTag.app)
+        try await waitUntil { sut.recordError == .recordError }
+        #expect(appGroup.transcriptionErrors.isEmpty)
+
+        sut.isShowingAlert = false
+        sut.recordError = .other
+        sut.startCaptureAudio(sourceTag: SourceTag.keyboard)
+        try await waitUntil { sut.recordError == .recordError }
+        #expect(appGroup.transcriptionErrors == ["Could not start recording. Open VivaDicta and try again."])
+    }
+
+    @MainActor
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<40 where !condition() {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        try #require(condition())
+    }
+
     // MARK: - Auto Share Note
 
     /// All three "Auto Share Note" cases share one SUT (and so one `AppState`)

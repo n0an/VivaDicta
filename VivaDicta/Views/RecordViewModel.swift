@@ -264,6 +264,16 @@ class RecordViewModel: NSObject, AVAudioPlayerDelegate {
         isShowingAlert = true
         recordingState = .idle
         appGroupBridge.updateRecordingState(false)
+
+        // A keyboard start runs with the app in the background, where the alert
+        // above goes unseen. The keyboard's start watchdog counts the recording
+        // state broadcasts as an acknowledgement, so tell the keyboard directly.
+        if activeSourceTag == SourceTag.keyboard {
+            let message = "Could not start recording. Open VivaDicta and try again."
+            if !failPendingVoiceInstruction(message) {
+                appGroupBridge.updateTranscriptionError(message)
+            }
+        }
     }
 
     private func requestMicrophonePermission() async -> Bool {
