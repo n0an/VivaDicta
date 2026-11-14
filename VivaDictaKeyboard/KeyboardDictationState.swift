@@ -77,6 +77,19 @@ final class KeyboardDictationState {
     // MARK: - Auto-dismiss
     private var errorDismissTask: Task<Void, Never>?
 
+    // MARK: - Start Watchdog
+    /// Marks the session inactive if the main app never acknowledges a start
+    /// request. See `requestStartRecording()`.
+    private var startWatchdogTask: Task<Void, Never>?
+
+    // MARK: - Callback Ownership
+    /// The instance whose closures are in the coordinator's callback slots.
+    ///
+    /// A replacement keyboard can call `start()` before the old instance's
+    /// deferred `stop()` runs. `stop()` clears the slots only while its instance
+    /// still owns them.
+    private static weak var callbackOwner: KeyboardDictationState?
+
     // MARK: - Init
     init() {
         self.isRecording = AppGroupCoordinator.shared.isRecording
@@ -125,7 +138,13 @@ final class KeyboardDictationState {
         // Refresh VivaModes when keyboard starts
         vivaModeManager.refreshVivaModes()
 
+        Self.callbackOwner = self
         AppGroupCoordinator.shared.onRecordingStateChanged = { [weak self] state in
+            // Any recording state broadcast acknowledges a pending start request.
+            // The broadcast carries no value, so after a sub-second recording
+            // `state` can already read false here.
+            self?.startWatchdogTask?.cancel()
+            self?.startWatchdogTask = nil
             self?.isRecording = state
         }
         AppGroupCoordinator.shared.onKeyboardSessionActivated = { [weak self] in
@@ -171,6 +190,11 @@ final class KeyboardDictationState {
     
     nonisolated func stop() {
         Task { @MainActor in
+            errorDismissTask?.cancel()
+            errorDismissTask = nil
+            // Leave the slots alone if a replacement instance has started since.
+            guard Self.callbackOwner === self else { return }
+            Self.callbackOwner = nil
             AppGroupCoordinator.shared.onRecordingStateChanged = nil
             AppGroupCoordinator.shared.onKeyboardSessionActivated = nil
             AppGroupCoordinator.shared.onKeyboardSessionExpired = nil
@@ -178,12 +202,13 @@ final class KeyboardDictationState {
             AppGroupCoordinator.shared.onTranscriptionEnhancing = nil
             AppGroupCoordinator.shared.onTranscriptionCompleted = nil
             AppGroupCoordinator.shared.onTranscriptionError = nil
+            // Whether this slot is set decides whether this process consumes the
+            // shared error message, so a stopped keyboard must not keep it.
+            AppGroupCoordinator.shared.onTranscriptionErrorMessage = nil
             AppGroupCoordinator.shared.onTranscriptionCancelled = nil
             AppGroupCoordinator.shared.onAudioLevelUpdated = nil
             AppGroupCoordinator.shared.onTextProcessingCompleted = nil
             AppGroupCoordinator.shared.onTextProcessingError = nil
-            errorDismissTask?.cancel()
-            errorDismissTask = nil
         }
     }
 
@@ -203,9 +228,13 @@ final class KeyboardDictationState {
             }
             AppGroupCoordinator.shared.requestStartRecording()
 
-            Task { [weak self] in
+            // Liveness check: no recording state broadcast within a second means
+            // the main app did not pick up the request. The broadcast cancels it.
+            startWatchdogTask?.cancel()
+            startWatchdogTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(1.0))
-                guard let self else { return }
+                guard let self, !Task.isCancelled else { return }
+                self.startWatchdogTask = nil
                 if !self.isRecording {
                     self.isSessionActive = false
                 }
