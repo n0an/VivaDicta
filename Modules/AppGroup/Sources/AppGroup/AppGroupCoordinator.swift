@@ -170,7 +170,12 @@ public final class AppGroupCoordinator: @unchecked Sendable {
     @MainActor public var onPauseRecordingRequested: (() -> Void)?
     @MainActor public var onResumeRecordingRequested: (() -> Void)?
     @MainActor public var onKeyboardSessionActivated: (() -> Void)?
+    /// Receives the transcribed text. Setting it makes this process the one
+    /// that consumes the shared text, so only the keyboard extension sets it.
     @MainActor public var onTranscriptionCompleted: ((String) -> Void)?
+    /// Observe-only completion hook for the main app. It takes no text and
+    /// leaves the shared text and status in place for the keyboard extension.
+    @MainActor public var onTranscriptionCompletionObserved: (() -> Void)?
     @MainActor public var onTranscriptionTranscribing: (() -> Void)?
     @MainActor public var onTranscriptionEnhancing: (() -> Void)?
     @MainActor public var onTranscriptionError: (() -> Void)?
@@ -1381,18 +1386,41 @@ public final class AppGroupCoordinator: @unchecked Sendable {
 
     private func handleTranscriptionCompletedNotification() {
         Task { @MainActor in
-            let text = getAndConsumeTranscribedText() ?? ""
-            onTranscriptionCompleted?(text)
+            deliverTranscriptionCompleted()
         }
+    }
+
+    /// Runs in every process that observes the completion broadcast (the main
+    /// app and the keyboard extension).
+    ///
+    /// Only a process with a text callback consumes the shared text. The main
+    /// app registers only the observe-only hook, so it can no longer delete the
+    /// text before the keyboard reads it.
+    @MainActor
+    func deliverTranscriptionCompleted() {
+        onTranscriptionCompletionObserved?()
+        guard let callback = onTranscriptionCompleted else { return }
+        let text = getAndConsumeTranscribedText() ?? ""
+        callback(text)
     }
 
     private func handleTranscriptionErrorNotification() {
         Task { @MainActor in
-            let message = getAndConsumeTranscriptionErrorMessage() ?? ""
-            onTranscriptionError?()
-            if !message.isEmpty {
-                onTranscriptionErrorMessage?(message)
-            }
+            deliverTranscriptionError()
+        }
+    }
+
+    /// Runs in every process that observes the error broadcast.
+    ///
+    /// `onTranscriptionError` is observe-only. Only a process with a message
+    /// callback (the keyboard extension) consumes the shared error message.
+    @MainActor
+    func deliverTranscriptionError() {
+        onTranscriptionError?()
+        guard let messageCallback = onTranscriptionErrorMessage else { return }
+        let message = getAndConsumeTranscriptionErrorMessage() ?? ""
+        if !message.isEmpty {
+            messageCallback(message)
         }
     }
 

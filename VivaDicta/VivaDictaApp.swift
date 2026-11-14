@@ -244,8 +244,9 @@ struct VivaDictaApp: App {
                             }
                         }
 
-                        // Set up handler for transcription completion - return to idle
-                        AppGroupCoordinator.shared.onTranscriptionCompleted = { _ in
+                        // Set up handler for transcription completion - return to idle.
+                        // Observe-only: the keyboard extension consumes the text.
+                        AppGroupCoordinator.shared.onTranscriptionCompletionObserved = {
                             Task {
                                 await appState.updateLiveActivityState(.idle)
                             }
