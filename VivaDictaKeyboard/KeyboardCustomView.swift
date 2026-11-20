@@ -80,7 +80,7 @@ struct KeyboardCustomView: View {
 
         var result: KeyboardLayout
         switch currentLanguage {
-        case .english: result = base
+        case .english, .italian: result = base
         case .french: result = AzertyLayout.rewrite(base)
         case .german: result = GermanLayout.rewrite(base)
         case .czech: result = CzechLayout.rewrite(base)
@@ -244,7 +244,7 @@ struct KeyboardCustomView: View {
                             )
                             .keyboardCalloutActions { params in
                                 switch currentLanguage {
-                                case .english: return params.standardActions()
+                                case .english, .italian: return params.standardActions()
                                 case .french: return AzertyCallouts.actionsBuilder(params)
                                 case .german: return GermanCallouts.actionsBuilder(params)
                                 case .czech: return CzechCallouts.actionsBuilder(params)
