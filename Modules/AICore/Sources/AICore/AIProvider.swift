@@ -576,6 +576,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             ]
         case .gemini:
             return [
+                "gemini-4-neon",
                 "gemini-4-carbon",
                 "gemini-4-argon",
                 "gemini-4-hydrogen",
@@ -614,6 +615,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             // gpt-5.1, gpt-5.2 and gpt-4.1-nano are deprecated/shutting down;
             // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
+                "gpt-6.2-astra",
+                "gpt-6.2-sol",
                 "gpt-6-astra",
                 "gpt-6.1-sol",
                 "gpt-6.1-terra",
