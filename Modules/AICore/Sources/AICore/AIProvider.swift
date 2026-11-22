@@ -512,11 +512,22 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
             "llama-3.1-8b-instant": "openai/gpt-oss-20b",
             "llama-3.3-70b-versatile": "openai/gpt-oss-120b"
         ],
-        // gpt-5.1 and gpt-4.1-nano shut down 2026-07-23; gpt-5.2 is deprecated
+        // gpt-5.1 and gpt-4.1-nano shut down 2026-07-23; gpt-5.2 is deprecated.
+        // gpt-5, gpt-5-mini and gpt-5-nano shut down 2026-12-11; gpt-4o,
+        // gpt-4o-mini, gpt-4.1 and gpt-4.1-mini shut down 2027-01-14
+        // (OpenAI names gpt-6-luna as their replacement). gpt-5 and gpt-5-mini
+        // follow the macOS app's mapping.
         .openAI: [
             "gpt-5.1": "gpt-5.5",
             "gpt-5.2": "gpt-5.5",
-            "gpt-4.1-nano": "gpt-5.4-nano"
+            "gpt-4.1-nano": "gpt-5.4-nano",
+            "gpt-5": "gpt-5.6-sol",
+            "gpt-5-mini": "gpt-5.6-terra",
+            "gpt-5-nano": "gpt-6-luna",
+            "gpt-4.1": "gpt-6-luna",
+            "gpt-4.1-mini": "gpt-6-luna",
+            "gpt-4o": "gpt-6-luna",
+            "gpt-4o-mini": "gpt-6-luna"
         ],
         // llama3.1-8b was removed from the public catalog;
         // zai-glm-4.7 is deprecated from 2026-08-17;
@@ -611,7 +622,8 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "claude-haiku-4-5"
             ]
         case .openAI:
-            // gpt-5.1, gpt-5.2 and gpt-4.1-nano are deprecated/shutting down;
+            // gpt-5.1, gpt-5.2, gpt-4.1-nano, the gpt-5 generation and the
+            // gpt-4o / gpt-4.1 families are deprecated/shutting down;
             // legacy selections are mapped forward via `retiredModelReplacements`.
             return [
                 "gpt-6-astra",
@@ -625,13 +637,7 @@ public enum AIProvider: String, CaseIterable, Identifiable, Codable, Sendable {
                 "gpt-5.5",
                 "gpt-5.4",
                 "gpt-5.4-mini",
-                "gpt-5.4-nano",
-                "gpt-5-mini",
-                "gpt-5-nano",
-                "gpt-4.1",
-                "gpt-4.1-mini",
-                "gpt-4o",
-                "gpt-4o-mini"
+                "gpt-5.4-nano"
             ]
         case .grok:
             // grok-4.20-non-reasoning leads because it is the default: measured
