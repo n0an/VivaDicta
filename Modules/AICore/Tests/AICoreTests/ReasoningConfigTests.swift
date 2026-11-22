@@ -15,6 +15,7 @@ struct ReasoningConfigTests {
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.7-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.8-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-argon") == "low")
+        #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-neon") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-carbon") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-hydrogen") == "low")
         // 3.1 Pro rejects "minimal" on both the OpenAI-compatible and native endpoints.
@@ -25,6 +26,8 @@ struct ReasoningConfigTests {
         #expect(ReasoningConfig.getReasoningParameter(for: "gpt-5-mini") == "minimal")
         // GPT-6 offers no "none" or "minimal" level, so "low" is its floor.
         #expect(ReasoningConfig.getReasoningParameter(for: "gpt-6-astra") == "low")
+        // gpt-6-luna accepts none (unlike astra) and replaces the retired gpt-4o/4.1/5-nano families.
+        #expect(ReasoningConfig.getReasoningParameter(for: "gpt-6-luna") == "none")
         // Cerebras / Groq
         #expect(ReasoningConfig.getReasoningParameter(for: "gpt-oss-120b") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "openai/gpt-oss-120b") == "low")

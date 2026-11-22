@@ -774,6 +774,20 @@ struct VivaDictaApp: App {
         "pl.edu.vulcan.hebe.ce",        // eduVULCAN - eduvulcan.pl serves no AASA, no known scheme
         "US.Luxy.Luxy",                 // Luxy - onluxy.com serves no AASA, no known scheme
 
+        // Checked 2026-11-21: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "ai.mammouth.application",      // Mammouth - mammouth.ai serves no AASA, closed source
+        "com.amazon.agentspaces.mobile", // AgentSpaces Mobile (Amazon) - no seller site, no known scheme
+        "com.apple.InCallService",      // Phone / FaceTime call screen
+        "com.apple.mobileslideshow.photospicker", // Photos picker sheet hosted in another app
+        "com.connectedbits.sf311",      // SF311 - sf311.org serves no AASA, no known scheme
+        "com.facebook.MAdMan",          // Meta Ads Manager - facebook.com AASA covers /adsmanager/* paths; the Ads Manager home would pull the user out of the ad they were editing
+        "com.goodnotesapp.x",           // Goodnotes - AASA covers /s/*, /deeplink/* and invites only, no root path
+        "com.groupme.iphone-app",       // GroupMe - AASA covers /join_*, /contact/* invites only
+        "com.moodle.moodlemobile",      // Moodle - moodlemobile:// (moodle.config.json in moodlehq/moodleapp) shows an "invalid site" error when opened bare (urlschemes.ts handleCustomURL)
+        "com.strava.stravaride",        // Strava - AASA has no root path; /dashboard would pull the user out of the activity they were editing
+        "ffinbank.MyFreedom",           // Freedom SuperApp (Bank Freedom Finance Kazakhstan) - bankffin.kz serves no AASA
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -1081,6 +1095,13 @@ struct VivaDictaApp: App {
             "io.robbie.HomeAssistant": "homeassistant://",                   // Home Assistant; Info.plist ${ENV_URL_HANDLER}, set to homeassistant in HomeAssistant.xcodeproj (home-assistant/iOS)
             "pl.znanylekarz": "https://www.znanylekarz.pl/",                 // ZnanyLekarz; AASA /* for the bundle, served at the root, not /.well-known
 
+            // 2026-11-21. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "com.foyer.thineai.internal": "https://thine.com/redirect",      // Thine AI; AASA path /redirect ("Opens Thine for installed app users") for the bundle
+            "com.max.gnclient": "https://gathern.co/",                       // Gathern; AASA path / for the bundle
+            "com.openchamber.app": "openchamber://",                         // OpenChamber; packages/mobile/ios/App/App/Info.plist in openchamber/openchamber; not on the App Store
+            "org.mozilla.ios.Focus": "firefox-focus://",                     // Firefox Focus; BLOCKZILLA_URL_SCHEME in focus-ios/Blockzilla.xcodeproj (mozilla-mobile/firefox-ios); NOT http/https, which it also claims
+
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
             // lists rather than the plist. A miss costs nothing beyond the
@@ -1121,6 +1142,9 @@ struct VivaDictaApp: App {
             "com.cisco.squared": "webexteams://",             // Webex; 2026-11-07, help.webex.com "webexteams protocol" article shows only space/meeting forms
             "com.microsoft.msedge": "microsoft-edge://",      // Microsoft Edge; 2026-11-07, community lists (Stack Overflow), no vendor doc for iOS; may open a new tab
             "com.apple.weather": "weather://",                // Weather; 2026-11-14, community (Stack Overflow answer), not read from the binary
+            "com.firecore.infuse": "infuse://",               // Infuse; 2026-11-21, vendor docs (support.firecore.com "API for Third-Party Apps") show only infuse://x-callback-url/... forms
+            "com.getupnote.ios": "upnote://",                 // UpNote; 2026-11-21, vendor docs (help.getupnote.com x-callback-url endpoints) show only upnote://x-callback-url/... forms; getupnote.com AASA is webcredentials only
+            "com.ulyssesapp.mac": "ulysses://",               // Ulysses (universal purchase, this bundle id on iOS too); 2026-11-21, vendor docs (ulysses.app/kb/x-callback-url) show only ulysses://x-callback-url/... forms
             "com.apple.Translate": "translate://"             // the simulator carries only a stub of Translate.app
         ]
 

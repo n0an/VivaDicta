@@ -18,6 +18,7 @@ public struct ReasoningConfig {
     // validation error, so the usual minimal-effort default would 400 every
     // enhancement call.
     static let geminiLowReasoningModels: Set<String> = [
+        "gemini-4-neon",
         "gemini-4-argon",
         "gemini-4-carbon",
         "gemini-4-hydrogen",
@@ -39,6 +40,7 @@ public struct ReasoningConfig {
 
     // 5.5, 5.4 and 5.2 models already default to "none", but we set it explicitly
     static let openAINoneReasoningModels: Set<String> = [
+        "gpt-6-luna",
         "gpt-5.5",
         "gpt-5.4",
         "gpt-5.4-mini",
