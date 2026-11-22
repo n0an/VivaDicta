@@ -40,6 +40,7 @@ public struct ReasoningConfig {
 
     // 5.5, 5.4 and 5.2 models already default to "none", but we set it explicitly
     static let openAINoneReasoningModels: Set<String> = [
+        "gpt-6-luna",
         "gpt-5.5",
         "gpt-5.4",
         "gpt-5.4-mini",
