@@ -15,6 +15,7 @@ struct ReasoningConfigTests {
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.7-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-3.8-flash") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-argon") == "low")
+        #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-neon") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-carbon") == "low")
         #expect(ReasoningConfig.getReasoningParameter(for: "gemini-4-hydrogen") == "low")
         // 3.1 Pro rejects "minimal" on both the OpenAI-compatible and native endpoints.
