@@ -788,6 +788,17 @@ struct VivaDictaApp: App {
         "com.strava.stravaride",        // Strava - AASA has no root path; /dashboard would pull the user out of the activity they were editing
         "ffinbank.MyFreedom",           // Freedom SuperApp (Bank Freedom Finance Kazakhstan) - bankffin.kz serves no AASA
 
+        // Checked 2026-11-28: no custom scheme found, and no universal link
+        // that opens the app at its root.
+        "ai.nousresearch.hermes.mobile", // Hermes (Nous Research) - not on the App Store, no public source, nothing to verify
+        "com.beeasy.seller",            // Shopee Seller Center - seller.shopee.* AASA covers /universal-link/*, /uls/*, /dlink/* deep links only
+        "com.sesameai.sesame.stable",   // Sesame - sesame.com AASA covers /mobile-app/* deep links (profile, app, call) only; no root path
+        "com.sitly.app",                // Sitly - app.sitly.com AASA covers /account, /messages/*, /settings and similar only; no root path
+        "com.somosplenti.plenti",       // Plenti - plenti.com.co AASA covers /records/* and /referidos only
+        "com.wazzup.mobile",            // Wazzup - wazzup24.com serves no AASA, no known scheme
+        "mn.onlime",                    // LIME Mongolia - lime.mn serves no AASA, no known scheme
+        "tw.zuvio.IRS",                 // Zuvio - zuvio.com.tw serves no AASA, no known scheme
+
         // Share and compose extensions. The surface the user typed into is torn
         // down on return, and the parent app is not where they were.
         "net.whatsapp.WhatsApp.ShareExtension",
@@ -795,6 +806,7 @@ struct VivaDictaApp: App {
         "org.whispersystems.signal.shareextension", // Signal share extension
         "com.apple.mobilenotes.SharingExtension", // Notes "Add to Notes" share sheet
         "com.linear.ios.ShareExtension", // Linear share extension
+        "com.apple.MobileSMS.MessagesNotificationExtension", // Messages quick reply from a notification banner
         "io.raindrop.ios.share"         // Raindrop.io share extension
     ]
 
@@ -1101,6 +1113,15 @@ struct VivaDictaApp: App {
             "com.max.gnclient": "https://gathern.co/",                       // Gathern; AASA path / for the bundle
             "com.openchamber.app": "openchamber://",                         // OpenChamber; packages/mobile/ios/App/App/Info.plist in openchamber/openchamber; not on the App Store
             "org.mozilla.ios.Focus": "firefox-focus://",                     // Firefox Focus; BLOCKZILLA_URL_SCHEME in focus-ios/Blockzilla.xcodeproj (mozilla-mobile/firefox-ios); NOT http/https, which it also claims
+
+            // 2026-11-28. Scheme read from the app's own source, or a universal
+            // link confirmed in the app's AASA file at the root or a catch-all path.
+            "cab.snapp.passenger": "https://app.snapp.taxi/",                // Snapp; AASA paths * and / for the bundle
+            "com.amazon.AmazonIN": "https://www.amazon.in/",                 // Amazon India; www.amazon.in AASA path / for the bundle
+            "com.brave.ios.browser.beta": "brave-beta://",                   // Brave Beta; BRAVE_URL_SCHEME in ios/brave-ios/App/Configuration/Beta.xcconfig (brave/brave-core); NOT http/https, which it also claims
+            "com.dreame.smarthome": "https://app.dreame.tech/",              // Dreamehome; AASA path * for the bundle
+            "com.wispr.flowapp": "https://wisprflow.ai/",                    // Wispr Flow; AASA path * for the bundle
+            "dev.serafim.fast.iphone": "yab://",                             // Yab browser; CFBundleURLSchemes in Phone/project.yml (yetanotherbrowser/yab); NOT http/https, which it also claims
 
             // 2026-09-27. Weaker: the AASA lists the bundle ID but only for a
             // specific page, or the scheme comes from vendor docs or community
